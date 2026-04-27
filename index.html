@@ -1,0 +1,1963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>NDC ProposalBuilder</title>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Georgia, serif; background: #f8fafc; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+import { useState } from "react";
+
+function uid() { return Math.random().toString(36).slice(2); }
+const NDC_LOGO = null;
+
+const fmt = (n) => Number(n).toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+const ALL_SERVICES = [
+  { id: "siding",   emoji: "🏠", label: "Siding",             sub: "HardiePlank, Board & Batten, Shingle" },
+  { id: "soffit",   emoji: "🪵", label: "Soffits",             sub: "Vented soffit panels & installation" },
+  { id: "fascia",   emoji: "🪚", label: "Fascia",              sub: "Fascia boards & trim" },
+  { id: "paint",    emoji: "🎨", label: "Paint",              sub: "Exterior priming & painting" },
+  { id: "windows",  emoji: "🪟", label: "Windows",        sub: "Replacement or new installation" },
+  { id: "misc",     emoji: "🔧", label: "Miscellaneous",   sub: "Additional work not listed above" },
+];
+
+const INSTALL_STEPS = {
+  "HardiePlank Lap Siding": [
+    "1. Surface Preparation - Remove existing siding, inspect sheathing, repair any damaged substrate",
+    "2. House Wrap / Weather Barrier - Install continuous WRB, tape all seams",
+    "3. Flashing - Install metal flashing at windows, doors, roof lines, and penetrations",
+    "4. Starter Strip - Install metal starter strip at base of wall, level and secure",
+    "5. HardiePlank Installation - Install lap siding bottom-up, maintain proper overlap per spec, use corrosion-resistant nails",
+    "6. Trim & Fascia - Install HardieTrim boards at corners, windows, doors, and eaves",
+    "9. Final Inspection - Inspect all fasteners, joints, and clearances per James Hardie installation requirements",
+  ],
+  "Board & Batten": [
+    "1. Surface Preparation - Remove existing siding, inspect sheathing, repair any damaged substrate",
+    "2. House Wrap / Weather Barrier - Install continuous WRB, tape all seams",
+    "3. Flashing - Install metal flashing at windows, doors, roof lines, and penetrations",
+    '4. HardiePanel Installation - Install vertical panels plumb and level, maintain 6" clearance from grade',
+    "5. Batten Installation - Install HardieTrim battens over panel joints, nail through into studs",
+    "6. Trim & Fascia - Install corner boards, window/door surrounds, and eave trim",
+    "9. Final Inspection - Inspect all fasteners, joints, and clearances per James Hardie installation requirements",
+  ],
+  "HardieShingle": [
+    "1. Surface Preparation - Remove existing siding, inspect sheathing, repair any damaged substrate",
+    "2. House Wrap / Weather Barrier - Install continuous WRB, tape all seams",
+    "3. Flashing - Install metal flashing at windows, doors, roof lines, and penetrations",
+    "4. Starter Course - Install starter strip and first course of shingles level at base",
+    "5. HardieShingle Installation - Install shingle courses with proper exposure and stagger pattern, blind-nail per spec",
+    "6. Trim & Fascia - Install corner boards and trim at all openings and eaves",
+    "9. Final Inspection - Inspect all fasteners, joints, and clearances per James Hardie installation requirements",
+  ],
+};
+
+const SOFFIT_STEPS = [
+  "1. Safety & Access - Set up ladders and scaffolding, establish safe work zones",
+  "2. Remove Existing Material - Remove deteriorated soffits, fascia boards, and J-channel",
+  "3. Inspect Rafter Tails & Sheathing - Check for rot, damage, or pest intrusion; repair as needed",
+  "4. Install New Fascia - Secure new fascia boards or HardieTrim fascia, ensure plumb and level",
+  "5. Install Vented Soffit Panels - Cut and install soffit panels with proper ventilation per code",
+  "6. J-Channel & Trim - Install J-channel, F-channel, and corner trim for clean finish",
+    "8. Paint / Finish - Prime and paint or confirm factory-finish color match",
+  "9. Final Inspection - Verify ventilation clearances, fastener spacing, and water drainage",
+];
+
+const PAINT_STEPS = [
+  "1. Surface Preparation - Pressure wash all exterior surfaces, allow to dry fully",
+  "3. Repairs - Fill cracks, holes, and gaps with exterior-grade caulk or patching compound",
+  "4. Masking & Protection - Mask windows, doors, fixtures, and landscaping",
+  "5. Surface Sealing - Seal all repaired areas and bare wood with appropriate sealer",
+  "6. First Coat - Apply first coat of exterior paint using directional spray technique",
+  "7. Second Coat - Apply second coat using directional spray for uniform coverage and adhesion",
+  "8. Trim & Detail Work - Cut in and paint all trim, shutters, soffits, and detail areas",
+  "9. Clean Up - Remove masking, clean up drips, dispose of materials properly",
+  "9. Final Inspection - Walk-through with homeowner to confirm coverage and finish quality",
+];
+
+const WINDOW_STEPS = [
+  "1. Measurement & Order Verification - Confirm rough opening dimensions match ordered units",
+  "2. Remove Existing Units - Carefully remove old windows/doors, preserve trim where possible",
+  "3. Inspect Opening - Check framing, sill, and flashing for rot or damage; repair as needed",
+  "4. Set New Unit - Install window/door unit plumb, level, and square; shim as needed",
+  "5. Insulation & Air Seal - Fill gaps with low-expansion foam insulation only (high-pressure or latex foam must NOT be used per Pella installation requirements)",
+  "6. Exterior Trim - Install exterior casing or brick mold, caulk all seams",
+  "7. Interior Trim - Install interior casing as needed",
+  "8. Hardware & Operation - Install hardware, adjust operation, verify locks and weatherstripping",
+  "9. Final Inspection - Test all units for operation, weathertightness, and code compliance",
+];
+
+const defaultSidingMaterials = (type) => [
+  { id: uid(), name: type + " panels", unit: "sq ft", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "House Wrap / Underlayment", unit: "sq ft", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Trim & Fascia (HardieTrim)", unit: "ln ft", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Galvanized Nails / Fasteners", unit: "box", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Caulk & Paintable Sealant", unit: "tube", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Exterior Primer", unit: "gallon", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Exterior Paint (2 coats)", unit: "gallon", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Metal Flashing", unit: "ln ft", sqft: "", pieces: "", cost: "" },
+];
+
+const defaultSoffitMaterials = () => [
+  { id: uid(), name: "Vented Soffit Panels", unit: "sq ft", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Fascia Board / HardieTrim Fascia", unit: "ln ft", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "J-Channel / F-Channel", unit: "ln ft", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Galvanized Nails / Screws", unit: "box", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Caulk & Sealant", unit: "tube", sqft: "", pieces: "", cost: "" },
+];
+
+const defaultPaintMaterials = () => [
+  { id: uid(), name: "Exterior Primer", unit: "gallon", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Exterior Paint (1st coat)", unit: "gallon", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Exterior Paint (2nd coat)", unit: "gallon", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Caulk & Patching Compound", unit: "tube", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Masking Tape & Plastic", unit: "roll", sqft: "", pieces: "", cost: "" },
+];
+
+const defaultWindowMaterials = () => [
+  { id: uid(), name: "Window / Door Units", unit: "each", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Sill Pan Flashing", unit: "ln ft", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Low-Expansion Foam", unit: "can", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Exterior Casing / Brick Mold", unit: "ln ft", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Caulk & Sealant", unit: "tube", sqft: "", pieces: "", cost: "" },
+];
+
+const makeInitialState = () => ({
+  company: { name: "New Direction Construction", address: "820 Worth Rd, Jacksonville, FL 32259", phone: "(904) 891-9980", email: "", license: "CBC059304", logo: NDC_LOGO },
+  customer: { name: "", address: "", email: "", phone: "", photo: null },
+  services: [],
+  siding: { walls: [{ id: uid(), label: "Wall 1", location: "", sqft: "", pricePerSqFt: "", currentSiding: "", removalRequired: "", osbSheathing: "", hardieProduct: "", hardieSize: "", hardieTexture: "", photo: null, notes: "" }], pricePerSqFt: "", sidingType: "HardiePlank Lap Siding" },
+  soffit: { items: [{ id: uid(), label: "Soffit Area 1", currentMaterial: "", newMaterial: "", linearFt: "", pricePerLnFt: "", notes: "" }] },
+  fascia: { items: [{ id: uid(), label: "Fascia Area 1", currentMaterial: "", newMaterial: "", linearFt: "", pricePerLnFt: "", notes: "" }] },
+  paint: { walls: [{ id: uid(), paintProduct: "", colorName: "", sqft: "", pricePerSqFt: "", notes: "" }], trim: [{ id: uid(), paintProduct: "", colorName: "", sqft: "", pricePerSqFt: "", notes: "" }], other: [{ id: uid(), paintProduct: "", colorName: "", sqft: "", pricePerSqFt: "", notes: "" }] },
+  windows: [{ id: uid(), label: "Window 1", location: "", manufacturer: "", manufacturerOther: "", frameType: "", frameColor: "", style: "", glassType: "", glassPack: "", grids: "", width: "", height: "", qty: "1", priceInstalled: "" }],
+  sidingMaterials: defaultSidingMaterials("HardiePlank Lap Siding"),
+  soffitMaterials: defaultSoffitMaterials(),
+  paintMaterials: defaultPaintMaterials(),
+  windowMaterials: defaultWindowMaterials(),
+  misc: { items: [{ id: uid(), description: "", qty: "", unitPrice: "", notes: "" }] },
+  notes: "",
+  financing: { monthlyPayment: "" },
+});
+
+function calcSiding(siding) {
+  let totalArea = 0;
+  let totalCost = 0;
+  siding.walls.forEach((w) => {
+    const sqft = parseFloat(w.sqft || 0);
+    const price = parseFloat(w.pricePerSqFt || 0);
+    totalArea += sqft;
+    totalCost += sqft * price;
+  });
+  return { totalArea: totalArea.toFixed(2), totalCost: totalCost.toFixed(2) };
+}
+function calcSoffit(soffit) {
+  return soffit.items.reduce((a, i) => a + parseFloat(i.linearFt || 0) * parseFloat(i.pricePerLnFt || 0), 0);
+}
+function calcPaint(paint) {
+  const combined = parseFloat(paint.combinedSqft || 0) * parseFloat(paint.combinedPrice || 0);
+  const other = (paint.other || []).reduce((a, i) => a + parseFloat(i.sqft || 0) * parseFloat(i.pricePerSqFt || 0), 0);
+  return combined + other;
+}
+function calcWindows(windows) {
+  return windows.map((w) => ({ ...w, total: (parseFloat(w.qty || 0) * parseFloat(w.priceInstalled || 0)).toFixed(2) }));
+}
+function calcGrandTotal(state) {
+  const sid = state.services.includes("siding") ? parseFloat(calcSiding(state.siding).totalCost) : 0;
+  const sof = state.services.includes("soffit") ? calcSoffit(state.soffit) : 0;
+  const fas = state.services.includes("fascia") ? calcSoffit(state.fascia) : 0;
+  const pnt = state.services.includes("paint") ? calcPaint(state.paint) : 0;
+  const win = state.services.includes("windows") ? calcWindows(state.windows).reduce((a, w) => a + parseFloat(w.total), 0) : 0;
+  const msc = state.services.includes("misc") ? (state.misc.items.reduce((a, i) => a + parseFloat(i.qty || 0) * parseFloat(i.unitPrice || 0), 0)) : 0;
+  return { sid, sof, fas, pnt, win, msc, total: sid + sof + fas + pnt + win + msc };
+}
+
+function ServiceSelectStep({ selected, onChange }) {
+  const toggle = (id) => {
+    if (selected.includes(id)) onChange(selected.filter((s) => s !== id));
+    else onChange([...selected, id]);
+  };
+  return (
+    <div style={S.stepWrap}>
+      <h2 style={S.stepTitle}>What services does this job include?</h2>
+      <p style={S.stepSub}>Select all that apply - only relevant sections will appear in your proposal.</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {ALL_SERVICES.map((svc) => {
+          const active = selected.includes(svc.id);
+          return (
+            <div key={svc.id} onClick={() => toggle(svc.id)} style={{
+              display: "flex", alignItems: "center", gap: 16,
+              background: active ? "#f0f9ff" : "white",
+              border: "2px solid " + (active ? "#0ea5e9" : "#e2e8f0"),
+              borderRadius: 14, padding: "16px 20px", cursor: "pointer",
+            }}>
+              <div style={{ fontSize: 32 }}>{svc.emoji}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 16, color: "#0f172a" }}>{svc.label}</div>
+                <div style={{ fontSize: 13, color: "#64748b", marginTop: 2 }}>{svc.sub}</div>
+              </div>
+              <div style={{
+                width: 24, height: 24, borderRadius: "50%",
+                border: "2px solid " + (active ? "#0ea5e9" : "#cbd5e1"),
+                background: active ? "#0ea5e9" : "white",
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              }}>
+                {active && <span style={{ color: "white", fontSize: 14, fontWeight: 800 }}>-</span>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
+
+function CustomerStep({ data, onChange }) {
+  return (
+    <div style={S.stepWrap}>
+      <h2 style={S.stepTitle}>- Customer Info</h2>
+      <p style={S.stepSub}>Who are you sending this proposal to?</p>
+      <Field label="Customer Name" value={data.name} onChange={(v) => onChange("name", v)} placeholder="John Smith" />
+      <Field label="Job Address" value={data.address} onChange={(v) => onChange("address", v)} placeholder="123 Main St, City, ST 12345" />
+      <Field label="Customer Email" value={data.email} onChange={(v) => onChange("email", v)} placeholder="customer@email.com" type="email" />
+      <Field label="Customer Phone" value={data.phone} onChange={(v) => onChange("phone", v)} placeholder="(555) 000-0000" />
+      <div style={S.field}>
+        <label style={S.label}>Property Street View Photo</label>
+        <label style={{
+          display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
+          background: data.photo ? "#f0f9ff" : "#f8fafc",
+          border: "1.5px dashed " + (data.photo ? "#0ea5e9" : "#cbd5e1"),
+          borderRadius: 8, padding: "12px 16px", fontSize: 13, color: "#475569"
+        }}>
+          <span style={{ fontSize: 22 }}>{data.photo ? "IMG" : "CAM"}</span>
+          <span>{data.photo ? "Photo attached - tap to replace" : "Tap to take photo or upload street view"}</span>
+          <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const r = new FileReader(); r.onload = (ev) => onChange("photo", ev.target.result); r.readAsDataURL(file);
+          }} />
+        </label>
+        {data.photo && (
+          <div style={{ marginTop: 8, position: "relative", display: "inline-block" }}>
+            <img src={data.photo} alt="Property" style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 8, border: "1.5px solid #e2e8f0", display: "block" }} />
+            <button onClick={() => onChange("photo", null)} style={{ position: "absolute", top: 6, right: 6, background: "#0f172a99", border: "none", borderRadius: "50%", color: "white", width: 26, height: 26, cursor: "pointer", fontSize: 13 }}>x</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SidingStep({ data, onChange, onSidingTypeChange }) {
+  const addWall = () => {
+    const last = data.walls[data.walls.length - 1];
+    onChange("walls", [...data.walls, {
+      ...last,
+      id: uid(),
+      label: "Wall " + (data.walls.length + 1),
+      photo: null,
+    }]);
+  };
+  const removeWall = (id) => onChange("walls", data.walls.filter((w) => w.id !== id));
+  const updateWall = (id, key, val) => onChange("walls", data.walls.map((w) => (w.id === id ? { ...w, [key]: val } : w)));
+  const { totalArea, totalCost } = calcSiding(data);
+  return (
+    <div style={S.stepWrap}>
+      <h2 style={S.stepTitle}>- Siding Measurements</h2>
+      <p style={S.stepSub}>Measure each wall. Your all-in price per sq ft covers materials, labor, and finish.</p>
+      <div style={S.field}>
+        <label style={S.label}>Siding Product Type</label>
+        <select style={S.input} value={data.sidingType} onChange={(e) => onSidingTypeChange(e.target.value)}>
+          <option>HardiePlank Lap Siding</option>
+          <option>Board & Batten</option>
+          <option>HardieShingle</option>
+          <option>Mix (specify in notes)</option>
+        </select>
+      </div>
+
+      {data.walls.map((wall) => {
+
+        return (
+          <div key={wall.id} style={S.card}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <input style={{ ...S.input, fontWeight: 700, width: 130, fontSize: 13 }} value={wall.label} onChange={(e) => updateWall(wall.id, "label", e.target.value)} />
+              {data.walls.length > 1 && <button style={S.removeBtn} onClick={() => removeWall(wall.id)}>-</button>}
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>WALL LOCATION</label>
+              <select style={{ ...S.input, fontSize: 13, padding: "6px 8px" }} value={wall.location || ""} onChange={(e) => updateWall(wall.id, "location", e.target.value)}>
+                <option value="">-- Select Location --</option>
+                <option>Front</option>
+                <option>Rear</option>
+                <option>Left Side</option>
+                <option>Right Side</option>
+                <option>Garage</option>
+                <option>Gable End</option>
+                <option>Other</option>
+              </select>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+              <div style={{ flex: 1, minWidth: 160 }}>
+                <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>Current Siding Type</label>
+                <select style={{ ...S.input, fontSize: 13, padding: "6px 8px" }} value={wall.currentSiding} onChange={(e) => updateWall(wall.id, "currentSiding", e.target.value)}>
+                  <option value="">-- Select --</option>
+                  <option>Vinyl Siding</option>
+                  <option>Wood Siding</option>
+                  <option>T1-11 / OSB Panel</option>
+                  <option>Stucco</option>
+                  <option>Brick / Masonry</option>
+                  <option>Aluminum Siding</option>
+                  <option>Fiber Cement (existing)</option>
+                  <option>Cedar Shake</option>
+                  <option>No Existing Siding</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div style={{ flex: 1, minWidth: 160 }}>
+                <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>Removal Required?</label>
+                <select style={{ ...S.input, fontSize: 13, padding: "6px 8px" }} value={wall.removalRequired} onChange={(e) => updateWall(wall.id, "removalRequired", e.target.value)}>
+                  <option value="">-- Select --</option>
+                  <option>Yes - Full Removal</option>
+                  <option>Yes - Partial Removal</option>
+                  <option>No - Install Over Existing</option>
+                  <option>TBD / Inspect First</option>
+                </select>
+              </div>
+            </div>
+
+            {/* OSB Sheathing */}
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>New OSB Sheathing Required?</label>
+              <select style={{ ...S.input, fontSize: 13, padding: "6px 8px" }} value={wall.osbSheathing} onChange={(e) => updateWall(wall.id, "osbSheathing", e.target.value)}>
+                <option value="">-- Select --</option>
+                <option>No - Existing Sheathing is Adequate</option>
+                <option>Yes - Full Wall OSB Replacement</option>
+                <option>Yes - Partial OSB Replacement</option>
+                <option>TBD - Inspect After Removal</option>
+              </select>
+            </div>
+
+            {/* Hardie Product Selection */}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+              <div style={{ flex: 1, minWidth: 160 }}>
+                <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>Hardie Product</label>
+                <select style={{ ...S.input, fontSize: 13, padding: "6px 8px" }} value={wall.hardieProduct} onChange={(e) => updateWall(wall.id, "hardieProduct", e.target.value)}>
+                  <option value="">-- Select Product --</option>
+                  <option value="lap">HardiePlank Lap</option>
+                  <option value="panel">HardiePanel</option>
+                  <option value="shake">HardieShingle Shake</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Lap Sizes & Textures */}
+            {wall.hardieProduct === "lap" && (
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+                <div style={{ flex: 1, minWidth: 160 }}>
+                  <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>Lap Size</label>
+                  <select style={{ ...S.input, fontSize: 13, padding: "6px 8px" }} value={wall.hardieSize} onChange={(e) => updateWall(wall.id, "hardieSize", e.target.value)}>
+                    <option value="">-- Select Size --</option>
+                    <option>5/16" x 6" - 5.25" Exposure</option>
+                    <option>5/16" x 7-1/4" - 6" Exposure</option>
+                    <option>5/16" x 8-1/4" - 7" Exposure</option>
+                    <option>5/16" x 9-1/4" - 8" Exposure</option>
+                    <option>5/16" x 12" - 11" Exposure</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1, minWidth: 160 }}>
+                  <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>Texture</label>
+                  <select style={{ ...S.input, fontSize: 13, padding: "6px 8px" }} value={wall.hardieTexture} onChange={(e) => updateWall(wall.id, "hardieTexture", e.target.value)}>
+                    <option value="">-- Select Texture --</option>
+                    <option>Smooth</option>
+                    <option>Sierra 8 (Cedar Grain)</option>
+                    <option>Beaded Smooth</option>
+                    <option>Beaded Cedar Mill</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Panel Sizes & Textures */}
+            {wall.hardieProduct === "panel" && (
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+                <div style={{ flex: 1, minWidth: 160 }}>
+                  <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>Panel Size</label>
+                  <select style={{ ...S.input, fontSize: 13, padding: "6px 8px" }} value={wall.hardieSize} onChange={(e) => updateWall(wall.id, "hardieSize", e.target.value)}>
+                    <option value="">-- Select Size --</option>
+                    <option>4' x 8' Panel</option>
+                    <option>4' x 9' Panel</option>
+                    <option>4' x 10' Panel</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1, minWidth: 160 }}>
+                  <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>Texture</label>
+                  <select style={{ ...S.input, fontSize: 13, padding: "6px 8px" }} value={wall.hardieTexture} onChange={(e) => updateWall(wall.id, "hardieTexture", e.target.value)}>
+                    <option value="">-- Select Texture --</option>
+                    <option>Smooth</option>
+                    <option>Sierra 8 (Cedar Grain)</option>
+                    <option>Stucco</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Shake Sizes & Textures */}
+            {wall.hardieProduct === "shake" && (
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+                <div style={{ flex: 1, minWidth: 160 }}>
+                  <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>Shake Size</label>
+                  <select style={{ ...S.input, fontSize: 13, padding: "6px 8px" }} value={wall.hardieSize} onChange={(e) => updateWall(wall.id, "hardieSize", e.target.value)}>
+                    <option value="">-- Select Size --</option>
+                    <option>15/32" x 48" - 7" Exposure (Individual)</option>
+                    <option>15/32" x 48" - 10" Exposure (Individual)</option>
+                    <option>Straight Edge Panel - 7" Exposure</option>
+                    <option>Staggered Edge Panel - 7" Exposure</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1, minWidth: 160 }}>
+                  <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>Texture</label>
+                  <select style={{ ...S.input, fontSize: 13, padding: "6px 8px" }} value={wall.hardieTexture} onChange={(e) => updateWall(wall.id, "hardieTexture", e.target.value)}>
+                    <option value="">-- Select Texture --</option>
+                    <option>Cedar Mill</option>
+                    <option>Smooth</option>
+                  </select>
+                </div>
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
+              <MiniField label="Total Sq Ft" value={wall.sqft} onChange={(v) => updateWall(wall.id, "sqft", v)} />
+              <MiniField label="Price/Sq Ft ($)" value={wall.pricePerSqFt} onChange={(v) => updateWall(wall.id, "pricePerSqFt", v)} />
+              <div style={{ paddingBottom: 6 }}><span style={{ fontSize: 13, color: "#0369a1", fontWeight: 700, fontFamily: "monospace" }}>= {fmt(parseFloat(wall.sqft||0) * parseFloat(wall.pricePerSqFt||0))}</span></div>
+            </div>
+            {/* Notes */}
+            <div style={{ marginTop: 10 }}>
+              <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>WALL NOTES</label>
+              <textarea
+                style={{ ...S.input, height: 70, resize: "vertical", fontSize: 13 }}
+                value={wall.notes || ""}
+                onChange={(e) => updateWall(wall.id, "notes", e.target.value)}
+                placeholder="e.g. rotted sheathing on left side, extra flashing needed at roofline..."
+              />
+            </div>
+
+            {/* Photo Upload */}
+            <div style={{ marginTop: 10 }}>
+              <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>WALL PHOTO</label>
+              <label style={{
+                display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
+                background: wall.photo ? "#f0f9ff" : "#f8fafc",
+                border: "1.5px dashed " + (wall.photo ? "#0ea5e9" : "#cbd5e1"),
+                borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#475569"
+              }}>
+                <span style={{ fontSize: 20 }}>{wall.photo ? "IMG" : "CAM"}</span>
+                <span>{wall.photo ? "Photo attached - tap to replace" : "Tap to take photo or upload"}</span>
+                <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => {
+                  const file = e.target.files[0]; if (!file) return;
+                  const r = new FileReader(); r.onload = (ev) => updateWall(wall.id, "photo", ev.target.result); r.readAsDataURL(file);
+                }} />
+              </label>
+              {wall.photo && (
+                <div style={{ marginTop: 8, position: "relative", display: "inline-block" }}>
+                  <img src={wall.photo} alt={wall.label} style={{ maxWidth: "100%", maxHeight: 180, borderRadius: 8, border: "1.5px solid #e2e8f0", display: "block" }} />
+                  <button onClick={() => updateWall(wall.id, "photo", null)} style={{ position: "absolute", top: 6, right: 6, background: "#0f172a99", border: "none", borderRadius: "50%", color: "white", width: 24, height: 24, cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>-</button>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+      <button style={S.addBtn} onClick={addWall}>+ Add Wall</button>
+      <div style={S.summaryBox}>
+        <div><div style={{ fontSize: 12, color: "#0369a1", marginBottom: 2 }}>Total Siding Area</div><div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a" }}>{totalArea} sq ft</div></div>
+        <div style={{ width: 1, background: "#bae6fd", alignSelf: "stretch" }} />
+        <div style={{ textAlign: "right" }}><div style={{ fontSize: 12, color: "#0369a1", marginBottom: 2 }}>Siding Total</div><div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a" }}>{fmt(totalCost)}</div></div>
+      </div>
+    </div>
+  );
+}
+
+function SoffitStep({ data, onChange, title = "Soffits & Fascia" }) {
+  const add = () => {
+    const last = data.items[data.items.length - 1];
+    onChange({ ...data, items: [...data.items, { ...last, id: uid(), label: "Area " + (data.items.length + 1), linearFt: "", notes: "" }] });
+  };
+  const remove = (id) => onChange({ ...data, items: data.items.filter((i) => i.id !== id) });
+  const update = (id, key, val) => onChange({ ...data, items: data.items.map((i) => (i.id === id ? { ...i, [key]: val } : i)) });
+  const total = data.items.reduce((a, i) => a + parseFloat(i.linearFt || 0) * parseFloat(i.pricePerLnFt || 0), 0);
+
+  const currentMaterials = title === "Fascia"
+    ? ["Wood Fascia", "Aluminum Fascia", "Vinyl Fascia", "Fiber Cement Fascia", "No Existing Material", "Other"]
+    : ["Wood Soffit", "Aluminum Soffit", "Vinyl Soffit", "T1-11 / Plywood Soffit", "Fiber Cement Soffit", "No Existing Material", "Other"];
+  const newMaterials = title === "Fascia"
+    ? ["Aluminum Fascia", "HardieTrim Fascia", "PVC Fascia", "Wood (painted)", "Other"]
+    : ["Aluminum Vented Soffit", "Vinyl Vented Soffit", "Aluminum Solid Soffit", "Vinyl Solid Soffit", "Other"];
+
+  return (
+    <div style={S.stepWrap}>
+      <h2 style={S.stepTitle}>{"- " + title}</h2>
+      <p style={S.stepSub}>{"Enter each " + title.toLowerCase() + " run with current materials, new materials, linear footage, and pricing."}</p>
+      {data.items.map((item) => {
+        const itemTotal = parseFloat(item.linearFt || 0) * parseFloat(item.pricePerLnFt || 0);
+        return (
+          <div key={item.id} style={S.card}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <input style={{ ...S.input, fontWeight: 700, width: 160, fontSize: 13 }} value={item.label} onChange={(e) => update(item.id, "label", e.target.value)} />
+              {data.items.length > 1 && <button style={S.removeBtn} onClick={() => remove(item.id)}>-</button>}
+            </div>
+
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+              <div style={{ flex: 1, minWidth: 160 }}>
+                <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>Current Material</label>
+                <select style={{ ...S.input, fontSize: 13, padding: "6px 8px" }} value={item.currentMaterial} onChange={(e) => update(item.id, "currentMaterial", e.target.value)}>
+                  <option value="">-- Select --</option>
+                  {currentMaterials.map(m => <option key={m}>{m}</option>)}
+                </select>
+              </div>
+              <div style={{ flex: 1, minWidth: 160 }}>
+                <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>New Material to Install</label>
+                <select style={{ ...S.input, fontSize: 13, padding: "6px 8px" }} value={item.newMaterial} onChange={(e) => update(item.id, "newMaterial", e.target.value)}>
+                  <option value="">-- Select --</option>
+                  {newMaterials.map(m => <option key={m}>{m}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 10 }}>
+              <MiniField label="Linear Ft" value={item.linearFt} onChange={(v) => update(item.id, "linearFt", v)} />
+              <MiniField label="Price / Lin Ft ($)" value={item.pricePerLnFt} onChange={(v) => update(item.id, "pricePerLnFt", v)} />
+              <div style={{ paddingBottom: 6 }}><span style={{ fontSize: 13, color: "#0369a1", fontWeight: 700, fontFamily: "monospace" }}>{fmt(itemTotal)}</span></div>
+            </div>
+
+            <div>
+              <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>NOTES</label>
+              <textarea style={{ ...S.input, height: 60, resize: "vertical", fontSize: 13 }} value={item.notes || ""} onChange={(e) => update(item.id, "notes", e.target.value)} placeholder="e.g. rotted fascia on north side, add drip edge at roofline..." />
+            </div>
+          </div>
+        );
+      })}
+      <button style={S.addBtn} onClick={add}>{"+ Add " + title + " Area"}</button>
+      {total > 0 && (
+        <div style={S.summaryBox}>
+          <span style={{ fontSize: 13, color: "#0369a1" }}>{title + " Total"}</span>
+          <span style={{ fontSize: 20, fontWeight: 800, color: "#0f172a" }}>{fmt(total)}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const PAINT_PRODUCTS = {
+  "Sherwin Williams": [
+    "SW Emerald Exterior (Highest Quality)",
+    "SW Duration Exterior",
+    "SW Resilience Exterior",
+    "SW SuperPaint Exterior",
+    "SW A-100 Exterior (Good Value)",
+  ],
+  "Behr": [
+    "Behr Dynasty Exterior (Highest Quality)",
+    "Behr Marquee Exterior",
+    "Behr Premium Plus Ultra Exterior",
+    "Behr Premium Plus Exterior",
+    "Behr Exterior (Good Value)",
+  ],
+};
+
+function PaintSection({ title, items, onChange, hidePrice = false }) {
+  const add = () => {
+    const last = items[items.length - 1];
+    onChange([...items, { ...last, id: uid(), colorName: "", sqft: "", pricePerSqFt: "" }]);
+  };
+  const remove = (id) => onChange(items.filter((a) => a.id !== id));
+  const update = (id, key, val) => onChange(items.map((a) => (a.id === id ? { ...a, [key]: val } : a)));
+  const sectionTotal = items.reduce((a, i) => a + parseFloat(i.sqft || 0) * parseFloat(i.pricePerSqFt || 0), 0);
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ fontSize: 13, fontWeight: 800, color: "#0f172a", marginBottom: 10, paddingBottom: 6, borderBottom: "2px solid #e2e8f0" }}>{title}</div>
+      {items.map((item) => {
+        const itemTotal = parseFloat(item.sqft || 0) * parseFloat(item.pricePerSqFt || 0);
+        return (
+          <div key={item.id} style={S.card}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>{title} Area</span>
+              {items.length > 1 && <button style={S.removeBtn} onClick={() => remove(item.id)}>-</button>}
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>PAINT BRAND & PRODUCT</label>
+              <select style={{ ...S.input, fontSize: 13, padding: "6px 8px" }} value={item.paintProduct || ""} onChange={(e) => update(item.id, "paintProduct", e.target.value)}>
+                <option value="">-- Select Brand & Product --</option>
+                {Object.entries(PAINT_PRODUCTS).map(([brand, products]) => (
+                  <optgroup key={brand} label={brand}>
+                    {products.map(p => <option key={p}>{p}</option>)}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>COLOR NAME</label>
+              <input style={{ ...S.input, fontSize: 13 }} value={item.colorName || ""} onChange={(e) => update(item.id, "colorName", e.target.value)} placeholder="e.g. Alabaster, Extra White..." />
+            </div>
+            {!hidePrice && (
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 10 }}>
+                <MiniField label="Sq Ft" value={item.sqft} onChange={(v) => update(item.id, "sqft", v)} />
+                <MiniField label="Price/Sq Ft ($)" value={item.pricePerSqFt} onChange={(v) => update(item.id, "pricePerSqFt", v)} />
+                {itemTotal > 0 && <div style={{ paddingBottom: 6 }}><span style={{ fontSize: 13, color: "#0369a1", fontWeight: 700, fontFamily: "monospace" }}>{fmt(itemTotal)}</span></div>}
+              </div>
+            )}
+            <div>
+              <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>NOTES</label>
+              <textarea style={{ ...S.input, height: 60, resize: "vertical", fontSize: 13 }} value={item.notes || ""} onChange={(e) => update(item.id, "notes", e.target.value)} placeholder="e.g. two coats required, prep work needed, accent color on shutters..." />
+            </div>
+          </div>
+        );
+      })}
+      <button style={S.addBtn} onClick={add}>{"+ Add " + title + " Section"}</button>
+      {sectionTotal > 0 && <div style={{ textAlign: "right", fontSize: 13, color: "#0369a1", fontWeight: 700, marginBottom: 4 }}>{title + " Total: " + fmt(sectionTotal)}</div>}
+    </div>
+  );
+}
+
+function PaintStep({ data, onChange }) {
+  const updateSection = (key, val) => onChange({ ...data, [key]: val });
+  const total = calcPaint(data);
+
+  // Walls + Trim share one combined price field stored on data
+  const combinedPrice = data.combinedPrice || "";
+
+  // When combined price changes, push it into all wall and trim items
+  const handleCombinedPrice = (val) => {
+    const updatedWalls = data.walls.map(i => ({ ...i, pricePerSqFt: val }));
+    const updatedTrim = data.trim.map(i => ({ ...i, pricePerSqFt: val }));
+    onChange({ ...data, combinedPrice: val, walls: updatedWalls, trim: updatedTrim });
+  };
+
+  return (
+    <div style={S.stepWrap}>
+      <h2 style={S.stepTitle}>- Paint</h2>
+      <p style={S.stepSub}>Select paint products and colors for each section. Walls & Trim share one combined price per sq ft.</p>
+
+      <div style={{ ...S.card, marginBottom: 20, background: "#f0f9ff", border: "1.5px solid #7dd3fc" }}>
+        <label style={{ fontSize: 12, fontWeight: 800, color: "#0369a1", display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>Walls & Trim - Combined</label>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 120 }}>
+            <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>TOTAL SQ FT</label>
+            <input style={{ ...S.input, fontSize: 15, fontWeight: 700 }} type="number" value={data.combinedSqft || ""} onChange={(e) => onChange({ ...data, combinedSqft: e.target.value })} placeholder="e.g. 1200" />
+          </div>
+          <div style={{ flex: 1, minWidth: 120 }}>
+            <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>PRICE PER SQ FT ($)</label>
+            <input style={{ ...S.input, fontSize: 15, fontWeight: 700 }} type="number" value={combinedPrice} onChange={(e) => handleCombinedPrice(e.target.value)} placeholder="e.g. 1.75" />
+          </div>
+          {(data.combinedSqft && combinedPrice) && (
+            <div style={{ display: "flex", alignItems: "flex-end", paddingBottom: 8 }}>
+              <span style={{ fontSize: 16, fontWeight: 800, color: "#0369a1", fontFamily: "monospace" }}>{fmt(parseFloat(data.combinedSqft || 0) * parseFloat(combinedPrice || 0))}</span>
+            </div>
+          )}
+        </div>
+        <p style={{ fontSize: 11, color: "#64748b", margin: "8px 0 0" }}>This sq ft and rate applies to both walls and trim.</p>
+      </div>
+
+      <PaintSection title="Walls" items={data.walls} onChange={(v) => updateSection("walls", v)} hidePrice />
+      <PaintSection title="Trim" items={data.trim} onChange={(v) => updateSection("trim", v)} hidePrice />
+      <PaintSection title="Other" items={data.other} onChange={(v) => updateSection("other", v)} />
+      {total > 0 && (
+        <div style={S.summaryBox}>
+          <span style={{ fontSize: 13, color: "#0369a1" }}>Paint Total</span>
+          <span style={{ fontSize: 20, fontWeight: 800, color: "#0f172a" }}>{fmt(total)}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const WIN_OPTS = {
+  manufacturers: ["PGT Innovations", "CGI Windows & Doors", "Impact Resistant Solutions (IRS)", "Andersen Windows", "Pella Windows", "Simonton Windows", "Jeld-Wen", "MI Windows", "Ply Gem / Atrium", "Thermoseal Windows", "Other"],
+  frameTypes: ["Vinyl", "Aluminum", "Fiberglass", "Wood-Clad", "Composite"],
+  frameColors: ["White", "Bronze", "Black", "Tan / Beige", "Gray", "Cream", "Custom Color"],
+  styles: ["Single Hung", "Double Hung", "Sliding / Gliding", "Casement", "Awning", "Fixed / Picture", "Hopper", "Bay / Bow", "Garden"],
+  glassTypes: ["Laminated (Impact)", "Tempered", "Laminated + Tempered", "Annealed (Standard)", "Obscure / Frosted"],
+  glassPacks: ["Low-E 366 (Best Performance)", "Low-E 272", "Low-E 180", "Low-E 2 Coat", "Clear Insulated (IGU)", "Single Pane Clear"],
+  grids: ["No Grids", "Colonial Grids", "Prairie Grids", "Diamond Grids", "Custom Grid Pattern"],
+};
+
+function WindowsStep({ windows, onChange }) {
+  const add = () => {
+    const last = windows[windows.length - 1];
+    onChange([...windows, { ...last, id: uid(), label: "Window " + (windows.length + 1), width: "", height: "", qty: "1", priceInstalled: "" }]);
+  };
+  const remove = (id) => onChange(windows.filter((w) => w.id !== id));
+  const update = (id, key, val) => onChange(windows.map((w) => (w.id === id ? { ...w, [key]: val } : w)));
+  const windowTotal = windows.reduce((a, w) => a + parseFloat(w.qty || 0) * parseFloat(w.priceInstalled || 0), 0);
+
+  const WinSelect = ({ label, field, win, options }) => (
+    <div style={{ flex: 1, minWidth: 150, marginBottom: 10 }}>
+      <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>{label}</label>
+      <select style={{ ...S.input, fontSize: 13, padding: "6px 8px" }} value={win[field] || ""} onChange={(e) => update(win.id, field, e.target.value)}>
+        <option value="">-- Select --</option>
+        {options.map(o => <option key={o}>{o}</option>)}
+      </select>
+    </div>
+  );
+
+  return (
+    <div style={S.stepWrap}>
+      <h2 style={S.stepTitle}>- Windows</h2>
+      <p style={S.stepSub}>Fill out details for each window. New cards copy the previous one.</p>
+      {windows.map((win) => {
+        const lineTotal = parseFloat(win.qty || 0) * parseFloat(win.priceInstalled || 0);
+        return (
+          <div key={win.id} style={S.card}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <input style={{ ...S.input, fontWeight: 700, width: 160, fontSize: 13 }} value={win.label} onChange={(e) => update(win.id, "label", e.target.value)} />
+              {windows.length > 1 && <button style={S.removeBtn} onClick={() => remove(win.id)}>-</button>}
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <WinSelect label="NEW MANUFACTURER" field="manufacturer" win={win} options={WIN_OPTS.manufacturers} />
+            </div>
+            {win.manufacturer === "Other" && (
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>MANUFACTURER NAME</label>
+                <input style={{ ...S.input, fontSize: 13 }} value={win.manufacturerOther || ""} onChange={(e) => update(win.id, "manufacturerOther", e.target.value)} placeholder="Enter manufacturer name..." />
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <WinSelect label="FRAME TYPE" field="frameType" win={win} options={WIN_OPTS.frameTypes} />
+              <WinSelect label="FRAME COLOR" field="frameColor" win={win} options={WIN_OPTS.frameColors} />
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <WinSelect label="WINDOW STYLE" field="style" win={win} options={WIN_OPTS.styles} />
+              <WinSelect label="GLASS TYPE" field="glassType" win={win} options={WIN_OPTS.glassTypes} />
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <WinSelect label="GLASS PACK" field="glassPack" win={win} options={WIN_OPTS.glassPacks} />
+              <WinSelect label="GRIDS" field="grids" win={win} options={WIN_OPTS.grids} />
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end", marginTop: 4 }}>
+              <MiniField label="Width (in)" value={win.width} onChange={(v) => update(win.id, "width", v)} />
+              <MiniField label="Height (in)" value={win.height} onChange={(v) => update(win.id, "height", v)} />
+              <MiniField label="Qty" value={win.qty} onChange={(v) => update(win.id, "qty", v)} />
+              <MiniField label="Price Installed ($)" value={win.priceInstalled} onChange={(v) => update(win.id, "priceInstalled", v)} />
+              {lineTotal > 0 && <div style={{ paddingBottom: 6 }}><span style={{ fontSize: 13, color: "#0369a1", fontWeight: 700, fontFamily: "monospace" }}>{fmt(lineTotal)}</span></div>}
+            </div>
+          </div>
+        );
+      })}
+      <button style={S.addBtn} onClick={add}>+ Add Window</button>
+      {windowTotal > 0 && (
+        <div style={S.summaryBox}>
+          <span style={{ fontSize: 13, color: "#0369a1" }}>Windows Total</span>
+          <span style={{ fontSize: 20, fontWeight: 800, color: "#0f172a" }}>{fmt(windowTotal)}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MaterialsStep({ materials, onChange, title }) {
+  const update = (id, key, val) => onChange(materials.map((m) => (m.id === id ? { ...m, [key]: val } : m)));
+  const add = () => onChange([...materials, { id: uid(), name: "", unit: "each", sqft: "", pieces: "", cost: "" }]);
+  const remove = (id) => onChange(materials.filter((m) => m.id !== id));
+  return (
+    <div style={S.stepWrap}>
+      <h2 style={S.stepTitle}>{"- " + title + " Materials"}</h2>
+      <p style={S.stepSub}>Enter quantities and costs for each material.</p>
+      {materials.map((mat) => (
+        <div key={mat.id} style={S.card}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center" }}>
+            <input style={{ ...S.input, flex: 1, fontWeight: 600, fontSize: 13 }} value={mat.name} onChange={(e) => update(mat.id, "name", e.target.value)} placeholder="Material name" />
+            <input style={{ ...S.input, width: 80, fontSize: 12 }} value={mat.unit} onChange={(e) => update(mat.id, "unit", e.target.value)} placeholder="unit" />
+            <button style={S.removeBtn} onClick={() => remove(mat.id)}>-</button>
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
+            <MiniField label="Sq Ft / Coverage" value={mat.sqft} onChange={(v) => update(mat.id, "sqft", v)} />
+            <MiniField label="Qty / Pieces" value={mat.pieces} onChange={(v) => update(mat.id, "pieces", v)} />
+            <MiniField label="Cost ($)" value={mat.cost} onChange={(v) => update(mat.id, "cost", v)} />
+            {mat.cost && <div style={{ paddingBottom: 6 }}><span style={{ fontSize: 13, color: "#0369a1", fontWeight: 700 }}>{fmt(mat.cost)}</span></div>}
+          </div>
+        </div>
+      ))}
+      <button style={S.addBtn} onClick={add}>+ Add Material</button>
+    </div>
+  );
+}
+
+function MiscStep({ data, onChange }) {
+  const add = () => {
+    const last = data.items[data.items.length - 1];
+    onChange({ ...data, items: [...data.items, { ...last, id: uid(), description: "", qty: "", unitPrice: "", notes: "" }] });
+  };
+  const remove = (id) => onChange({ ...data, items: data.items.filter((i) => i.id !== id) });
+  const update = (id, key, val) => onChange({ ...data, items: data.items.map((i) => (i.id === id ? { ...i, [key]: val } : i)) });
+  const total = data.items.reduce((a, i) => a + parseFloat(i.qty || 0) * parseFloat(i.unitPrice || 0), 0);
+
+  return (
+    <div style={S.stepWrap}>
+      <h2 style={S.stepTitle}>- Miscellaneous</h2>
+      <p style={S.stepSub}>Add any additional work items not covered in other sections.</p>
+      {data.items.map((item) => {
+        const itemTotal = parseFloat(item.qty || 0) * parseFloat(item.unitPrice || 0);
+        return (
+          <div key={item.id} style={S.card}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>Item</span>
+              {data.items.length > 1 && <button style={S.removeBtn} onClick={() => remove(item.id)}>-</button>}
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>DESCRIPTION</label>
+              <input style={{ ...S.input, fontSize: 13 }} value={item.description} onChange={(e) => update(item.id, "description", e.target.value)} placeholder="e.g. Caulking, pressure washing, dumpster rental..." />
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 10 }}>
+              <MiniField label="Qty" value={item.qty} onChange={(v) => update(item.id, "qty", v)} />
+              <MiniField label="Unit Price ($)" value={item.unitPrice} onChange={(v) => update(item.id, "unitPrice", v)} />
+              {itemTotal > 0 && <div style={{ paddingBottom: 6 }}><span style={{ fontSize: 13, color: "#0369a1", fontWeight: 700, fontFamily: "monospace" }}>{fmt(itemTotal)}</span></div>}
+            </div>
+            <div>
+              <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>NOTES</label>
+              <textarea style={{ ...S.input, height: 60, resize: "vertical", fontSize: 13 }} value={item.notes || ""} onChange={(e) => update(item.id, "notes", e.target.value)} placeholder="Additional details..." />
+            </div>
+          </div>
+        );
+      })}
+      <button style={S.addBtn} onClick={add}>+ Add Item</button>
+      {total > 0 && (
+        <div style={S.summaryBox}>
+          <span style={{ fontSize: 13, color: "#0369a1" }}>Miscellaneous Total</span>
+          <span style={{ fontSize: 20, fontWeight: 800, color: "#0f172a" }}>{fmt(total)}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FinancingStep({ data, onChange, state }) {
+  const t = calcGrandTotal(state);
+  return (
+    <div style={S.stepWrap}>
+      <h2 style={S.stepTitle}>Financing Option</h2>
+      <p style={S.stepSub}>Enter the monthly payment amount to display in Option 1 on the proposal. Leave blank if not offering financing.</p>
+
+      <div style={{ ...S.summaryBox, flexDirection: "column", alignItems: "flex-start", marginBottom: 16 }}>
+        <div style={{ fontSize: 11, color: "#0369a1", fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>Total Job Cost</div>
+        {state.services.includes("siding")  && <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: 12, color: "#334155", padding: "2px 0" }}><span>Siding</span><span>{fmt(t.sid)}</span></div>}
+        {state.services.includes("soffit")  && <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: 12, color: "#334155", padding: "2px 0" }}><span>Soffits</span><span>{fmt(t.sof)}</span></div>}
+        {state.services.includes("fascia")  && <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: 12, color: "#334155", padding: "2px 0" }}><span>Fascia</span><span>{fmt(t.fas)}</span></div>}
+        {state.services.includes("paint")   && <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: 12, color: "#334155", padding: "2px 0" }}><span>Paint</span><span>{fmt(t.pnt)}</span></div>}
+        {state.services.includes("windows") && <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: 12, color: "#334155", padding: "2px 0" }}><span>Windows</span><span>{fmt(t.win)}</span></div>}
+        {state.services.includes("misc")    && <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: 12, color: "#334155", padding: "2px 0" }}><span>Miscellaneous</span><span>{fmt(t.msc)}</span></div>}
+        <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: 15, fontWeight: 800, color: "#0f172a", marginTop: 8, paddingTop: 8, borderTop: "1.5px solid #bae6fd" }}>
+          <span>Total</span><span style={{ color: "#0ea5e9" }}>{fmt(t.total)}</span>
+        </div>
+      </div>
+
+      <div style={S.card}>
+        <label style={{ ...S.label, marginBottom: 8 }}>Monthly Payment Amount ($)</label>
+        <input
+          style={{ ...S.input, fontSize: 22, fontWeight: 700, color: "#0ea5e9" }}
+          type="number"
+          value={data.monthlyPayment}
+          onChange={(e) => onChange({ ...data, monthlyPayment: e.target.value })}
+          placeholder="e.g. 485.00"
+        />
+        {data.monthlyPayment && (
+          <div style={{ marginTop: 12, background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 8, padding: "12px 16px" }}>
+            <div style={{ fontSize: 11, color: "#0369a1", fontWeight: 700, marginBottom: 4 }}>Will display on proposal as:</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a" }}>
+              {"$" + parseFloat(data.monthlyPayment).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/month"}
+            </div>
+            <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>Shown under Option 1 - Priority Client Reservation</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NotesStep({ notes, onChange }) {
+  return (
+    <div style={S.stepWrap}>
+      <h2 style={S.stepTitle}>- Proposal Notes</h2>
+      <p style={S.stepSub}>Add any warranty info, timeline, payment terms, or other details for the customer.</p>
+      <textarea style={{ ...S.input, height: 140, resize: "vertical" }} value={notes} onChange={(e) => onChange(e.target.value)} placeholder="Warranty, timeline, payment terms, start date, special conditions..." />
+    </div>
+  );
+}
+
+function ProposalPage({ children, style = {} }) {
+  return (
+    <div style={{
+      background: "white", border: "1px solid #e2e8f0", borderRadius: 0,
+      padding: "40px 36px", marginBottom: 0,
+      pageBreakAfter: "always", minHeight: 900,
+      borderBottom: "3px solid #0ea5e9",
+      ...style
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function ProposalHeader({ company, pageNum, totalPages }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28, paddingBottom: 16, borderBottom: "2px solid #0f172a" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        {company.logo
+          ? <img src={company.logo} alt="logo" style={{ maxHeight: 48, display: "block" }} />
+          : <div style={{ width: 48, height: 48, background: "#0f172a", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 800, fontSize: 18 }}>ND</div>
+        }
+        <div>
+          <div style={{ fontWeight: 800, fontSize: 15, color: "#0f172a", letterSpacing: "-0.3px" }}>{company.name}</div>
+          <div style={{ fontSize: 11, color: "#64748b" }}>{company.address}</div>
+          <div style={{ fontSize: 11, color: "#64748b" }}>{company.phone}{company.license ? " . Lic# " + company.license : ""}</div>
+        </div>
+      </div>
+      <div style={{ textAlign: "right" }}>
+        <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 600, letterSpacing: 1 }}>{"PAGE " + pageNum + " OF " + totalPages}</div>
+      </div>
+    </div>
+  );
+}
+
+function SectionTitle({ children, accent = false }) {
+  return (
+    <div style={{
+      fontSize: 11, fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase",
+      color: accent ? "white" : "#0ea5e9",
+      background: accent ? "#0f172a" : "transparent",
+      padding: accent ? "6px 12px" : "0",
+      borderRadius: accent ? 4 : 0,
+      borderLeft: accent ? "none" : "3px solid #0ea5e9",
+      paddingLeft: accent ? 12 : 10,
+      marginBottom: 12, marginTop: 20,
+    }}>{children}</div>
+  );
+}
+
+function ProposalTable({ headers, rows }) {
+  return (
+    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, marginBottom: 8 }}>
+      <thead>
+        <tr style={{ background: "#0f172a" }}>
+          {headers.map(h => <th key={h} style={{ textAlign: "left", padding: "8px 10px", color: "white", fontWeight: 700, fontSize: 10, letterSpacing: "0.5px" }}>{h}</th>)}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row, i) => (
+          <tr key={i} style={{ background: i % 2 === 0 ? "white" : "#f8fafc" }}>
+            {row.map((cell, j) => <td key={j} style={{ padding: "7px 10px", borderBottom: "1px solid #e2e8f0", color: "#1e293b", fontSize: 11 }}>{cell}</td>)}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function LineItem({ label, value, bold = false }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid #f1f5f9", fontSize: bold ? 13 : 12, fontWeight: bold ? 700 : 400, color: bold ? "#0f172a" : "#334155" }}>
+      <span>{label}</span><span>{value}</span>
+    </div>
+  );
+}
+
+
+function Divider() {
+  return <div style={{ borderTop: "1px solid #e2e8f0", margin: "16px 0" }} />;
+}
+
+function BulletList({ items }) {
+  return (
+    <ul style={{ margin: "8px 0 0 0", paddingLeft: 18 }}>
+      {items.map((item, i) => <li key={i} style={{ fontSize: 11, color: "#334155", lineHeight: 1.8 }}>{item}</li>)}
+    </ul>
+  );
+}
+
+function SubHead({ children }) {
+  return <div style={{ fontSize: 10, fontWeight: 800, color: "#64748b", letterSpacing: "1.5px", textTransform: "uppercase", marginTop: 16, marginBottom: 6 }}>{children}</div>;
+}
+
+
+function calcSidingTotal(state) {
+  return state.siding.walls.reduce(function(a, w) { return a + parseFloat(w.sqft || 0) * parseFloat(w.pricePerSqFt || 0); }, 0);
+}
+
+function buildProposalHTML(state, selectedOption, signature) {
+  var t = calcGrandTotal(state);
+  var today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  var priority = t.total;
+  var standard = t.total * 1.0835;
+  var chosen = selectedOption === "priority" ? priority : selectedOption === "standard" ? standard : null;
+
+  function row(label, val) { return "<tr><td style='padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#334155'>" + label + "</td><td style='padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#334155;text-align:right'>" + val + "</td></tr>"; }
+  function section(title) { return "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin:18px 0 8px;padding-bottom:4px;border-bottom:2px solid #0ea5e9'>" + title + "</div>"; }
+
+  var html = "<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>";
+  html += "<style>body{font-family:Georgia,serif;margin:0;padding:0;background:#f8fafc}";
+  html += ".page{background:white;max-width:800px;margin:0 auto;padding:40px;border-bottom:3px solid #0ea5e9}";
+  html += "table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:12px}";
+  html += "th{background:#0f172a;color:white;padding:7px 10px;text-align:left;font-size:10px;font-weight:700}";
+  html += ".opt{border:2px solid #e2e8f0;border-radius:10px;padding:18px;margin-bottom:14px;cursor:pointer}";
+  html += ".opt.selected{border-color:#0ea5e9;background:#f0f9ff}";
+  html += ".sig-box{border:1.5px solid #e2e8f0;border-radius:8px;padding:16px;margin-top:12px}";
+  html += ".sig-line{border-bottom:1.5px solid #0f172a;min-height:30px;margin-bottom:12px;font-family:cursive;font-size:18px;color:#0f172a;padding:4px}";
+  html += "@media print{.no-print{display:none}}</style></head><body>";
+
+  var monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
+
+  // Build project overview bullets
+  var overviewItems = [];
+  if (state.services.includes("siding")) {
+    var prod = state.siding.walls[0] && state.siding.walls[0].hardieProduct;
+    var pname = prod === "lap" ? "HardiePlank Lap" : prod === "panel" ? "HardiePanel" : prod === "shake" ? "HardieShingle" : "James Hardie";
+    var hasRemoval = state.siding.walls.some(function(w){ return w.removalRequired && w.removalRequired.includes("Yes"); });
+    if (hasRemoval) overviewItems.push("Remove and dispose of existing exterior siding");
+    overviewItems.push("Inspect and prepare substrate - repair as needed");
+    overviewItems.push("Install weather-resistive barrier and flashing system");
+    overviewItems.push("Install " + pname + " siding system per manufacturer specifications");
+    overviewItems.push("Install HardieTrim at all corners, openings, and eaves");
+    overviewItems.push("Caulk, seal, prime, and finish all surfaces");
+  }
+  if (state.services.includes("soffit")) overviewItems.push("Install new vented soffit panels");
+  if (state.services.includes("fascia")) overviewItems.push("Install new fascia boards and trim");
+  if (state.services.includes("paint"))  overviewItems.push("Full exterior paint - prep and directional spray finish coats");
+  if (state.services.includes("windows")) overviewItems.push("Replace " + state.windows.reduce(function(a,w){return a+parseFloat(w.qty||0);},0) + " window(s) per specifications");
+  if (state.services.includes("misc"))   overviewItems.push("Additional miscellaneous items per scope");
+
+  // PAGE 1 - COVER
+  html += "<div class='page' style='min-height:900px;display:flex;flex-direction:column'>";
+
+  // TOP HALF - Company left, Client right
+  html += "<div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:20px;border-bottom:2px solid #0f172a'>";
+  
+  // Top Left - Company Info
+  html += "<div style='flex:1;padding-right:20px'>";
+  if (state.company.logo) {
+    html += "<img src='" + state.company.logo + "' style='max-height:50px;margin-bottom:10px;display:block'/>";
+  }
+  html += "<div style='font-size:18px;font-weight:800;color:#0f172a;line-height:1.2'>" + (state.company.name || "New Direction Construction") + "</div>";
+  html += "<div style='font-size:11px;color:#64748b;margin-top:2px'>Exterior Remodeling</div>";
+  html += "<div style='font-size:11px;color:#64748b;margin-top:6px'>" + state.company.address + "</div>";
+  html += "<div style='font-size:11px;color:#64748b'>" + state.company.phone + "</div>";
+  html += "<div style='font-size:11px;color:#64748b'>Lic# " + state.company.license + "</div>";
+  html += "<div style='font-size:10px;color:#94a3b8;margin-top:8px'>Date: " + today + " | Valid 30 Days</div>";
+  html += "</div>";
+
+  // Top Right - Client Info
+  html += "<div style='flex:1;padding-left:20px;border-left:2px solid #f1f5f9;text-align:right'>";
+  html += "<div style='font-size:10px;font-weight:700;color:#0ea5e9;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px'>Prepared For</div>";
+  html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>" + (state.customer.name || "-") + "</div>";
+  html += "<div style='font-size:11px;color:#64748b;margin-top:4px'>" + state.customer.address + "</div>";
+  html += "<div style='font-size:11px;color:#64748b'>" + state.customer.phone + "</div>";
+  html += "<div style='font-size:11px;color:#64748b'>" + state.customer.email + "</div>";
+  if (state.customer.photo) {
+    html += "<div style='margin-top:12px'>";
+    html += "<img src='" + state.customer.photo + "' style='max-width:100%;max-height:160px;border-radius:8px;border:1.5px solid #e2e8f0;display:inline-block;object-fit:cover' alt='Property Street View'/>";
+    html += "<div style='font-size:9px;color:#94a3b8;margin-top:4px'>Property Street View</div>";
+    html += "</div>";
+  }
+  html += "</div></div>";
+
+  // Project Overview - still in top half
+  html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px 20px;margin-bottom:24px'>";
+  html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px'>Project Overview</div>";
+  html += "<div style='columns:2;column-gap:20px'>";
+  overviewItems.forEach(function(item) {
+    html += "<div style='font-size:11px;color:#334155;line-height:1.8;break-inside:avoid'>- " + item + "</div>";
+  });
+  html += "</div></div>";
+
+  // BOTTOM HALF - Pricing side by side
+  html += "<div style='display:flex;gap:16px;flex:1'>";
+
+  // Bottom Left - Priority Option
+  html += "<div style='flex:1;border:2px solid #0ea5e9;border-radius:12px;padding:20px;background:#f0f9ff;display:flex;flex-direction:column'>";
+  html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Option 1</div>";
+  html += "<div style='font-size:14px;font-weight:800;color:#0f172a;margin-bottom:4px'>Priority Client Reservation</div>";
+  html += "<div style='font-size:10px;color:#0369a1;font-weight:700;margin-bottom:12px'>RECOMMENDED</div>";
+  html += "<div style='font-size:26px;font-weight:800;color:#0ea5e9;margin-bottom:12px'>" + fmt(priority) + "</div>";
+  html += "<ul style='margin:0 0 16px;padding-left:16px;flex:1'>";
+  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Lock in your project start date today</li>";
+  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Best available pricing - priority rate guaranteed</li>";
+  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Priority scheduling - front of our queue</li>";
+  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Full manufacturer warranty on all materials</li>";
+  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Priority scheduling and pricing are limited and subject to current project availability</li>";
+  html += "</ul>";
+  // Financing option - only show if monthly payment entered
+  if (monthlyPayment) {
+    html += "<div style='background:white;border:1px solid #bae6fd;border-radius:8px;padding:12px;margin-top:auto'>";
+    html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px'>Financing Option Available</div>";
+    html += "<div style='display:flex;align-items:baseline;gap:4px'>";
+    html += "<div style='font-size:26px;font-weight:800;color:#0f172a'>$" + monthlyPayment.toLocaleString("en-US", {minimumFractionDigits:2,maximumFractionDigits:2}) + "</div>";
+    html += "<div style='font-size:12px;color:#64748b;font-weight:600'>/month</div></div>";
+    html += "<div style='font-size:9px;color:#94a3b8;margin-top:4px'>Subject to credit approval. Ask your representative for details.</div>";
+    html += "</div>";
+  }
+  html += "</div>";
+
+  // Bottom Right - Standard Option
+  html += "<div style='flex:1;border:2px solid #e2e8f0;border-radius:12px;padding:20px;background:white;display:flex;flex-direction:column'>";
+  html += "<div style='font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Option 2</div>";
+  html += "<div style='font-size:14px;font-weight:800;color:#0f172a;margin-bottom:4px'>Standard Scheduling</div>";
+  html += "<div style='font-size:10px;color:#64748b;font-weight:600;margin-bottom:12px'>FLEXIBLE START DATE</div>";
+  html += "<div style='font-size:26px;font-weight:800;color:#334155;margin-bottom:12px'>" + fmt(standard) + "</div>";
+  html += "<ul style='margin:0;padding-left:16px;flex:1'>";
+  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Full scope of work as outlined in this proposal</li>";
+  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Scheduled based on next available opening</li>";
+  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Full manufacturer warranty on all materials</li>";
+  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Price valid for 30 days due to material cost variability and schedule availability</li>";
+  html += "</ul></div>";
+
+  html += "</div>"; // end bottom pricing row
+  html += "</div>"; // end page
+
+  // PAGE 2+ - SERVICE SECTIONS
+  function scopePage(title, total, steps, tableHeaders, tableRows) {
+    var pg = "<div class='page'>";
+    pg += "<div style='display:flex;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
+    pg += "<div style='font-size:18px;font-weight:800;color:#0f172a'>" + title + "</div>";
+    pg += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(total) + "</div></div>";
+    if (steps && steps.length) {
+      pg += section("Scope of Work");
+      pg += "<div style='border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;margin-bottom:16px'>";
+      steps.forEach(function(s, i) {
+        pg += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:" + (i%2===0?"white":"#f8fafc") + ";border-bottom:1px solid #f1f5f9'>" + s + "</div>";
+      });
+      pg += "</div>";
+    }
+    if (tableHeaders && tableRows && tableRows.length) {
+      pg += section("Breakdown");
+      pg += "<table><thead><tr>" + tableHeaders.map(function(h) { return "<th>" + h + "</th>"; }).join("") + "</tr></thead><tbody>";
+      tableRows.forEach(function(r) { pg += "<tr>" + r.map(function(c) { return "<td style='padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#334155'>" + c + "</td>"; }).join("") + "</tr>"; });
+      pg += "</tbody></table>";
+    }
+    return pg;
+  }
+
+  var sidingStepsMap = {
+    "HardiePlank Lap Siding": ["1. Surface Preparation - Remove existing siding, inspect sheathing", "2. House Wrap / WRB - Install continuous weather barrier, tape all seams", "3. Flashing - Install metal flashing at all openings and penetrations", "4. Starter Strip - Install starter strip at base of wall, level and secure", "5. Siding Installation - Install bottom-up, maintain overlap per spec, corrosion-resistant nails", "6. Trim & Fascia - Install HardieTrim at corners, windows, doors, eaves", "7. Caulking & Sealing - Caulk all joints, penetrations, and trim connections", "8. Priming & Painting - Apply approved primer and two coats exterior paint", "9. Final Inspection - Inspect all fasteners, joints, clearances per James Hardie requirements"],
+    "Board & Batten": ["1. Surface Preparation - Remove existing siding, inspect sheathing", "2. House Wrap / WRB - Install continuous weather barrier, tape all seams", "3. Flashing - Install metal flashing at all openings", "4. HardiePanel Installation - Install vertical panels plumb and level, maintain 6in clearance from grade", "5. Batten Installation - Install HardieTrim battens over panel joints, nail through into studs", "6. Trim & Fascia - Install corner boards, window/door surrounds, eave trim", "7. Caulking & Sealing - Caulk all joints and penetrations", "8. Priming & Painting - Apply approved primer and two coats exterior paint", "9. Final Inspection - Inspect all fasteners, joints, clearances per James Hardie requirements"],
+    "HardieShingle": ["1. Surface Preparation - Remove existing siding, inspect sheathing", "2. House Wrap / WRB - Install continuous weather barrier, tape all seams", "3. Flashing - Install metal flashing at all openings", "4. Starter Course - Install starter strip and first course level at base", "5. Shingle Installation - Install courses with proper exposure and stagger, blind-nail per spec", "6. Trim & Fascia - Install corner boards and trim at all openings and eaves", "7. Caulking & Sealing - Caulk all trim joints and penetrations", "8. Priming & Painting - Apply approved primer and two coats exterior paint", "9. Final Inspection - Inspect all fasteners, joints, clearances per James Hardie requirements"]
+  };
+
+  if (state.services.includes("siding")) {
+    var sidingSteps = sidingStepsMap[state.siding.sidingType] || sidingStepsMap["HardiePlank Lap Siding"];
+
+    // Full James Hardie material list per product type
+    var totalSidingSqFt = state.siding.walls.reduce(function(a,w){return a+parseFloat(w.sqft||0);},0);
+    var sqftWaste = Math.ceil(totalSidingSqFt * 1.10);
+    var wrbSqft = Math.ceil(totalSidingSqFt * 1.15);
+    var wrbRolls = Math.ceil(wrbSqft / 1000);
+    var nailLbs = Math.ceil(totalSidingSqFt / 100);
+    var caulkTubes = Math.ceil(totalSidingSqFt / 150);
+    var primerGal = Math.ceil(totalSidingSqFt / 350);
+    var paintGal = Math.ceil(totalSidingSqFt / 350);
+    var osbWalls = state.siding.walls.filter(function(w){return w.osbSheathing&&w.osbSheathing.includes("Yes");});
+    var osbSqft = osbWalls.reduce(function(a,w){return a+parseFloat(w.sqft||0);},0);
+    var osbSheets = Math.ceil((osbSqft*1.05)/32);
+    var needsOSB = osbWalls.length > 0;
+    var prod0 = state.siding.walls[0]&&state.siding.walls[0].hardieProduct;
+
+    var sidingMatLap = [
+      ["HardiePlank Lap Siding panels", sqftWaste + " sq ft", "Total " + totalSidingSqFt.toFixed(0) + " sq ft + 10% waste factor"],
+      ["House Wrap / Weather Resistive Barrier (WRB)", wrbSqft + " sq ft", "Full wall coverage + 15% seam overlap per HardieWrap specs"],
+      ["WRB Seam Tape", wrbRolls + " roll(s)", "All seams, penetrations, and transitions"],
+      ["HardieTrim Boards - Corners", "Measure on site", "All exterior corners per lineal foot"],
+      ["HardieTrim Boards - Window Surrounds", "Measure on site", "All window and door openings per lineal foot"],
+      ["HardieTrim Boards - Door Surrounds", "Measure on site", "All door openings per lineal foot"],
+      ["HardieTrim Boards - Eave Termination", "Measure on site", "Eave line per lineal foot"],
+      ["Metal Drip Cap / Head Flashing (galvanized)", "Measure on site", "Above all windows and doors per James Hardie manual"],
+      ["Step Flashing", "Measure on site", "All roof-wall intersections"],
+      ["Kick-Out Flashing", "As needed", "Roof-wall intersections to direct water away"],
+      ["Metal Starter Strip", "Measure on site", "Base of each wall - level and plumb"],
+      ["Corrosion-Resistant Nails 6d or 8d (Hot-Dipped Galvanized or Stainless)", nailLbs + " lb(s)", "No electro-plated nails - per James Hardie fastener requirements"],
+      ["Paintable Elastomeric Caulk (OSI Quad or equivalent)", caulkTubes + " tube(s)", "All trim-to-siding joints, penetrations, and transitions"],
+      ["Exterior Paint", paintGal + " gal", "~350 sq ft per gallon coverage"],
+    ];
+    if (needsOSB) {
+      sidingMatLap.push(["OSB Sheathing (7/16 or 15/32 inch)", osbSheets + " sheet(s)", osbSqft.toFixed(0) + " sq ft of replacement sheathing required"]);
+      sidingMatLap.push(["Sheathing Fasteners (code-compliant)", "1 box", "Per replaced sheathing area"]);
+    }
+
+    var sidingMatPanel = [
+      ["HardiePanel Vertical Panels", sqftWaste + " sq ft", "Total " + totalSidingSqFt.toFixed(0) + " sq ft + 10% waste factor"],
+      ["House Wrap / Weather Resistive Barrier (WRB)", wrbSqft + " sq ft", "Full wall coverage + 15% seam overlap"],
+      ["WRB Seam Tape", wrbRolls + " roll(s)", "All seams, penetrations, and transitions"],
+      ["HardieTrim Battens (1x4 or 1x6)", "Measure on site", "Over all vertical panel joints per lineal foot"],
+      ["HardieTrim Corner Boards", "Measure on site", "All exterior corners per lineal foot"],
+      ["HardieTrim Window and Door Surrounds", "Measure on site", "All openings per lineal foot"],
+      ["HardieTrim Eave Termination", "Measure on site", "Eave line per lineal foot"],
+      ["Metal Drip Cap / Head Flashing (galvanized)", "Measure on site", "Above all windows and doors"],
+      ["Step Flashing", "Measure on site", "All roof-wall intersections"],
+      ["Kick-Out Flashing", "As needed", "Roof-wall intersections"],
+      ["Metal Starter Strip", "Measure on site", "Base of each wall"],
+      ["Corrosion-Resistant Nails 6d or 8d (Hot-Dipped Galvanized or Stainless)", nailLbs + " lb(s)", "Per James Hardie fastener requirements"],
+      ["Paintable Elastomeric Caulk (OSI Quad or equivalent)", caulkTubes + " tube(s)", "All joints, batten edges, penetrations"],
+      ["Exterior Paint", paintGal + " gal", "~350 sq ft per gallon"],
+    ];
+    if (needsOSB) {
+      sidingMatPanel.push(["OSB Sheathing (7/16 or 15/32 inch)", osbSheets + " sheet(s)", osbSqft.toFixed(0) + " sq ft replacement"]);
+      sidingMatPanel.push(["Sheathing Fasteners (code-compliant)", "1 box", "Per replaced sheathing area"]);
+    }
+
+    var sidingMatShake = [
+      ["HardieShingle Panels or Individual Shingles", sqftWaste + " sq ft", "Total " + totalSidingSqFt.toFixed(0) + " sq ft + 10% waste factor"],
+      ["House Wrap / Weather Resistive Barrier (WRB)", wrbSqft + " sq ft", "Full wall coverage + 15% overlap"],
+      ["WRB Seam Tape", wrbRolls + " roll(s)", "All seams and penetrations"],
+      ["HardieTrim Corner Boards", "Measure on site", "All corners per lineal foot"],
+      ["HardieTrim Window and Door Surrounds", "Measure on site", "All openings per lineal foot"],
+      ["Metal Drip Cap / Head Flashing (galvanized)", "Measure on site", "Above all windows and doors"],
+      ["Step Flashing", "Measure on site", "All roof-wall intersections"],
+      ["Kick-Out Flashing", "As needed", "Roof-wall intersections"],
+      ["Starter Course / Starter Strip", "Measure on site", "Base of each wall"],
+      ["Corrosion-Resistant Stainless Steel or Hot-Dipped Galvanized Nails", nailLbs + " lb(s)", "2 nails per shingle per course - no face nailing"],
+      ["Exterior Paint", paintGal + " gal", "~350 sq ft per gallon"],
+    ];
+    if (needsOSB) {
+      sidingMatShake.push(["OSB Sheathing (7/16 or 15/32 inch)", osbSheets + " sheet(s)", osbSqft.toFixed(0) + " sq ft replacement"]);
+      sidingMatShake.push(["Sheathing Fasteners (code-compliant)", "1 box", "Per replaced sheathing area"]);
+    }
+
+    var sidingMats = prod0==="panel" ? sidingMatPanel : prod0==="shake" ? sidingMatShake : sidingMatLap;
+
+    // SIDING PAGE
+    html += "<div class='page'>";
+    html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
+    html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>James Hardie " + (state.siding.sidingType||"Siding") + "</div>";
+    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(t.sid) + "</div></div>";
+    html += "<div style='font-size:10px;color:#64748b;margin-bottom:16px'>Per James Hardie Installation Manual - All work performed to manufacturer specifications</div>";
+
+    // Scope of Work
+    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Scope of Work</div>";
+    html += "<div style='border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;margin-bottom:20px'>";
+    sidingSteps.forEach(function(s,i){
+      html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:" + (i%2===0?"white":"#f8fafc") + ";border-bottom:1px solid #f1f5f9'>" + s + "</div>";
+    });
+    html += "</div>";
+
+    // Installation Standards callout
+    html += "<div style='background:#f0f9ff;border-left:4px solid #0ea5e9;padding:12px 16px;margin-bottom:20px;border-radius:0 6px 6px 0'>";
+    html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px'>James Hardie Installation Standards</div>";
+    html += "<div style='columns:2;column-gap:16px'>";
+    ["Minimum 6in clearance from finished grade to bottom of siding",
+     "All fasteners must be corrosion-resistant - no electro-plated nails",
+     "Maximum 16in on-center stud spacing for blind nailing",
+     "All cut ends must be field-primed same day as cut",
+     "WRB lapped minimum 6in horizontal and 12in vertical",
+     "Flashing integrated at all windows, doors, and roof intersections",
+     "Expansion gaps maintained at all abutting surfaces",
+     "All joints and penetrations sealed with paintable elastomeric caulk"
+    ].forEach(function(s){
+      html += "<div style='font-size:10px;color:#334155;line-height:1.8;break-inside:avoid'>- " + s + "</div>";
+    });
+    html += "</div></div>";
+
+    // Wall Elevations table
+    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Wall Elevations</div>";
+    html += "<table><thead><tr><th>Area</th><th>Location</th><th>Current Siding</th><th>Removal</th><th>OSB</th><th>Product</th><th>Size</th><th>Texture</th><th>Sq Ft</th></tr></thead><tbody>";
+    state.siding.walls.forEach(function(w){
+      var prod = w.hardieProduct==="lap"?"HardiePlank Lap":w.hardieProduct==="panel"?"HardiePanel":w.hardieProduct==="shake"?"HardieShingle Shake":"-";
+      html += "<tr><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + w.label + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.location||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.currentSiding||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.removalRequired||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.osbSheathing||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + prod + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.hardieSize||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.hardieTexture||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px;font-weight:700'>" + (w.sqft||"-") + " sq ft</td></tr>";
+      if (w.notes) html += "<tr><td colspan='9' style='padding:4px 8px 8px;font-size:10px;color:#78350f;background:#fffbeb'>Note: " + w.notes + "</td></tr>";
+    });
+    html += "</tbody><tfoot><tr><td colspan='8' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL SIDING</td><td style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + fmt(t.sid) + "</td></tr></tfoot></table>";
+
+    // Wall Photos
+    var photoWalls = state.siding.walls.filter(function(w){return w.photo;});
+    if (photoWalls.length) {
+      html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 8px'>Site Photos</div>";
+      html += "<div style='display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px'>";
+      photoWalls.forEach(function(w){
+        html += "<div style='text-align:center'><img src='" + w.photo + "' style='max-height:150px;max-width:200px;border-radius:6px;border:1px solid #e2e8f0;display:block'/><div style='font-size:10px;color:#64748b;margin-top:4px;font-weight:600'>" + w.label + (w.location?" - "+w.location:"") + "</div></div>";
+      });
+      html += "</div>";
+    }
+
+    // Materials List
+    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 8px'>Materials List - Per James Hardie Installation Manual</div>";
+    html += "<div style='font-size:10px;color:#64748b;margin-bottom:8px'>Based on " + totalSidingSqFt.toFixed(0) + " sq ft total wall area. Quantities include standard waste factors.</div>";
+    html += "<table><thead><tr><th>Material</th><th>Quantity</th><th>Specification / Notes</th></tr></thead><tbody>";
+    sidingMats.forEach(function(m,i){
+      html += "<tr style='background:" + (i%2===0?"white":"#f8fafc") + "'><td style='padding:6px 10px;font-size:10px;color:#0f172a;font-weight:600;border-bottom:1px solid #f1f5f9'>" + m[0] + "</td><td style='padding:6px 10px;font-size:10px;color:#0369a1;font-weight:700;border-bottom:1px solid #f1f5f9;white-space:nowrap'>" + m[1] + "</td><td style='padding:6px 10px;font-size:10px;color:#64748b;border-bottom:1px solid #f1f5f9'>" + m[2] + "</td></tr>";
+    });
+    html += "</tbody></table>";
+    html += "<div style='font-size:9px;color:#94a3b8;margin-top:8px;font-style:italic'>* All James Hardie products must be installed per HardieZone requirements. Material quantities are estimates based on field measurements. Final quantities subject to field verification.</div>";
+    html += "</div>";
+  }
+
+  var soffitSteps = ["1. Safety & Access - Set up ladders and scaffolding", "2. Remove Existing - Remove deteriorated soffits, fascia, J-channel", "3. Inspect Rafter Tails - Check for rot, damage, pest intrusion", "4. Install New Fascia - Secure fascia boards, ensure plumb and level", "5. Install Soffit Panels - Cut and install with proper ventilation", "6. J-Channel & Trim - Install channels and trim for clean finish", "7. Final Inspection - Verify ventilation clearances, fastener spacing, and water drainage"];
+
+  if (state.services.includes("soffit")) {
+    var totalSoffitLnFt2 = state.soffit.items.reduce(function(a,i){return a+parseFloat(i.linearFt||0);},0);
+    var soffitSqft2 = Math.ceil(totalSoffitLnFt2 * 1.5);
+    var soffitNails = Math.ceil(totalSoffitLnFt2 / 50);
+    var soffitCaulk = Math.ceil(totalSoffitLnFt2 / 50);
+    var soffitJchan = Math.ceil(totalSoffitLnFt2 * 2);
+
+    var soffitMats = [
+      ["Vented Aluminum or Vinyl Soffit Panels", soffitSqft2 + " sq ft", "Full soffit area based on " + totalSoffitLnFt2.toFixed(0) + " lf + 10% waste"],
+      ["J-Channel (wall side)", totalSoffitLnFt2.toFixed(0) + " lf", "Along all wall edges of soffit run"],
+      ["F-Channel (fascia side)", totalSoffitLnFt2.toFixed(0) + " lf", "Along all fascia edges of soffit run"],
+      ["Aluminum or Vinyl Fascia Cover Wrap", "Measure on site", "Over existing or new fascia boards"],
+      ["Galvanized Roofing Nails or Stainless Screws", soffitNails + " box(es)", "Per panel per manufacturer spacing requirements"],
+      ["Aluminum Coil Stock (trim wrapping)", "As needed", "For wrapping fascia boards and trim transitions"],
+      ["Drip Edge (galvanized or aluminum)", totalSoffitLnFt2.toFixed(0) + " lf", "At roof-to-fascia junction to direct water"],
+    ];
+
+    html += "<div class='page'>";
+    html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
+    html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>Soffit Installation</div>";
+    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(t.sof) + "</div></div>";
+    html += "<div style='font-size:10px;color:#64748b;margin-bottom:16px'>Vented soffit panels and accessories - " + totalSoffitLnFt2.toFixed(0) + " linear feet</div>";
+
+    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Scope of Work</div>";
+    html += "<div style='border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;margin-bottom:20px'>";
+    soffitSteps.forEach(function(s,i){
+      html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:" + (i%2===0?"white":"#f8fafc") + ";border-bottom:1px solid #f1f5f9'>" + s + "</div>";
+    });
+    html += "</div>";
+
+    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Area Breakdown</div>";
+    html += "<table><thead><tr><th>Area</th><th>Current Material</th><th>New Material</th><th>Linear Ft</th><th>Notes</th></tr></thead><tbody>";
+    state.soffit.items.forEach(function(item,i){
+      html += "<tr style='background:" + (i%2===0?"white":"#f8fafc") + "'><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + item.label + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (item.currentMaterial||"-") + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (item.newMaterial||"-") + "</td><td style='padding:6px 8px;font-size:10px;font-weight:700;border-bottom:1px solid #f1f5f9'>" + (item.linearFt||"-") + " lf</td><td style='padding:6px 8px;font-size:10px;color:#78350f;border-bottom:1px solid #f1f5f9'>" + (item.notes||"-") + "</td></tr>";
+    });
+    html += "</tbody><tfoot><tr><td colspan='3' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL SOFFITS</td><td colspan='2' style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + fmt(t.sof) + "</td></tr></tfoot></table>";
+
+    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 8px'>Materials List</div>";
+    html += "<div style='font-size:10px;color:#64748b;margin-bottom:8px'>Based on " + totalSoffitLnFt2.toFixed(0) + " total linear feet. Quantities include waste factors.</div>";
+    html += "<table><thead><tr><th>Material</th><th>Quantity</th><th>Specification / Notes</th></tr></thead><tbody>";
+    soffitMats.forEach(function(m,i){
+      html += "<tr style='background:" + (i%2===0?"white":"#f8fafc") + "'><td style='padding:6px 10px;font-size:10px;font-weight:600;border-bottom:1px solid #f1f5f9'>" + m[0] + "</td><td style='padding:6px 10px;font-size:10px;color:#0369a1;font-weight:700;border-bottom:1px solid #f1f5f9;white-space:nowrap'>" + m[1] + "</td><td style='padding:6px 10px;font-size:10px;color:#64748b;border-bottom:1px solid #f1f5f9'>" + m[2] + "</td></tr>";
+    });
+    html += "</tbody></table>";
+    html += "</div>";
+  }
+
+  if (state.services.includes("fascia")) {
+    var totalFasciaLnFt2 = state.fascia.items.reduce(function(a,i){return a+parseFloat(i.linearFt||0);},0);
+    var fasciaWaste = Math.ceil(totalFasciaLnFt2 * 1.10);
+    var fasciaNails = Math.ceil(totalFasciaLnFt2 / 50);
+    var fasciaCaulk = Math.ceil(totalFasciaLnFt2 / 50);
+
+    var fasciaMats = [
+      ["Aluminum Coil Stock or HardieTrim Fascia Board", fasciaWaste + " lf", "Total " + totalFasciaLnFt2.toFixed(0) + " lf + 10% waste"],
+      ["Aluminum Brake (coil wrap)", "As needed", "For forming fascia cover to match existing profile"],
+      ["Galvanized Nails or Stainless Steel Screws", fasciaNails + " box(es)", "Per fascia board at each rafter tail"],
+      ["Paintable Elastomeric Caulk or Sealant", fasciaCaulk + " tube(s)", "All joints, end caps, and transitions"],
+      ["Drip Edge (galvanized or aluminum)", totalFasciaLnFt2.toFixed(0) + " lf", "At roof-to-fascia junction"],
+      ["J-Trim / End Caps", "As needed", "All open ends and outside corners"],
+    ];
+
+    html += "<div class='page'>";
+    html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
+    html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>Fascia Installation</div>";
+    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(t.fas) + "</div></div>";
+    html += "<div style='font-size:10px;color:#64748b;margin-bottom:16px'>Fascia boards and trim - " + totalFasciaLnFt2.toFixed(0) + " linear feet</div>";
+
+    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Scope of Work</div>";
+    html += "<div style='border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;margin-bottom:20px'>";
+    soffitSteps.forEach(function(s,i){
+      html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:" + (i%2===0?"white":"#f8fafc") + ";border-bottom:1px solid #f1f5f9'>" + s + "</div>";
+    });
+    html += "</div>";
+
+    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Area Breakdown</div>";
+    html += "<table><thead><tr><th>Area</th><th>Current Material</th><th>New Material</th><th>Linear Ft</th><th>Notes</th></tr></thead><tbody>";
+    state.fascia.items.forEach(function(item,i){
+      html += "<tr style='background:" + (i%2===0?"white":"#f8fafc") + "'><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + item.label + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (item.currentMaterial||"-") + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (item.newMaterial||"-") + "</td><td style='padding:6px 8px;font-size:10px;font-weight:700;border-bottom:1px solid #f1f5f9'>" + (item.linearFt||"-") + " lf</td><td style='padding:6px 8px;font-size:10px;color:#78350f;border-bottom:1px solid #f1f5f9'>" + (item.notes||"-") + "</td></tr>";
+    });
+    html += "</tbody><tfoot><tr><td colspan='3' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL FASCIA</td><td colspan='2' style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + fmt(t.fas) + "</td></tr></tfoot></table>";
+
+    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 8px'>Materials List</div>";
+    html += "<div style='font-size:10px;color:#64748b;margin-bottom:8px'>Based on " + totalFasciaLnFt2.toFixed(0) + " total linear feet.</div>";
+    html += "<table><thead><tr><th>Material</th><th>Quantity</th><th>Specification / Notes</th></tr></thead><tbody>";
+    fasciaMats.forEach(function(m,i){
+      html += "<tr style='background:" + (i%2===0?"white":"#f8fafc") + "'><td style='padding:6px 10px;font-size:10px;font-weight:600;border-bottom:1px solid #f1f5f9'>" + m[0] + "</td><td style='padding:6px 10px;font-size:10px;color:#0369a1;font-weight:700;border-bottom:1px solid #f1f5f9;white-space:nowrap'>" + m[1] + "</td><td style='padding:6px 10px;font-size:10px;color:#64748b;border-bottom:1px solid #f1f5f9'>" + m[2] + "</td></tr>";
+    });
+    html += "</tbody></table>";
+    html += "</div>";
+  }
+
+  var paintSteps = [
+    "1. Caulking & Sealing - Caulk all joints, penetrations, trim connections, and gaps with paintable elastomeric sealant",
+    "2. Surface Preparation - Pressure wash all exterior surfaces, allow to fully dry",
+    "3. Repairs - Fill all cracks, holes, and gaps with exterior-grade elastomeric caulk",
+    "4. Masking & Protection - Mask windows, doors, fixtures, trim, and landscaping",
+    "5. Surface Sealing - Seal all bare wood and repaired areas with appropriate sealer",
+    "6. First Coat - Apply first coat of exterior paint using directional spray technique for full penetration",
+    "7. Second Coat - Apply second coat using directional spray for uniform coverage and lasting adhesion",
+    "8. Trim & Detail Work - Cut in and hand-paint all trim, corners, shutters, and detail areas",
+    "9. Clean Up - Remove all masking, clean overspray, dispose of materials properly",
+    "10. Final Walk-Through - Inspect with homeowner to confirm full coverage and finish quality"
+  ];
+
+  if (state.services.includes("paint")) {
+    var combinedSqft = parseFloat(state.paint.combinedSqft||0);
+    var paintCoatGal = Math.ceil(combinedSqft / 350) || 1;
+    var paintCaulk = Math.ceil(combinedSqft / 200) || 1;
+    var paintMats = [
+      ["Exterior Elastomeric Caulk", paintCaulk + " tube(s)", "All cracks, gaps, and seams prior to painting"],
+      ["Exterior Patching Compound", "As needed", "Filling holes and surface repairs"],
+      ["Masking Tape", "As needed", "Windows, doors, trim, and fixtures"],
+      ["Plastic Drop Sheeting", "As needed", "Protecting landscaping and hardscape"],
+      ["Exterior Surface Sealer", "As needed", "Bare wood and repaired areas prior to paint"],
+      ["Exterior Paint", paintCoatGal + " gal", "~350 sq ft per gallon - adequate amount for full penetration"],
+      ["Trim Paint - 1st Coat", "As needed", "Hand-applied to all trim, shutters, and detail areas"],
+      ["Trim Paint - 2nd Coat", "As needed", "Second hand-applied coat on all trim"],
+    ];
+
+    html += "<div class='page'>";
+    html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
+    html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>Exterior Paint</div>";
+    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(t.pnt) + "</div></div>";
+    html += "<div style='font-size:10px;color:#64748b;margin-bottom:16px'>Full exterior paint application using directional spray technique</div>";
+
+    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Scope of Work</div>";
+    html += "<div style='border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;margin-bottom:20px'>";
+    paintSteps.forEach(function(s,i){
+      html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:" + (i%2===0?"white":"#f8fafc") + ";border-bottom:1px solid #f1f5f9'>" + s + "</div>";
+    });
+    html += "</div>";
+
+    if (state.paint.combinedSqft || state.paint.combinedPrice) {
+      var combinedTotal = parseFloat(state.paint.combinedSqft||0)*parseFloat(state.paint.combinedPrice||0);
+      html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Pricing Breakdown</div>";
+      html += "<table><tbody>";
+      html += "<tr><td style='padding:6px 10px;font-size:10px;color:#334155;border-bottom:1px solid #f1f5f9'>Total Sq Ft (Walls & Trim)</td><td style='padding:6px 10px;font-size:10px;font-weight:700;color:#0f172a;border-bottom:1px solid #f1f5f9;text-align:right'>" + (state.paint.combinedSqft||"-") + " sq ft</td></tr>";
+      html += "<tr><td style='padding:6px 10px;font-size:10px;color:#334155;border-bottom:1px solid #f1f5f9'>Price Per Sq Ft</td><td style='padding:6px 10px;font-size:10px;font-weight:700;color:#0f172a;border-bottom:1px solid #f1f5f9;text-align:right'>" + fmt(state.paint.combinedPrice||0) + "</td></tr>";
+      html += "</tbody><tfoot><tr><td style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL PAINT</td><td style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px;text-align:right'>" + fmt(combinedTotal) + "</td></tr></tfoot></table>";
+    }
+
+    // Paint selections
+    var hasWalls = state.paint.walls.some(function(a){return a.colorName||a.paintProduct;});
+    var hasTrim = state.paint.trim.some(function(a){return a.colorName||a.paintProduct;});
+    if (hasWalls || hasTrim) {
+      html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 8px'>Paint Selections</div>";
+      html += "<table><thead><tr><th>Area</th><th>Product</th><th>Color</th><th>Notes</th></tr></thead><tbody>";
+      if (hasWalls) state.paint.walls.forEach(function(a,i){ html += "<tr style='background:" + (i%2===0?"white":"#f8fafc") + "'><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9;font-weight:600'>Wall</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (a.paintProduct||"-") + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (a.colorName||"-") + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9;color:#64748b'>" + (a.notes||"-") + "</td></tr>"; });
+      if (hasTrim) state.paint.trim.forEach(function(a,i){ html += "<tr style='background:" + (i%2===0?"#f8fafc":"white") + "'><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9;font-weight:600'>Trim</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (a.paintProduct||"-") + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (a.colorName||"-") + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9;color:#64748b'>" + (a.notes||"-") + "</td></tr>"; });
+      html += "</tbody></table>";
+    }
+
+    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 8px'>Materials List</div>";
+    html += "<div style='font-size:10px;color:#64748b;margin-bottom:8px'>Based on " + combinedSqft.toFixed(0) + " sq ft total area.</div>";
+    html += "<table><thead><tr><th>Material</th><th>Quantity</th><th>Specification / Notes</th></tr></thead><tbody>";
+    paintMats.forEach(function(m,i){
+      html += "<tr style='background:" + (i%2===0?"white":"#f8fafc") + "'><td style='padding:6px 10px;font-size:10px;font-weight:600;border-bottom:1px solid #f1f5f9'>" + m[0] + "</td><td style='padding:6px 10px;font-size:10px;color:#0369a1;font-weight:700;border-bottom:1px solid #f1f5f9;white-space:nowrap'>" + m[1] + "</td><td style='padding:6px 10px;font-size:10px;color:#64748b;border-bottom:1px solid #f1f5f9'>" + m[2] + "</td></tr>";
+    });
+    html += "</tbody></table>";
+    html += "</div>";
+  }
+
+  var windowSteps = ["1. Measurement Verification - Confirm rough opening dimensions match ordered units", "2. Remove Existing Units - Carefully remove old windows/doors", "3. Inspect Opening - Check framing, sill, flashing for rot or damage", "4. Set New Unit - Install unit plumb, level, and square; shim as needed", "5. Insulation & Air Seal - Fill gaps with low-expansion foam ONLY (not high-pressure or latex)", "6. Exterior Trim - Install exterior casing or brick mold, caulk all seams", "7. Interior Trim - Install interior casing as needed", "8. Hardware & Operation - Install hardware, adjust operation, verify locks", "9. Final Inspection - Test all units for operation and weathertightness"];
+
+  if (state.services.includes("windows")) {
+    var totalWinQty = state.windows.reduce(function(a,w){return a+parseFloat(w.qty||0);},0);
+    var winFoam = Math.ceil(totalWinQty * 0.5) || 1;
+    var winCaulk = Math.ceil(totalWinQty * 0.5) || 1;
+    var winShims = Math.ceil(totalWinQty) || 1;
+    var winBacker = Math.ceil(totalWinQty * 12);
+
+    var windowMats = [
+      ["Window Units (per schedule below)", totalWinQty + " unit(s)", "Per specifications in window schedule"],
+      ["Sill Pan Flashing", totalWinQty + " unit(s)", "One per rough opening - integrated with WRB"],
+      ["Flashing Tape (self-adhering)", "As needed", "Head, jamb, and sill flashing integration"],
+      ["Low-Expansion Foam Insulation", winFoam + " can(s)", "ONLY low-expansion foam - high-pressure or latex foam NOT permitted per Pella specs"],
+      ["Composite or Cedar Shims", winShims + " pack(s)", "Sill, jamb, and head - for plumb level and square installation"],
+      ["Corrosion-Resistant Nails or Screws", "1 box", "Nailing fin attachment per manufacturer specs"],
+      ["Exterior-Grade Elastomeric Caulk (OSI Quad or equivalent)", winCaulk + " tube(s)", "Perimeter seal at all unit flanges"],
+      ["Backer Rod", winBacker + " lf", "Behind exterior sealant bead - ~12 lf per window"],
+      ["Interior Casing / Trim", "Measure on site", "All openings - match existing profile"],
+    ];
+
+    html += "<div class='page'>";
+    html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
+    html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>Window Installation</div>";
+    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(t.win) + "</div></div>";
+    html += "<div style='font-size:10px;color:#64748b;margin-bottom:16px'>" + totalWinQty + " unit(s) - per manufacturer installation specifications</div>";
+
+    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Scope of Work</div>";
+    html += "<div style='border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;margin-bottom:20px'>";
+    windowSteps.forEach(function(s,i){
+      html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:" + (i%2===0?"white":"#f8fafc") + ";border-bottom:1px solid #f1f5f9'>" + s + "</div>";
+    });
+    html += "</div>";
+
+    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Window Schedule</div>";
+    html += "<table><thead><tr><th>Label</th><th>Location</th><th>Manufacturer</th><th>Style</th><th>Frame</th><th>Color</th><th>Glass Type</th><th>Glass Pack</th><th>Grids</th><th>Size</th><th>Qty</th></tr></thead><tbody>";
+    state.windows.forEach(function(w,i){
+      var mfr = w.manufacturer==="Other"?(w.manufacturerOther||"Other"):(w.manufacturer||"-");
+      var sz = w.width&&w.height?w.width+"x"+w.height+"in":"-";
+      html += "<tr style='background:" + (i%2===0?"white":"#f8fafc") + "'><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9;font-weight:600'>" + w.label + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.location||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + mfr + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.style||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.frameType||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.frameColor||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.glassType||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.glassPack||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.grids||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9;font-weight:700'>" + sz + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9;font-weight:700;color:#0369a1'>" + (w.qty||"-") + "</td></tr>";
+    });
+    html += "</tbody><tfoot><tr><td colspan='10' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL WINDOWS</td><td style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + fmt(t.win) + "</td></tr></tfoot></table>";
+
+    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 8px'>Materials List</div>";
+    html += "<div style='font-size:10px;color:#64748b;margin-bottom:8px'>Based on " + totalWinQty + " total window units.</div>";
+    html += "<table><thead><tr><th>Material</th><th>Quantity</th><th>Specification / Notes</th></tr></thead><tbody>";
+    windowMats.forEach(function(m,i){
+      html += "<tr style='background:" + (i%2===0?"white":"#f8fafc") + "'><td style='padding:6px 10px;font-size:10px;font-weight:600;border-bottom:1px solid #f1f5f9'>" + m[0] + "</td><td style='padding:6px 10px;font-size:10px;color:#0369a1;font-weight:700;border-bottom:1px solid #f1f5f9;white-space:nowrap'>" + m[1] + "</td><td style='padding:6px 10px;font-size:10px;color:#64748b;border-bottom:1px solid #f1f5f9'>" + m[2] + "</td></tr>";
+    });
+    html += "</tbody></table>";
+    html += "<div style='font-size:9px;color:#94a3b8;margin-top:8px;font-style:italic'>* Low-expansion foam insulation ONLY. High-pressure or latex foam is NOT permitted per Pella installation requirements.</div>";
+    html += "</div>";
+  }
+
+  if (state.services.includes("misc")) {
+    var miscRows = state.misc.items.filter(function(i){return i.description;}).map(function(i) {
+      var tot = parseFloat(i.qty||0)*parseFloat(i.unitPrice||0);
+      return [i.description, i.qty||"-", fmt(i.unitPrice||0), fmt(tot), i.notes||"-"];
+    });
+    html += scopePage("Miscellaneous Items", t.msc, [], ["Description","Qty","Unit Price","Total","Notes"], miscRows);
+    html += "</div>";
+  }
+
+  // PRICING PAGE
+  html += "<div class='page'>";
+  html += "<div style='font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px'>Project Investment Options</div>";
+  html += "<div style='font-size:11px;color:#64748b;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #0f172a'>Both options include the full scope of work, materials, and warranty outlined in this proposal.</div>";
+  
+  html += "<div class='opt" + (selectedOption==="priority"?" selected":"") + "' onclick=\'selectOption(\"priority\")\'>";
+  html += "<div style='display:flex;justify-content:space-between;align-items:flex-start'>";
+  html += "<div><div style='font-size:14px;font-weight:800'>Option 1 - Priority Client Reservation</div><div style='font-size:10px;color:#0369a1;font-weight:700;margin-top:2px'>RECOMMENDED</div></div>";
+  html += "<div style='text-align:right'><div style='font-size:22px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div><div style='font-size:10px;color:#64748b'>Best Available Rate</div></div></div>";
+  html += "<ul style='margin:12px 0 0;padding-left:18px'><li style='font-size:11px;color:#334155;line-height:1.8'>Lock in your project start date today</li><li style='font-size:11px;color:#334155;line-height:1.8'>Best available pricing - priority rate guaranteed</li><li style='font-size:11px;color:#334155;line-height:1.8'>Priority scheduling - front of our queue</li><li style='font-size:11px;color:#334155;line-height:1.8'>Full manufacturer warranty on all materials</li><li style='font-size:11px;color:#334155;line-height:1.8'>Priority scheduling and pricing are limited and subject to current project availability</li></ul></div>";
+  
+  html += "<div class='opt" + (selectedOption==="standard"?" selected":"") + "' onclick=\'selectOption(\"standard\")\'>";
+  html += "<div style='display:flex;justify-content:space-between;align-items:flex-start'>";
+  html += "<div><div style='font-size:14px;font-weight:800'>Option 2 - Standard Scheduling</div><div style='font-size:10px;color:#64748b;font-weight:600;margin-top:2px'>FLEXIBLE START DATE</div></div>";
+  html += "<div style='text-align:right'><div style='font-size:22px;font-weight:800;color:#334155'>" + fmt(standard) + "</div><div style='font-size:10px;color:#94a3b8'>Standard Rate</div></div></div>";
+  html += "<ul style='margin:12px 0 0;padding-left:18px'><li style='font-size:11px;color:#334155;line-height:1.8'>Full scope of work as outlined in this proposal</li><li style='font-size:11px;color:#334155;line-height:1.8'>Scheduled based on next available opening</li><li style='font-size:11px;color:#334155;line-height:1.8'>Price valid for 30 days due to material cost variability and schedule availability</li><li style='font-size:11px;color:#334155;line-height:1.8'>Full manufacturer warranty on all materials</li></ul></div>";
+
+  if (selectedOption) {
+    html += "<div style='background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center'>";
+    html += "<div style='font-size:12px;font-weight:700;color:#0369a1'>" + (selectedOption==="priority"?"Option 1 - Priority Client Reservation Selected":"Option 2 - Standard Scheduling Selected") + "</div>";
+    html += "<div style='font-size:16px;font-weight:800;color:#0f172a'>" + fmt(selectedOption==="priority"?priority:standard) + "</div></div>";
+  }
+  html += "</div>";
+
+  // AGREEMENT PAGE
+  html += "<div class='page'>";
+  html += "<div style='font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px'>Agreement & Authorization</div>";
+  html += "<div style='font-size:11px;color:#64748b;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #0f172a'>Please review and sign to authorize this project.</div>";
+  
+  html += "<div style='background:#fef9c3;border:1px solid #fde68a;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:11px;color:#78350f;line-height:1.7'>";
+  html += "<strong>Binding Agreement:</strong> This document constitutes a legally binding agreement between the Client and New Direction Construction upon signature by both parties.</div>";
+
+  html += section("Project Timeline");
+  html += "<table><tbody>" + row("Proposal Date", today) + row("Valid Until", "30 days from issue date") + row("Estimated Start Date", "To be confirmed upon signing") + row("Estimated Completion", "To be confirmed based on scope") + "</tbody></table>";
+
+  html += section("Warranty");
+  html += "<table><tbody>" + row("James Hardie Product Warranty", "30-year limited (transferable)") + row("Paint / Finish Warranty", "Per manufacturer specification") + row("NDC Workmanship Warranty", "2 years from completion date") + "</tbody></table>";
+
+  html += section("Selected Option");
+  html += "<div style='display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap'>";
+  html += "<div onclick=\'selectOption(\"priority\")\' style='flex:1;min-width:140px;border:2px solid " + (selectedOption==="priority"?"#0ea5e9":"#e2e8f0") + ";border-radius:8px;padding:10px 14px;cursor:pointer;background:" + (selectedOption==="priority"?"#f0f9ff":"white") + "'>";
+  html += "<div style='font-size:11px;font-weight:700;color:" + (selectedOption==="priority"?"#0ea5e9":"#64748b") + "'>" + (selectedOption==="priority"?"Check ":"O ") + "Option 1 - Priority - " + fmt(priority) + "</div></div>";
+  html += "<div onclick=\'selectOption(\"standard\")\' style='flex:1;min-width:140px;border:2px solid " + (selectedOption==="standard"?"#475569":"#e2e8f0") + ";border-radius:8px;padding:10px 14px;cursor:pointer;background:" + (selectedOption==="standard"?"#f8fafc":"white") + "'>";
+  html += "<div style='font-size:11px;font-weight:700;color:" + (selectedOption==="standard"?"#334155":"#64748b") + "'>" + (selectedOption==="standard"?"Check ":"O ") + "Option 2 - Standard - " + fmt(standard) + "</div></div></div>";
+
+  // Payment Options
+  var chosenTotal = selectedOption === "priority" ? priority : selectedOption === "standard" ? standard : priority;
+  var opt50_1 = chosenTotal * 0.50;
+  var opt50_2 = chosenTotal * 0.50;
+  var opt33_1 = chosenTotal * 0.33;
+  var opt33_2 = chosenTotal * 0.33;
+  var opt33_3 = chosenTotal - (opt33_1 + opt33_2);
+  var selectedPayment = state.financing && state.financing.selectedPayment ? state.financing.selectedPayment : null;
+
+  html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px'>Select Payment Schedule</div>";
+  html += "<div style='display:flex;flex-direction:column;gap:12px;margin-bottom:20px'>";
+
+  // Option A - 50/50
+  html += "<div onclick='selectPayment(\"optA\")' style='border:2.5px solid " + (selectedPayment==="optA"?"#0ea5e9":"#e2e8f0") + ";border-radius:10px;padding:14px 16px;cursor:pointer;background:" + (selectedPayment==="optA"?"#f0f9ff":"white") + ";display:flex;align-items:flex-start;gap:12px'>";
+  html += "<div style='width:22px;height:22px;border-radius:4px;border:2px solid " + (selectedPayment==="optA"?"#0ea5e9":"#cbd5e1") + ";background:" + (selectedPayment==="optA"?"#0ea5e9":"white") + ";display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px'>";
+  html += selectedPayment==="optA" ? "<svg width='13' height='13' viewBox='0 0 13 13'><polyline points='2,7 5,10 11,3' stroke='white' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>" : "";
+  html += "</div>";
+  html += "<div style='flex:1'><div style='font-size:12px;font-weight:800;color:#0f172a;margin-bottom:6px'>Option A - 50 / 50</div>";
+  html += "<div style='display:flex;gap:8px;flex-wrap:wrap'>";
+  html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;flex:1;min-width:120px'><div style='font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:2px'>Due at Signing</div><div style='font-size:14px;font-weight:800;color:#0f172a'>" + fmt(opt50_1) + "</div><div style='font-size:9px;color:#94a3b8'>50% deposit</div></div>";
+  html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;flex:1;min-width:120px'><div style='font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:2px'>Due at Completion</div><div style='font-size:14px;font-weight:800;color:#0f172a'>" + fmt(opt50_2) + "</div><div style='font-size:9px;color:#94a3b8'>50% balance</div></div>";
+  html += "</div></div></div>";
+
+  // Option B - 33/33/33
+  html += "<div onclick='selectPayment(\"optB\")' style='border:2.5px solid " + (selectedPayment==="optB"?"#0ea5e9":"#e2e8f0") + ";border-radius:10px;padding:14px 16px;cursor:pointer;background:" + (selectedPayment==="optB"?"#f0f9ff":"white") + ";display:flex;align-items:flex-start;gap:12px'>";
+  html += "<div style='width:22px;height:22px;border-radius:4px;border:2px solid " + (selectedPayment==="optB"?"#0ea5e9":"#cbd5e1") + ";background:" + (selectedPayment==="optB"?"#0ea5e9":"white") + ";display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px'>";
+  html += selectedPayment==="optB" ? "<svg width='13' height='13' viewBox='0 0 13 13'><polyline points='2,7 5,10 11,3' stroke='white' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>" : "";
+  html += "</div>";
+  html += "<div style='flex:1'><div style='font-size:12px;font-weight:800;color:#0f172a;margin-bottom:6px'>Option B - 33 / 33 / 33</div>";
+  html += "<div style='display:flex;gap:8px;flex-wrap:wrap'>";
+  html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;flex:1;min-width:100px'><div style='font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:2px'>Due at Signing</div><div style='font-size:13px;font-weight:800;color:#0f172a'>" + fmt(opt33_1) + "</div><div style='font-size:9px;color:#94a3b8'>33%</div></div>";
+  html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;flex:1;min-width:100px'><div style='font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:2px'>Crew Starts</div><div style='font-size:13px;font-weight:800;color:#0f172a'>" + fmt(opt33_2) + "</div><div style='font-size:9px;color:#94a3b8'>33%</div></div>";
+  html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;flex:1;min-width:100px'><div style='font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:2px'>Due at Completion</div><div style='font-size:13px;font-weight:800;color:#0f172a'>" + fmt(opt33_3) + "</div><div style='font-size:9px;color:#94a3b8'>balance</div></div>";
+  html += "</div></div></div>";
+
+  // Option C - No money down
+  html += "<div onclick='selectPayment(\"optC\")' style='border:2.5px solid " + (selectedPayment==="optC"?"#0ea5e9":"#e2e8f0") + ";border-radius:10px;padding:14px 16px;cursor:pointer;background:" + (selectedPayment==="optC"?"#f0f9ff":"white") + ";display:flex;align-items:flex-start;gap:12px'>";
+  html += "<div style='width:22px;height:22px;border-radius:4px;border:2px solid " + (selectedPayment==="optC"?"#0ea5e9":"#cbd5e1") + ";background:" + (selectedPayment==="optC"?"#0ea5e9":"white") + ";display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px'>";
+  html += selectedPayment==="optC" ? "<svg width='13' height='13' viewBox='0 0 13 13'><polyline points='2,7 5,10 11,3' stroke='white' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>" : "";
+  html += "</div>";
+  html += "<div style='flex:1'><div style='font-size:12px;font-weight:800;color:#0f172a;margin-bottom:6px'>Option C - No Money Down</div>";
+  html += "<div style='display:flex;gap:8px;flex-wrap:wrap'>";
+  html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;flex:1;min-width:140px'><div style='font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:2px'>Due at Signing</div><div style='font-size:14px;font-weight:800;color:#0f172a'>$0.00</div><div style='font-size:9px;color:#94a3b8'>No deposit required</div></div>";
+  html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;flex:1;min-width:140px'><div style='font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:2px'>Due at Completion</div><div style='font-size:14px;font-weight:800;color:#0f172a'>" + fmt(chosenTotal) + "</div><div style='font-size:9px;color:#94a3b8'>Full amount</div></div>";
+  html += "</div></div></div>";
+
+  html += "</div>";
+
+  if (selectedPayment) {
+    html += "<div style='background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center'>";
+    var payLabel = selectedPayment==="optA"?"Option A - 50/50 Selected":selectedPayment==="optB"?"Option B - 33/33/33 Selected":"Option C - No Money Down Selected";
+    html += "<div style='font-size:12px;font-weight:700;color:#0369a1'>" + payLabel + "</div>";
+    html += "<div style='font-size:14px;font-weight:800;color:#0f172a'>" + fmt(chosenTotal) + "</div></div>";
+  }
+  html += "</div></div>";
+
+  // TERMS PAGE - Official NDC Terms & Conditions
+  html += "<div class='page'>";
+  html += "<div style='text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
+  html += "<div style='font-size:16px;font-weight:800;color:#0f172a;text-decoration:underline'>Terms and Conditions</div></div>";
+
+  // Two column layout
+  html += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:9.5px;color:#1e293b;line-height:1.7'>";
+
+  // LEFT COLUMN
+  html += "<div>";
+  html += "<p><strong>1. Office Approval</strong> All contracts are subject to approval by Company manager and/or officer of the Company.</p>";
+  html += "<p><strong>2. Damages for Cancelation</strong> You have a limited right to cancel this contract. You may do so only in the time stated in the contract or allowed by law.</p>";
+  html += "<p><strong>3. Amount of Cancelation Damages</strong> The agreed damages are 25% of the contracted price. If any part of the work has been completed, the agreed damages are the proportionate price of the work completed plus 24% of the balance of the cash contracted price. You will also be liable for court costs, interest and our attorney fees. The buyer is liable for all costs incurred for special ordered material and/or products if cancelled after the cancellation time frame allowed by law.</p>";
+  html += "<p><strong>4. Access</strong> You will permit us to go onto the premises. The premises include the land and the buildings. You will obtain any consent needed for us to go onto the premises to complete work. If we are prevented from completing the work, because of denial of access, then we have no further duty to perform the contract. You will then immediately pay us agreed damages. The amount will be as is stated in Paragraph 3.</p>";
+  html += "<p><strong>5. Insurance</strong> We have Public Liability Insurance, Property Damage Insurance and Installer/Applicators have Workers Compensation Insurance.</p>";
+  html += "<p><strong>6. Debris</strong> We will remove the job related debris.</p>";
+  html += "<p><strong>7. Interference and Performance</strong> We are not responsible for any interference with performance for reason beyond our reasonable control. This includes strikes, fires, weather, inability to obtain materials, etc.</p>";
+  html += "<p><strong>8. Warranties</strong> The following refers to warranties:</p>";
+  html += "<p style='padding-left:12px'><strong>a.</strong> The only express warranties which apply to labor or materials furnished under this contract are those in our warranty certificates.</p>";
+  html += "<p style='padding-left:12px'><strong>b.</strong> The only remedies for breach of warranty are those stated in our warranty certificates. We have no liability for incidental or consequential damages.</p>";
+  html += "<p><strong>9. Option to Declare Balance Due</strong> We may declare the contract cancelled by you and collect both for work completed and agreed damages if:</p>";
+  html += "<p style='padding-left:12px'>a. You sell, mortgage or transfer any interest of the premises before full payment to us.</p>";
+  html += "<p style='padding-left:12px'>b. Anyone places an attachment, writ, lien or any other process against the premises.</p>";
+  html += "<p style='padding-left:12px'>c. There is a default in payment of taxes on the premises.</p>";
+  html += "<p><strong>10. Consumer Credit Contract Notice</strong> If this document applies to a consumer credit contract, this notice applies.</p>";
+  html += "<p style='font-style:italic;font-weight:600'>NOTICE: Any holder of this consumer credit contract is subject to all claims and defenses which the debtor could assert against the seller of goods or services obtained here to with the proceeds hereof. Recovery hereunder by the debtor shall not exceed amounts paid by the debtor hereunder.</p>";
+  html += "<p><strong>11. Entire Agreement</strong> This contract sets forth the entire agreement between the parties and supersedes any and all prior understandings, agreements or representations made by Company, its agents or representatives. This contract can only be changed in writing by an amendment signed by both Company and you. Anything not specifically stated or agreed to by Company is waived to the extent permitted by law.</p>";
+  html += "<p><strong>12. Compliance with Law</strong> If any provision or term contained herein shall be construed to be invalid, unenforceable or in violation of any law, rule or regulation by any court having jurisdiction thereof, then this contract shall be interrupted as if said provision or term has been omitted or alternatively construed in a manner that such provision or term would be valid, enforceable or in compliance with any law, rule or regulation and the validity of the remaining provisions and terms of this contract shall not be affected thereby.</p>";
+  html += "</div>";
+
+  // RIGHT COLUMN
+  html += "<div>";
+  html += "<p><strong>13. Florida Homeowner's Construction Recovery Fund (F.S.489):</strong> Payment may be made available for the Homeowner's Construction Recovery Fund if you lose money on a project preformed under contract, where the loss results from specified violations of Florida Law by a licensed contractor. For information about the recovery fund and filing a claim, contact the Florida Construction Industry license board at the following number and address: Florida Homeowner's Construction Recovery Fund 1940 N. Monroe Street, Suite 60 Tallahassee, FL 32339</p>";
+  html += "<p><strong>14. Binding Arbitration Agreement</strong> Any disputes arising in any manner relating to this agreement that cannot be resolved by negotiation between the parties shall be subject to mandatory exclusive and binding arbitration under the Arbitration Association in existence at the time the dispute arises. Neither party may take any other action by way of request for injunctive relief or otherwise. The order of the arbitrator(s) may be entered into any court of competent jurisdiction. The purchaser and dealer agree to abide by the ruling of the Arbitration Association in Lieu of filing a lawsuit.</p>";
+  html += "<p><strong>15. Transfer</strong> You may not transfer your duties under this contract to any person without written consent by us.</p>";
+  html += "<p><strong>16. Successors</strong> This contract binds your heirs, executors and administrators.</p>";
+  html += "<p><strong>17. Verification</strong> Our construction specialists check the measurements and calculations made by the sales representative in determining the work involved. If a significant mistake or special construction problems occur, we reserve the right to cancel the contract without liability. We will refund any down payment made by you.</p>";
+  html += "<p><strong>18. Notice to all Florida Residents</strong> Florida law contains important requirements you must follow before you may file a lawsuit for defective construction against a contractor, subcontractor, supplier or design professional for an alleged construction defect in your home. Sixty days before you file your lawsuit, you must deliver to the contractor, subcontractor, supplier or design professional a written notice of any construction conditions you allege are defective and provide your contractor, subcontractor, supplier or design professional the opportunity to inspect the alleged construction defects. You are not obligated to accept any offer made by the contractor, subcontractor, supplier or design professionals. There are strict deadlines and procedures under Florida Law.</p>";
+  html += "<p><strong>19. Direct Contract Mandatory Provisions (F.S. 713)</strong> According to Florida's Construction Lien Law (Florida statues 713.001/713.37) those who work on your property or provide material and have not paid in full have a right to enforce their claim for payment against your property. This claim is known as a construction lien. If our contractor, subcontractor, supplier or design professional neglects to make other legally required payments, the people who are owed money may look to your property for payment, even if you have paid the contractor in full. If you fail to pay the contractor, your contractor may also have a lien on your property. This means if a lien is filed, your property could be sold against your will to pay for labor, materials or other services that your contractor or subcontractor may have failed to pay. Florida's Construction Lien Law is complex and it is recommended that whenever a specific problem arises, you consult an attorney.</p>";
+  html += "</div>";
+  html += "</div>"; // end grid
+
+  // Signature lines at bottom
+  html += "<div style='margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0'>";
+  html += "<div style='display:flex;gap:20px;margin-bottom:16px'>";
+  html += "<div style='flex:2'><div style='border-bottom:1px solid #0f172a;margin-bottom:4px;min-height:24px'></div><div style='font-size:9px;color:#64748b'>Approved by - Company Manager and/or Office</div></div>";
+  html += "<div style='flex:1'><div style='border-bottom:1px solid #0f172a;margin-bottom:4px;min-height:24px'></div><div style='font-size:9px;color:#64748b'>On</div></div>";
+  html += "</div>";
+  html += "<div style='display:flex;gap:20px;margin-bottom:16px;align-items:flex-end'>";
+  html += "<div style='flex:1'><div style='font-size:9px;color:#64748b;margin-bottom:4px'>Home Owner Notified</div><div style='display:flex;gap:16px'><span style='font-size:9px'>Yes</span><span style='font-size:9px'>No at</span><div style='flex:1;border-bottom:1px solid #0f172a'></div></div></div>";
+  html += "<div style='flex:1'><div style='border-bottom:1px solid #0f172a;margin-bottom:4px;min-height:24px'></div><div style='font-size:9px;color:#64748b'>Telephone and/or Address</div></div>";
+  html += "</div>";
+  html += "<div style='display:flex;gap:20px'>";
+  html += "<div style='flex:1'><div style='border-bottom:1px solid #0f172a;margin-bottom:4px;min-height:24px'></div><div style='font-size:9px;color:#64748b'>Date</div></div>";
+  html += "<div style='flex:1'><div style='border-bottom:1px solid #0f172a;margin-bottom:4px;min-height:24px'></div><div style='font-size:9px;color:#64748b'>Time</div></div>";
+  html += "<div style='flex:2'><div style='border-bottom:1px solid #0f172a;margin-bottom:4px;min-height:24px'></div><div style='font-size:9px;color:#64748b'>By</div></div>";
+  html += "</div>";
+  html += "</div>";
+
+  html += "<p style='font-size:9px;color:#94a3b8;text-align:center;margin-top:16px'>New Direction Construction - 820 Worth Rd, Jacksonville, FL 32259 - (904) 891-9980 - Lic# CBC059304</p>";
+  html += "</div>";
+
+  // CANCELLATION NOTICE PAGE
+  var cancelDate = new Date();
+  var businessDaysAdded = 0;
+  while (businessDaysAdded < 4) {
+    cancelDate.setDate(cancelDate.getDate() + 1);
+    var dow = cancelDate.getDay();
+    if (dow !== 0 && dow !== 6) businessDaysAdded++;
+  }
+  var cancelDateStr = (cancelDate.getMonth()+1) + "/" + cancelDate.getDate() + "/" + String(cancelDate.getFullYear()).slice(-2);
+
+  html += "<div class='page'>";
+  html += "<div style='text-align:center;margin-bottom:16px'>";
+  html += "<div style='font-size:13px;font-weight:800;color:#0f172a'>Notice of Cancelation</div></div>";
+  html += "<div style='font-size:10.5px;color:#0f172a;line-height:1.85;text-align:justify'>";
+  html += "<p><strong>You may cancel this transaction without any penalty or obligation, within three business days from the above date.</strong> If you cancel, any property traded in, any payments made by you under the contract or sale, and any negotiable instrument executed by you will be returned to you within 10 business days following receipt by the seller of your cancellation notice and any security interest arising out of the transaction will be cancelled. If you cancel, you must make available to the seller of your cancelation notice at your residence, in substantially as good condition as when received, any good delivered to you under the contract or sale, or you may if you wish, comply with the instructions of the seller regarding the return shipment of the goods at the sellers expense and risk. If you do make the goods available to the seller and the seller does not pick them up within 20 days of the date of your cancelation notice, you may return or dispose of the goods without any further obligation. If you fail to make the goods available to the seller, or if you agree to return the goods to the seller and fail to do so, then you remain liable for performance of all obligations under the contract. To cancel this transaction, mail or deliver a signed and dated copy of this cancelation notice or any other written notice to 820 Worth Rd., Jacksonville FL 32259 Not later than midnight of</p>";
+  html += "</div>";
+  html += "<div style='display:flex;align-items:center;gap:8px;margin:8px 0 20px 40px'>";
+  html += "<div style='border-bottom:1.5px solid #0f172a;width:140px;text-align:center;padding-bottom:2px;font-size:11px;font-weight:700'>" + cancelDateStr + "</div>";
+  html += "</div>";
+  html += "<div style='margin-top:24px;display:flex;align-items:center;gap:8px'>";
+  html += "<div style='font-size:11px;font-weight:800;color:#0f172a;white-space:nowrap'>I HEREBY CANCEL THIS TRASACTION</div>";
+  html += "<div style='flex:1;border-bottom:1.5px solid #0f172a;min-height:20px'></div>";
+  html += "</div>";
+  html += "<p style='font-size:9px;color:#94a3b8;text-align:center;margin-top:32px'>New Direction Construction - 820 Worth Rd, Jacksonville, FL 32259 - (904) 891-9980 - Lic# CBC059304</p>";
+  html += "</div>";
+
+  html += "<script>";
+  html += "function selectOption(opt) { window.parent.postMessage({type:'selectOption',option:opt},'*'); }";
+  html += "function selectPayment(opt) { window.parent.postMessage({type:'selectPayment',payment:opt},'*'); }";
+  html += "</script>";
+  html += "</body></html>";
+  return html;
+}
+
+function PreviewStep({ state }) {
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [signature, setSignature] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [emailOverride, setEmailOverride] = useState(state.customer.email);
+  const [bccEmail, setBccEmail] = useState("");
+
+  const handleSend = async () => { setSending(true); await new Promise(r => setTimeout(r, 1400)); setSending(false); setSent(true); };
+
+  const [selectedPayment, setSelectedPayment] = useState(null);
+
+  // Listen for selections from iframe
+  useState(() => {
+    function handler(e) {
+      if (e.data && e.data.type === "selectOption") setSelectedOption(e.data.option);
+      if (e.data && e.data.type === "selectPayment") setSelectedPayment(e.data.payment);
+    }
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  });
+
+  // Inject selectedPayment into state.financing for the HTML builder
+  const stateWithPayment = { ...state, financing: { ...(state.financing||{}), selectedPayment: selectedPayment } };
+  const html = buildProposalHTML(stateWithPayment, selectedOption, signature);
+  const t = calcGrandTotal(state);
+  const priority = t.total;
+  const standard = t.total * 1.0835;
+
+  return (
+    <div style={{ padding: "0 0 24px" }}>
+      <div style={{ padding: "16px 24px 8px", fontWeight: 800, fontSize: 16, color: "#0f172a" }}>Proposal Preview</div>
+      <iframe
+        srcDoc={html}
+        style={{ width: "100%", height: 600, border: "none", display: "block" }}
+        title="Proposal"
+      />
+      <div style={{ padding: "16px 24px 0" }}>
+        {selectedOption && (
+          <div style={{ background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 8, padding: "10px 14px", marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#0369a1" }}>{selectedOption === "priority" ? "Option 1 - Priority" : "Option 2 - Standard"}</span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{selectedOption === "priority" ? fmt(priority) : fmt(standard)}</span>
+          </div>
+        )}
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>Customer Signature (type to sign)</label>
+          <input style={{ width: "100%", boxSizing: "border-box", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 20, fontFamily: "cursive", color: "#0f172a", outline: "none" }} placeholder="Type full name to sign" value={signature} onChange={e => setSignature(e.target.value)} />
+        </div>
+        {/* Email fields */}
+        <div style={{ marginBottom: 10 }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>To — Customer Email</label>
+          <input style={{ width: "100%", boxSizing: "border-box", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 15, color: "#1e293b", outline: "none" }} type="email" value={emailOverride} onChange={e => setEmailOverride(e.target.value)} placeholder="customer@email.com" />
+        </div>
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>BCC — Your Email</label>
+          <input style={{ width: "100%", boxSizing: "border-box", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 15, color: "#1e293b", outline: "none" }} type="email" value={bccEmail} onChange={e => setBccEmail(e.target.value)} placeholder="yourname@email.com" />
+        </div>
+
+        {/* Action buttons */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {sent ? (
+            <div style={{ background: "#dcfce7", color: "#166534", padding: "12px 16px", borderRadius: 8, fontWeight: 600, textAlign: "center" }}>Proposal sent to {emailOverride}!</div>
+          ) : (
+            <button style={{ background: "linear-gradient(135deg,#0ea5e9,#0369a1)", color: "white", border: "none", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%", opacity: sending ? 0.7 : 1 }} onClick={handleSend} disabled={sending}>
+              {sending ? "Sending..." : "Send Proposal by Email"}
+            </button>
+          )}
+
+          {/* Download PDF button */}
+          <button
+            style={{ background: "white", color: "#0f172a", border: "1.5px solid #0f172a", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+            onClick={() => {
+              const iframe = document.querySelector("iframe[title='Proposal']");
+              if (iframe) {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+              }
+            }}
+          >
+            Download / Print PDF
+          </button>
+
+          {/* Share link button */}
+          <button
+            style={{ background: "white", color: "#475569", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "10px 24px", fontWeight: 600, fontSize: 13, cursor: "pointer", width: "100%" }}
+            onClick={() => {
+              if (navigator.share) {
+                navigator.share({ title: "New Direction Construction Proposal", text: "Exterior Remodeling Proposal from New Direction Construction", url: window.location.href });
+              } else {
+                navigator.clipboard.writeText(window.location.href).then(() => alert("Link copied to clipboard!"));
+              }
+            }}
+          >
+            Share Proposal Link
+          </button>
+        </div>
+        <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 8, textAlign: "center" }}>Connect EmailJS or SendGrid to enable real email delivery. PDF download works on any device.</p>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, value, onChange, placeholder, type = "text" }) {
+  return (
+    <div style={S.field}>
+      <label style={S.label}>{label}</label>
+      <input style={S.input} type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+    </div>
+  );
+}
+
+function MiniField({ label, value, onChange }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>{label}</label>
+      <input style={{ ...S.input, padding: "6px 8px", fontSize: 13, width: 100 }} type="number" value={value} onChange={(e) => onChange(e.target.value)} placeholder="0" />
+    </div>
+  );
+}
+
+function buildSteps(services) {
+  const steps = [
+    { key: "services", label: "Services" },
+
+    { key: "customer", label: "Customer" },
+  ];
+  if (services.includes("siding"))  steps.push({ key: "siding", label: "Siding" });
+  if (services.includes("soffit"))  steps.push({ key: "soffit", label: "Soffits" });
+  if (services.includes("fascia"))  steps.push({ key: "fascia", label: "Fascia" });
+  if (services.includes("paint"))   steps.push({ key: "paint",  label: "Paint"  });
+  if (services.includes("windows")) steps.push({ key: "windows", label: "Windows" });
+  if (services.includes("misc"))    steps.push({ key: "misc",    label: "Misc" });
+  steps.push({ key: "financing", label: "Financing" });
+  steps.push({ key: "notes",   label: "Notes"   });
+  steps.push({ key: "preview", label: "Preview" });
+  return steps;
+}
+
+function App() {
+  const [step, setStep] = useState(0);
+  const [state, setState] = useState(makeInitialState());
+  const steps = buildSteps(state.services);
+  const currentKey = steps[step] && steps[step].key;
+  const lastStep = steps.length - 1;
+
+  const update = (section, key, val) => setState((s) => ({ ...s, [section]: { ...s[section], [key]: val } }));
+
+  const canNext = () => {
+    if (currentKey === "services") return state.services.length > 0;
+
+    if (currentKey === "customer") return state.customer.name.trim().length > 0;
+    return true;
+  };
+
+  return (
+    <div style={S.app}>
+      <div style={S.header}>
+        <div style={S.headerTitle}>ProposalBuilder</div>
+        <div style={S.headerSub}>New Direction Construction - On-Site Estimator</div>
+      </div>
+      <div style={{ ...S.progress, overflowX: "auto" }}>
+        {steps.map((s, i) => (
+          <div key={s.key} style={{ ...S.progressStep, cursor: i < step ? "pointer" : "default", minWidth: 44 }} onClick={() => i < step && setStep(i)}>
+            <div style={{ ...S.progressDot, background: i <= step ? "#0ea5e9" : "#e2e8f0" }}>{i < step ? "-" : i + 1}</div>
+            <span style={{ fontSize: 8, marginTop: 3, color: i <= step ? "#0ea5e9" : "#94a3b8", fontWeight: i === step ? 700 : 400, whiteSpace: "nowrap" }}>{s.label}</span>
+          </div>
+        ))}
+      </div>
+      <div style={S.body}>
+        {currentKey === "services" && <ServiceSelectStep selected={state.services} onChange={(v) => setState((s) => ({ ...s, services: v }))} />}
+
+        {currentKey === "customer" && <CustomerStep data={state.customer} onChange={(k, v) => update("customer", k, v)} />}
+        {currentKey === "siding"   && <SidingStep data={state.siding} onChange={(k, v) => setState((s) => ({ ...s, siding: { ...s.siding, [k]: v } }))} onSidingTypeChange={(type) => setState((s) => ({ ...s, siding: { ...s.siding, sidingType: type }, sidingMaterials: defaultSidingMaterials(type) }))} />}
+
+        {currentKey === "soffit"   && <SoffitStep title="Soffits" data={state.soffit} onChange={(v) => setState((s) => ({ ...s, soffit: v }))} />}
+        {currentKey === "fascia"   && <SoffitStep title="Fascia" data={state.fascia} onChange={(v) => setState((s) => ({ ...s, fascia: v }))} />}
+        {currentKey === "paint"    && <PaintStep data={state.paint} onChange={(v) => setState((s) => ({ ...s, paint: v }))} />}
+        {currentKey === "windows"  && <WindowsStep windows={state.windows} onChange={(v) => setState((s) => ({ ...s, windows: v }))} />}
+        {currentKey === "misc"     && <MiscStep data={state.misc} onChange={(v) => setState((s) => ({ ...s, misc: v }))} />}
+        {currentKey === "financing" && <FinancingStep data={state.financing} onChange={(v) => setState((s) => ({ ...s, financing: v }))} state={state} />}
+        {currentKey === "notes"    && <NotesStep notes={state.notes} onChange={(v) => setState((s) => ({ ...s, notes: v }))} />}
+        {currentKey === "preview"  && <PreviewStep state={state} />}
+      </div>
+      {step < lastStep && (
+        <div style={S.nav}>
+          {step > 0 && <button style={S.secondaryBtn} onClick={() => setStep(step - 1)}>- Back</button>}
+          <button style={{ ...S.primaryBtn, marginLeft: "auto", opacity: canNext() ? 1 : 0.5 }} disabled={!canNext()} onClick={() => setStep(step + 1)}>
+            {step === lastStep - 1 ? "Preview Proposal" : "Next"}
+          </button>
+        </div>
+      )}
+      {step === lastStep && (
+        <div style={S.nav}>
+          <button style={S.secondaryBtn} onClick={() => setStep(lastStep - 1)}>- Back</button>
+          <button style={{ ...S.secondaryBtn, marginLeft: "auto" }} onClick={() => { setState(makeInitialState()); setStep(0); }}>- New Proposal</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const S = {
+  app: { fontFamily: "'Georgia', serif", background: "#f8fafc", minHeight: "100vh", display: "flex", flexDirection: "column", maxWidth: 700, margin: "0 auto" },
+  header: { background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)", color: "white", padding: "20px 24px 16px", textAlign: "center" },
+  headerTitle: { fontSize: 24, fontWeight: 800, letterSpacing: "-0.5px" },
+  headerSub: { fontSize: 13, color: "#7dd3fc", marginTop: 2 },
+  progress: { display: "flex", justifyContent: "space-between", padding: "14px 16px 0", background: "white", borderBottom: "1px solid #e2e8f0" },
+  progressStep: { display: "flex", flexDirection: "column", alignItems: "center", flex: 1 },
+  progressDot: { width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "white" },
+  body: { flex: 1, padding: "0 0 24px" },
+  nav: { display: "flex", padding: "12px 24px", borderTop: "1px solid #e2e8f0", background: "white", gap: 10 },
+  stepWrap: { padding: "20px 24px" },
+  stepTitle: { fontSize: 18, fontWeight: 800, color: "#0f172a", margin: "0 0 4px" },
+  stepSub: { color: "#64748b", fontSize: 13, margin: "0 0 20px", lineHeight: 1.5 },
+  field: { marginBottom: 14 },
+  label: { display: "block", fontSize: 12, fontWeight: 700, color: "#475569", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" },
+  input: { width: "100%", boxSizing: "border-box", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 15, color: "#1e293b", outline: "none", background: "white" },
+  card: { background: "white", border: "1.5px solid #e2e8f0", borderRadius: 12, padding: 14, marginBottom: 12 },
+  addBtn: { background: "none", border: "1.5px dashed #0ea5e9", borderRadius: 8, padding: "8px 16px", color: "#0ea5e9", fontWeight: 700, fontSize: 13, cursor: "pointer", width: "100%", marginBottom: 12 },
+  removeBtn: { background: "#fef2f2", border: "none", borderRadius: 6, color: "#ef4444", fontWeight: 700, cursor: "pointer", padding: "2px 8px", fontSize: 13 },
+  summaryBox: { background: "#f0f9ff", border: "1.5px solid #7dd3fc", borderRadius: 10, padding: "12px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 8 },
+  primaryBtn: { background: "linear-gradient(135deg, #0ea5e9, #0369a1)", color: "white", border: "none", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer" },
+  secondaryBtn: { background: "white", color: "#475569", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "12px 20px", fontWeight: 600, fontSize: 14, cursor: "pointer" },
+  proposal: { background: "white", border: "1.5px solid #e2e8f0", borderRadius: 14, padding: 24, marginBottom: 16 },
+  propSection: { marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" },
+  propLabel: { fontSize: 11, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 },
+  lineItem: { display: "flex", justifyContent: "space-between", fontSize: 13, color: "#1e293b", padding: "3px 0" },
+  totalBox: { background: "linear-gradient(135deg, #0f172a, #1e3a5f)", color: "white", borderRadius: 10, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 },
+  table: { width: "100%", borderCollapse: "collapse", fontSize: 12, marginBottom: 8 },
+  th: { textAlign: "left", padding: "6px 8px", background: "#f8fafc", color: "#64748b", fontWeight: 700, borderBottom: "1px solid #e2e8f0" },
+  td: { padding: "6px 8px", borderBottom: "1px solid #f1f5f9", color: "#334155" },
+};
+
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(App));
+  </script>
+</body>
+</html>
