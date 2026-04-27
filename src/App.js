@@ -1061,47 +1061,45 @@ function buildProposalHTML(state, selectedOption, signature) {
   html += "</div></div>";
 
   // BOTTOM HALF - Pricing side by side
-  html += "<div style='display:flex;gap:16px;flex:1'>";
+  // BOTTOM HALF - Single pricing box
+  html += "<div style='flex:1'>";
+  html += "<div style='border:2px solid #0ea5e9;border-radius:12px;padding:24px;background:#f0f9ff;height:100%'>";
 
-  // Bottom Left - Priority Option
-  html += "<div style='flex:1;border:2px solid #0ea5e9;border-radius:12px;padding:20px;background:#f0f9ff;display:flex;flex-direction:column'>";
-  html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Option 1</div>";
-  html += "<div style='font-size:14px;font-weight:800;color:#0f172a;margin-bottom:4px'>Priority Client Reservation</div>";
-  html += "<div style='font-size:10px;color:#0369a1;font-weight:700;margin-bottom:12px'>RECOMMENDED</div>";
-  html += "<div style='font-size:26px;font-weight:800;color:#0ea5e9;margin-bottom:12px'>" + fmt(priority) + "</div>";
-  html += "<ul style='margin:0 0 16px;padding-left:16px;flex:1'>";
-  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Lock in your project start date today</li>";
-  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Best available pricing - priority rate guaranteed</li>";
-  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Priority scheduling - front of our queue</li>";
-  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Full manufacturer warranty on all materials</li>";
-  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Priority scheduling and pricing are limited and subject to current project availability</li>";
-  html += "</ul>";
-  // Financing option - only show if monthly payment entered
+  // Total price at top
+  html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:16px;border-bottom:1.5px solid #bae6fd'>";
+  html += "<div><div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px'>Total Project Investment</div>";
+  html += "<div style='font-size:28px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div></div>";
   if (monthlyPayment) {
-    html += "<div style='background:white;border:1px solid #bae6fd;border-radius:8px;padding:12px;margin-top:auto'>";
-    html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px'>Financing Option Available</div>";
-    html += "<div style='display:flex;align-items:baseline;gap:4px'>";
-    html += "<div style='font-size:26px;font-weight:800;color:#0f172a'>$" + monthlyPayment.toLocaleString("en-US", {minimumFractionDigits:2,maximumFractionDigits:2}) + "</div>";
-    html += "<div style='font-size:12px;color:#64748b;font-weight:600'>/month</div></div>";
-    html += "<div style='font-size:9px;color:#94a3b8;margin-top:4px'>Subject to credit approval. Ask your representative for details.</div>";
-    html += "</div>";
+    html += "<div style='background:white;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;text-align:right'>";
+    html += "<div style='font-size:9px;font-weight:700;color:#0369a1;text-transform:uppercase;margin-bottom:2px'>Financing Available</div>";
+    html += "<div style='font-size:20px;font-weight:800;color:#0f172a'>$" + monthlyPayment.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "<span style='font-size:11px;color:#64748b;font-weight:600'>/mo</span></div>";
+    html += "<div style='font-size:8px;color:#94a3b8'>Subject to credit approval</div></div>";
   }
   html += "</div>";
 
-  // Bottom Right - Standard Option
-  html += "<div style='flex:1;border:2px solid #e2e8f0;border-radius:12px;padding:20px;background:white;display:flex;flex-direction:column'>";
-  html += "<div style='font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Option 2</div>";
-  html += "<div style='font-size:14px;font-weight:800;color:#0f172a;margin-bottom:4px'>Standard Scheduling</div>";
-  html += "<div style='font-size:10px;color:#64748b;font-weight:600;margin-bottom:12px'>FLEXIBLE START DATE</div>";
-  html += "<div style='font-size:26px;font-weight:800;color:#334155;margin-bottom:12px'>" + fmt(standard) + "</div>";
-  html += "<ul style='margin:0;padding-left:16px;flex:1'>";
-  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Full scope of work as outlined in this proposal</li>";
-  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Scheduled based on next available opening</li>";
-  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Full manufacturer warranty on all materials</li>";
-  html += "<li style='font-size:10px;color:#334155;line-height:1.9'>Price valid for 30 days due to material cost variability and schedule availability</li>";
-  html += "</ul></div>";
+  // Scope of work bullets
+  html += "<div style='margin-bottom:20px'>";
+  html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Scope of Work</div>";
+  html += "<div style='columns:2;column-gap:16px'>";
+  overviewItems.forEach(function(item) {
+    html += "<div style='font-size:10px;color:#334155;line-height:1.8;break-inside:avoid;margin-bottom:2px'>- " + item + "</div>";
+  });
+  html += "</div></div>";
 
-  html += "</div>"; // end bottom pricing row
+  // Service price breakdown
+  html += "<div style='background:white;border-radius:8px;padding:14px;border:1px solid #bae6fd'>";
+  html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px'>Service Breakdown</div>";
+  if (state.services.includes('siding'))  html += "<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>James Hardie Siding</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.sid) + "</span></div>";
+  if (state.services.includes('soffit'))  html += "<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Soffit Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.sof) + "</span></div>";
+  if (state.services.includes('fascia'))  html += "<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Fascia Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.fas) + "</span></div>";
+  if (state.services.includes('paint'))   html += "<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Exterior Paint</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.pnt) + "</span></div>";
+  if (state.services.includes('windows')) html += "<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Window Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.win) + "</span></div>";
+  if (state.services.includes('misc'))    html += "<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Miscellaneous</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.msc) + "</span></div>";
+  html += "<div style='display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px'><span style='color:#0f172a;font-weight:800'>Total</span><span style='color:#0ea5e9;font-weight:800'>" + fmt(priority) + "</span></div>";
+  html += "</div>";
+
+  html += "</div>"; // end pricing box
+  html += "</div>"; // end bottom half
   html += "</div>"; // end page
 
   // PAGE 2+ - SERVICE SECTIONS
@@ -1560,50 +1558,45 @@ function buildProposalHTML(state, selectedOption, signature) {
   var opt33_3 = chosenTotal - (opt33_1 + opt33_2);
   var selectedPayment = state.financing && state.financing.selectedPayment ? state.financing.selectedPayment : null;
 
-  html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px'>Select Payment Schedule</div>";
-  html += "<div style='display:flex;flex-direction:column;gap:12px;margin-bottom:20px'>";
-
-  // Option A - 50/50
-  html += "<div onclick='selectPayment(\"optA\")' style='border:2.5px solid " + (selectedPayment==="optA"?"#0ea5e9":"#e2e8f0") + ";border-radius:10px;padding:14px 16px;cursor:pointer;background:" + (selectedPayment==="optA"?"#f0f9ff":"white") + ";display:flex;align-items:flex-start;gap:12px'>";
-  html += "<div style='width:22px;height:22px;border-radius:4px;border:2px solid " + (selectedPayment==="optA"?"#0ea5e9":"#cbd5e1") + ";background:" + (selectedPayment==="optA"?"#0ea5e9":"white") + ";display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px'>";
-  html += selectedPayment==="optA" ? "<svg width='13' height='13' viewBox='0 0 13 13'><polyline points='2,7 5,10 11,3' stroke='white' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>" : "";
-  html += "</div>";
-  html += "<div style='flex:1'><div style='font-size:12px;font-weight:800;color:#0f172a;margin-bottom:6px'>Option A - 50 / 50</div>";
-  html += "<div style='display:flex;gap:8px;flex-wrap:wrap'>";
-  html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;flex:1;min-width:120px'><div style='font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:2px'>Due at Signing</div><div style='font-size:14px;font-weight:800;color:#0f172a'>" + fmt(opt50_1) + "</div><div style='font-size:9px;color:#94a3b8'>50% deposit</div></div>";
-  html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;flex:1;min-width:120px'><div style='font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:2px'>Due at Completion</div><div style='font-size:14px;font-weight:800;color:#0f172a'>" + fmt(opt50_2) + "</div><div style='font-size:9px;color:#94a3b8'>50% balance</div></div>";
-  html += "</div></div></div>";
-
-  // Option B - 33/33/33
-  html += "<div onclick='selectPayment(\"optB\")' style='border:2.5px solid " + (selectedPayment==="optB"?"#0ea5e9":"#e2e8f0") + ";border-radius:10px;padding:14px 16px;cursor:pointer;background:" + (selectedPayment==="optB"?"#f0f9ff":"white") + ";display:flex;align-items:flex-start;gap:12px'>";
-  html += "<div style='width:22px;height:22px;border-radius:4px;border:2px solid " + (selectedPayment==="optB"?"#0ea5e9":"#cbd5e1") + ";background:" + (selectedPayment==="optB"?"#0ea5e9":"white") + ";display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px'>";
-  html += selectedPayment==="optB" ? "<svg width='13' height='13' viewBox='0 0 13 13'><polyline points='2,7 5,10 11,3' stroke='white' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>" : "";
-  html += "</div>";
-  html += "<div style='flex:1'><div style='font-size:12px;font-weight:800;color:#0f172a;margin-bottom:6px'>Option B - 33 / 33 / 33</div>";
-  html += "<div style='display:flex;gap:8px;flex-wrap:wrap'>";
-  html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;flex:1;min-width:100px'><div style='font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:2px'>Due at Signing</div><div style='font-size:13px;font-weight:800;color:#0f172a'>" + fmt(opt33_1) + "</div><div style='font-size:9px;color:#94a3b8'>33%</div></div>";
-  html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;flex:1;min-width:100px'><div style='font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:2px'>Crew Starts</div><div style='font-size:13px;font-weight:800;color:#0f172a'>" + fmt(opt33_2) + "</div><div style='font-size:9px;color:#94a3b8'>33%</div></div>";
-  html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;flex:1;min-width:100px'><div style='font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:2px'>Due at Completion</div><div style='font-size:13px;font-weight:800;color:#0f172a'>" + fmt(opt33_3) + "</div><div style='font-size:9px;color:#94a3b8'>balance</div></div>";
-  html += "</div></div></div>";
-
-  // Option C - No money down
-  html += "<div onclick='selectPayment(\"optC\")' style='border:2.5px solid " + (selectedPayment==="optC"?"#0ea5e9":"#e2e8f0") + ";border-radius:10px;padding:14px 16px;cursor:pointer;background:" + (selectedPayment==="optC"?"#f0f9ff":"white") + ";display:flex;align-items:flex-start;gap:12px'>";
-  html += "<div style='width:22px;height:22px;border-radius:4px;border:2px solid " + (selectedPayment==="optC"?"#0ea5e9":"#cbd5e1") + ";background:" + (selectedPayment==="optC"?"#0ea5e9":"white") + ";display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px'>";
-  html += selectedPayment==="optC" ? "<svg width='13' height='13' viewBox='0 0 13 13'><polyline points='2,7 5,10 11,3' stroke='white' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>" : "";
-  html += "</div>";
-  html += "<div style='flex:1'><div style='font-size:12px;font-weight:800;color:#0f172a;margin-bottom:6px'>Option C - No Money Down</div>";
-  html += "<div style='display:flex;gap:8px;flex-wrap:wrap'>";
-  html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;flex:1;min-width:140px'><div style='font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:2px'>Due at Signing</div><div style='font-size:14px;font-weight:800;color:#0f172a'>$0.00</div><div style='font-size:9px;color:#94a3b8'>No deposit required</div></div>";
-  html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;flex:1;min-width:140px'><div style='font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:2px'>Due at Completion</div><div style='font-size:14px;font-weight:800;color:#0f172a'>" + fmt(chosenTotal) + "</div><div style='font-size:9px;color:#94a3b8'>Full amount</div></div>";
-  html += "</div></div></div>";
-
-  html += "</div>";
-
-  if (selectedPayment) {
-    html += "<div style='background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center'>";
-    var payLabel = selectedPayment==="optA"?"Option A - 50/50 Selected":selectedPayment==="optB"?"Option B - 33/33/33 Selected":"Option C - No Money Down Selected";
-    html += "<div style='font-size:12px;font-weight:700;color:#0369a1'>" + payLabel + "</div>";
-    html += "<div style='font-size:14px;font-weight:800;color:#0f172a'>" + fmt(chosenTotal) + "</div></div>";
+  if (!selectedPayment) {
+    // No selection - show tappable options
+    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px'>Select Payment Schedule</div>";
+    html += "<div style='display:flex;flex-direction:column;gap:10px;margin-bottom:16px'>";
+    var oc_a = "onclick='selectPayment(\\x22optA\\x22)'";
+    var oc_b = "onclick='selectPayment(\\x22optB\\x22)'";
+    var oc_c = "onclick='selectPayment(\\x22optC\\x22)'";
+    html += "<div " + oc_a + " style='border:2px solid #e2e8f0;border-radius:10px;padding:12px 16px;cursor:pointer;background:white;display:flex;align-items:center;gap:12px'>";
+    html += "<div style='width:20px;height:20px;border-radius:4px;border:2px solid #cbd5e1;background:white;flex-shrink:0'></div>";
+    html += "<div><div style='font-size:11px;font-weight:800;color:#0f172a'>Option A - 50 / 50</div><div style='font-size:10px;color:#64748b'>" + fmt(opt50_1) + " at signing &nbsp;|&nbsp; " + fmt(opt50_2) + " at completion</div></div></div>";
+    html += "<div " + oc_b + " style='border:2px solid #e2e8f0;border-radius:10px;padding:12px 16px;cursor:pointer;background:white;display:flex;align-items:center;gap:12px'>";
+    html += "<div style='width:20px;height:20px;border-radius:4px;border:2px solid #cbd5e1;background:white;flex-shrink:0'></div>";
+    html += "<div><div style='font-size:11px;font-weight:800;color:#0f172a'>Option B - 33 / 33 / 33</div><div style='font-size:10px;color:#64748b'>" + fmt(opt33_1) + " at signing &nbsp;|&nbsp; " + fmt(opt33_2) + " crew starts &nbsp;|&nbsp; " + fmt(opt33_3) + " at completion</div></div></div>";
+    html += "<div " + oc_c + " style='border:2px solid #e2e8f0;border-radius:10px;padding:12px 16px;cursor:pointer;background:white;display:flex;align-items:center;gap:12px'>";
+    html += "<div style='width:20px;height:20px;border-radius:4px;border:2px solid #cbd5e1;background:white;flex-shrink:0'></div>";
+    html += "<div><div style='font-size:11px;font-weight:800;color:#0f172a'>Option C - No Money Down</div><div style='font-size:10px;color:#64748b'>$0.00 at signing &nbsp;|&nbsp; " + fmt(chosenTotal) + " at completion</div></div></div>";
+    html += "</div>";
+  } else {
+    // Payment selected - show clean professional table only
+    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px'>Agreed Payment Schedule</div>";
+    html += "<div style='border:1.5px solid #0ea5e9;border-radius:10px;overflow:hidden;margin-bottom:16px'>";
+    html += "<div style='background:#0f172a;padding:10px 16px;display:flex;justify-content:space-between'>";
+    html += "<span style='font-size:11px;font-weight:800;color:white'>Payment Milestone</span>";
+    html += "<span style='font-size:11px;font-weight:800;color:#7dd3fc'>Amount Due</span></div>";
+    if (selectedPayment === 'optA') {
+      html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:white'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due at Signing</div><div style='font-size:9px;color:#64748b'>Payment due day of signing</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(opt50_1) + "</div></div>";
+      html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:#f8fafc'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due at Completion</div><div style='font-size:9px;color:#64748b'>Payment due day of project completion</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(opt50_2) + "</div></div>";
+    } else if (selectedPayment === 'optB') {
+      html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:white'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due at Signing</div><div style='font-size:9px;color:#64748b'>Payment due day of signing</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(opt33_1) + "</div></div>";
+      html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:#f8fafc'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due When Crew Starts</div><div style='font-size:9px;color:#64748b'>Payment due day crew mobilizes on site</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(opt33_2) + "</div></div>";
+      html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:white'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due at Completion</div><div style='font-size:9px;color:#64748b'>Payment due day of project completion</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(opt33_3) + "</div></div>";
+    } else {
+      html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:white'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due at Signing</div><div style='font-size:9px;color:#64748b'>No deposit required</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>$0.00</div></div>";
+      html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:#f8fafc'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due at Completion</div><div style='font-size:9px;color:#64748b'>Payment due day of project completion</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(chosenTotal) + "</div></div>";
+    }
+    html += "<div style='display:flex;justify-content:space-between;padding:12px 16px;background:#0f172a'>";
+    html += "<span style='font-size:12px;font-weight:800;color:white'>Total Project Investment</span>";
+    html += "<span style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(chosenTotal) + "</span></div>";
+    html += "</div>";
   }
   html += "</div></div>";
 
@@ -1649,22 +1642,7 @@ function buildProposalHTML(state, selectedOption, signature) {
   html += "</div>";
   html += "</div>"; // end grid
 
-  // Signature lines at bottom
-  html += "<div style='margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0'>";
-  html += "<div style='display:flex;gap:20px;margin-bottom:16px'>";
-  html += "<div style='flex:2'><div style='border-bottom:1px solid #0f172a;margin-bottom:4px;min-height:24px'></div><div style='font-size:9px;color:#64748b'>Approved by - Company Manager and/or Office</div></div>";
-  html += "<div style='flex:1'><div style='border-bottom:1px solid #0f172a;margin-bottom:4px;min-height:24px'></div><div style='font-size:9px;color:#64748b'>On</div></div>";
-  html += "</div>";
-  html += "<div style='display:flex;gap:20px;margin-bottom:16px;align-items:flex-end'>";
-  html += "<div style='flex:1'><div style='font-size:9px;color:#64748b;margin-bottom:4px'>Home Owner Notified</div><div style='display:flex;gap:16px'><span style='font-size:9px'>Yes</span><span style='font-size:9px'>No at</span><div style='flex:1;border-bottom:1px solid #0f172a'></div></div></div>";
-  html += "<div style='flex:1'><div style='border-bottom:1px solid #0f172a;margin-bottom:4px;min-height:24px'></div><div style='font-size:9px;color:#64748b'>Telephone and/or Address</div></div>";
-  html += "</div>";
-  html += "<div style='display:flex;gap:20px'>";
-  html += "<div style='flex:1'><div style='border-bottom:1px solid #0f172a;margin-bottom:4px;min-height:24px'></div><div style='font-size:9px;color:#64748b'>Date</div></div>";
-  html += "<div style='flex:1'><div style='border-bottom:1px solid #0f172a;margin-bottom:4px;min-height:24px'></div><div style='font-size:9px;color:#64748b'>Time</div></div>";
-  html += "<div style='flex:2'><div style='border-bottom:1px solid #0f172a;margin-bottom:4px;min-height:24px'></div><div style='font-size:9px;color:#64748b'>By</div></div>";
-  html += "</div>";
-  html += "</div>";
+
 
   html += "<p style='font-size:9px;color:#94a3b8;text-align:center;margin-top:16px'>New Direction Construction - 820 Worth Rd, Jacksonville, FL 32259 - (904) 891-9980 - Lic# CBC059304</p>";
   html += "</div>";
@@ -1688,10 +1666,7 @@ function buildProposalHTML(state, selectedOption, signature) {
   html += "<div style='display:flex;align-items:center;gap:8px;margin:8px 0 20px 40px'>";
   html += "<div style='border-bottom:1.5px solid #0f172a;width:140px;text-align:center;padding-bottom:2px;font-size:11px;font-weight:700'>" + cancelDateStr + "</div>";
   html += "</div>";
-  html += "<div style='margin-top:24px;display:flex;align-items:center;gap:8px'>";
-  html += "<div style='font-size:11px;font-weight:800;color:#0f172a;white-space:nowrap'>I HEREBY CANCEL THIS TRASACTION</div>";
-  html += "<div style='flex:1;border-bottom:1.5px solid #0f172a;min-height:20px'></div>";
-  html += "</div>";
+
   html += "<p style='font-size:9px;color:#94a3b8;text-align:center;margin-top:32px'>New Direction Construction - 820 Worth Rd, Jacksonville, FL 32259 - (904) 891-9980 - Lic# CBC059304</p>";
   html += "</div>";
 
@@ -1703,7 +1678,7 @@ function buildProposalHTML(state, selectedOption, signature) {
   return html;
 }
 
-function PreviewStep({ state }) {
+function PreviewStep({ state, setStep, steps }) {
   const [selectedOption, setSelectedOption] = useState(null);
   const [signature, setSignature] = useState("");
   const [sending, setSending] = useState(false);
@@ -1711,19 +1686,19 @@ function PreviewStep({ state }) {
   const [emailOverride, setEmailOverride] = useState(state.customer.email);
   const [bccEmail, setBccEmail] = useState("");
 
-  const handleSend = async () => { setSending(true); await new Promise(r => setTimeout(r, 1400)); setSending(false); setSent(true); };
+  const handleSend = () => { setSending(true); setTimeout(() => { setSending(false); setSent(true); }, 1400); };
 
   const [selectedPayment, setSelectedPayment] = useState(null);
 
   // Listen for selections from iframe
-  useState(() => {
+  useEffect(() => {
     function handler(e) {
       if (e.data && e.data.type === "selectOption") setSelectedOption(e.data.option);
       if (e.data && e.data.type === "selectPayment") setSelectedPayment(e.data.payment);
     }
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  });
+  }, []);
 
   // Inject selectedPayment into state.financing for the HTML builder
   const stateWithPayment = { ...state, financing: { ...(state.financing||{}), selectedPayment: selectedPayment } };
@@ -1735,6 +1710,21 @@ function PreviewStep({ state }) {
   return (
     <div style={{ padding: "0 0 24px" }}>
       <div style={{ padding: "16px 24px 8px", fontWeight: 800, fontSize: 16, color: "#0f172a" }}>Proposal Preview</div>
+      <div style={{ padding: "0 24px 12px", borderBottom: "1px solid #e2e8f0", marginBottom: 8 }}>
+        <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>Tap any section to edit and come back</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          <button onClick={() => setStep(steps.findIndex(s => s.key === "customer"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Customer</button>
+          {state.services.includes("siding") && <button onClick={() => setStep(steps.findIndex(s => s.key === "siding"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Siding</button>}
+          {state.services.includes("soffit") && <button onClick={() => setStep(steps.findIndex(s => s.key === "soffit"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Soffits</button>}
+          {state.services.includes("fascia") && <button onClick={() => setStep(steps.findIndex(s => s.key === "fascia"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Fascia</button>}
+          {state.services.includes("paint") && <button onClick={() => setStep(steps.findIndex(s => s.key === "paint"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Paint</button>}
+          {state.services.includes("windows") && <button onClick={() => setStep(steps.findIndex(s => s.key === "windows"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Windows</button>}
+          {state.services.includes("misc") && <button onClick={() => setStep(steps.findIndex(s => s.key === "misc"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Misc</button>}
+          <button onClick={() => setStep(steps.findIndex(s => s.key === "financing"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Financing</button>
+          <button onClick={() => setStep(steps.findIndex(s => s.key === "notes"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Notes</button>
+          <button onClick={() => setStep(0)} style={{ background: "#fef2f2", border: "1.5px solid #fecaca", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#dc2626", cursor: "pointer" }}>Edit Services</button>
+        </div>
+      </div>
       <iframe
         srcDoc={html}
         style={{ width: "100%", height: 600, border: "none", display: "block" }}
@@ -1777,8 +1767,13 @@ function PreviewStep({ state }) {
             onClick={() => {
               const iframe = document.querySelector("iframe[title='Proposal']");
               if (iframe) {
+                const clientName = state.customer.name ? state.customer.name.replace(/[^a-zA-Z0-9 ]/g, "").trim().replace(/ /g, "_") : "Client";
+                const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
+                const filename = "NDC_Proposal_" + clientName + "_" + dateStr;
+                iframe.contentWindow.document.title = filename;
                 iframe.contentWindow.focus();
                 iframe.contentWindow.print();
+                setTimeout(() => { iframe.contentWindow.document.title = "Proposal"; }, 2000);
               }
             }}
           >
@@ -1841,7 +1836,7 @@ function buildSteps(services) {
   return steps;
 }
 
-export default function App() {
+function App() {
   const [step, setStep] = useState(0);
   const [state, setState] = useState(makeInitialState());
   const steps = buildSteps(state.services);
@@ -1935,3 +1930,5 @@ const S = {
   th: { textAlign: "left", padding: "6px 8px", background: "#f8fafc", color: "#64748b", fontWeight: 700, borderBottom: "1px solid #e2e8f0" },
   td: { padding: "6px 8px", borderBottom: "1px solid #f1f5f9", color: "#334155" },
 };
+
+export default App;
