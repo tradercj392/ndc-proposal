@@ -156,7 +156,7 @@ const makeInitialState = () => ({
   windowMaterials: defaultWindowMaterials(),
   misc: { items: [{ id: uid(), description: "", qty: "", unitPrice: "", notes: "" }] },
   notes: "",
-  financing: { monthlyPayment: "" },
+  financing: { monthlyPayment: "", customPayment: "" },
 });
 
 function calcSiding(siding) {
@@ -1634,6 +1634,20 @@ function buildProposalHTML(state, selectedOption, signature) {
     html += "<div " + oc_c + " style='border:2px solid #e2e8f0;border-radius:10px;padding:12px 16px;cursor:pointer;background:white;display:flex;align-items:center;gap:12px'>";
     html += "<div style='width:20px;height:20px;border-radius:4px;border:2px solid #cbd5e1;background:white;flex-shrink:0'></div>";
     html += "<div><div style='font-size:11px;font-weight:800;color:#0f172a'>Option C - No Money Down</div><div style='font-size:10px;color:#64748b'>$0.00 at signing &nbsp;|&nbsp; " + fmt(chosenTotal) + " at completion</div></div></div>";
+
+    // Option D - Financing
+    if (monthlyPayment) {
+      html += "<div onclick='selectPayment("optD")' style='border:2px solid #e2e8f0;border-radius:10px;padding:12px 16px;cursor:pointer;background:white;display:flex;align-items:center;gap:12px'>";
+      html += "<div style='width:20px;height:20px;border-radius:4px;border:2px solid #cbd5e1;background:white;flex-shrink:0'></div>";
+      html += "<div><div style='font-size:11px;font-weight:800;color:#0f172a'>Option D - Financing</div><div style='font-size:10px;color:#64748b'>$" + monthlyPayment.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "/mo &nbsp;|&nbsp; Subject to credit approval</div></div></div>";
+    }
+
+    // Option E - Custom
+    html += "<div style='border:2px solid #e2e8f0;border-radius:10px;padding:12px 16px;background:white'>";
+    html += "<div style='font-size:11px;font-weight:800;color:#0f172a;margin-bottom:8px'>Option E - Custom Payment Terms</div>";
+    html += "<input id='customPayment' placeholder='Type custom payment terms here...' style='width:100%;border:1.5px solid #e2e8f0;border-radius:6px;padding:8px 12px;font-size:11px;color:#0f172a;outline:none;box-sizing:border-box' oninput='updateCustomPayment(this.value)' value='" + (window._customPayment||'') + "'/>";
+    html += "</div>";
+
     html += "</div>";
   } else {
     // Payment selected - show clean professional table only
@@ -1649,6 +1663,10 @@ function buildProposalHTML(state, selectedOption, signature) {
       html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:white'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due at Signing</div><div style='font-size:9px;color:#64748b'>Payment due day of signing</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(opt33_1) + "</div></div>";
       html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:#f8fafc'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due When Crew Starts</div><div style='font-size:9px;color:#64748b'>Payment due day crew mobilizes on site</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(opt33_2) + "</div></div>";
       html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:white'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due at Completion</div><div style='font-size:9px;color:#64748b'>Payment due day of project completion</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(opt33_3) + "</div></div>";
+    } else if (selectedPayment === 'optD') {
+      html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:white'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Monthly Financing Payment</div><div style='font-size:9px;color:#64748b'>Subject to credit approval</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>$" + (monthlyPayment ? monthlyPayment.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '-') + "/mo</div></div>";
+    } else if (selectedPayment === 'optE') {
+      html += "<div style='padding:12px 16px;background:white'><div style='font-size:11px;font-weight:700;color:#0f172a;margin-bottom:4px'>Custom Payment Terms</div><div style='font-size:11px;color:#334155'>" + (state.financing.customPayment || 'See agreed terms') + "</div></div>";
     } else {
       html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:white'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due at Signing</div><div style='font-size:9px;color:#64748b'>No deposit required</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>$0.00</div></div>";
       html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:#f8fafc'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due at Completion</div><div style='font-size:9px;color:#64748b'>Payment due day of project completion</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(chosenTotal) + "</div></div>";
@@ -1731,8 +1749,9 @@ function buildProposalHTML(state, selectedOption, signature) {
   html += "</div>";
 
   html += "<script>";
-  html += "function selectOption(opt) { window.parent.postMessage({type:'selectOption',option:opt},'*'); }";
-  html += "function selectPayment(opt) { window.parent.postMessage({type:'selectPayment',payment:opt},'*'); }";
+  html += "function selectOption(opt) { var y = window.scrollY; window.parent.postMessage({type:'selectOption',option:opt,scrollY:y},'*'); }";
+  html += "function selectPayment(opt) { var y = window.scrollY; window.parent.postMessage({type:'selectPayment',payment:opt,scrollY:y},'*'); }";
+  html += "function updateCustomPayment(val) { var y = window.scrollY; window.parent.postMessage({type:'customPayment',value:val,scrollY:y},'*'); }";
   html += "</script>";
   html += "</body></html>";
   return html;
@@ -1746,7 +1765,36 @@ function PreviewStep({ state, setStep, steps }) {
   const [emailOverride, setEmailOverride] = useState(state.customer.email);
   const [bccEmail, setBccEmail] = useState("");
 
-  const handleSend = () => { setSending(true); setTimeout(() => { setSending(false); setSent(true); }, 1400); };
+  const handleSend = async () => {
+    if (!emailOverride) { alert("Please enter a customer email address."); return; }
+    setSending(true);
+    try {
+      const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          service_id: "service_ux3iomm",
+          template_id: "template_5p1hgvg",
+          user_id: "E8HiQe2t7ABVkhaHw",
+          template_params: {
+            to_email: emailOverride,
+            bcc_email: bccEmail || "",
+            from_email: "4xhelp@gmail.com",
+            message: "Please find your project proposal from New Direction Construction attached below.\n\nClient: " + state.customer.name + "\nAddress: " + state.customer.address + "\nTotal Investment: " + fmt(calcGrandTotal(state).total) + "\n\nPlease contact us at (904) 891-9980 with any questions.\n\nThank you for choosing New Direction Construction!",
+          }
+        })
+      });
+      if (response.ok) {
+        setSent(true);
+      } else {
+        const err = await response.text();
+        alert("Email failed to send. Error: " + err);
+      }
+    } catch(e) {
+      alert("Email error: " + e.message);
+    }
+    setSending(false);
+  };
 
   const [selectedPayment, setSelectedPayment] = useState(null);
 
@@ -1878,6 +1926,222 @@ function MiniField({ label, value, onChange }) {
   );
 }
 
+
+function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }) {
+  const canvasRef = React.useRef(null);
+  const [isSigning, setIsSigning] = React.useState(false);
+  const [hasSigned, setHasSigned] = React.useState(false);
+  const [signatureData, setSignatureData] = React.useState(null);
+
+  const t = calcGrandTotal(state);
+  const priority = t.total;
+  const standard = t.total * 1.0835;
+  const chosenTotal = selectedOption === "standard" ? standard : priority;
+  const opt50_1 = chosenTotal * 0.50;
+  const opt50_2 = chosenTotal * 0.50;
+  const opt33_1 = chosenTotal * 0.33;
+  const opt33_2 = chosenTotal * 0.33;
+  const opt33_3 = chosenTotal - (opt33_1 + opt33_2);
+  const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  const monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
+
+  const startDraw = (e) => {
+    setIsSigning(true);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const draw = (e) => {
+    if (!isSigning) return;
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "#0f172a";
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+
+  const endDraw = () => {
+    setIsSigning(false);
+    const canvas = canvasRef.current;
+    setSignatureData(canvas.toDataURL());
+    setHasSigned(true);
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setHasSigned(false);
+    setSignatureData(null);
+  };
+
+  const getPaymentSchedule = () => {
+    if (selectedPayment === "optA") return [
+      { label: "Due at Signing", amount: fmt(opt50_1), note: "50% deposit - due day of signing" },
+      { label: "Due at Completion", amount: fmt(opt50_2), note: "50% balance - due day of completion" },
+    ];
+    if (selectedPayment === "optB") return [
+      { label: "Due at Signing", amount: fmt(opt33_1), note: "33% deposit - due day of signing" },
+      { label: "Due When Crew Starts", amount: fmt(opt33_2), note: "33% - due day crew mobilizes on site" },
+      { label: "Due at Completion", amount: fmt(opt33_3), note: "Balance - due day of completion" },
+    ];
+    if (selectedPayment === "optC") return [
+      { label: "Due at Signing", amount: "$0.00", note: "No deposit required" },
+      { label: "Due at Completion", amount: fmt(chosenTotal), note: "Full amount due day of completion" },
+    ];
+    if (selectedPayment === "optD") return [
+      { label: "Monthly Financing Payment", amount: "$" + (monthlyPayment ? monthlyPayment.toFixed(2) : "-") + "/mo", note: "Subject to credit approval" },
+    ];
+    if (selectedPayment === "optE") return [
+      { label: "Custom Terms", amount: "", note: state.financing.customPayment || "Per agreed terms" },
+    ];
+    return [];
+  };
+
+  const schedule = getPaymentSchedule();
+  const pricingLabel = selectedOption === "standard" ? "Standard Pricing" : "Administrative Savings Credit";
+
+  return (
+    <div style={S.stepWrap}>
+      <h2 style={S.stepTitle}>Final Contract</h2>
+      <p style={S.stepSub}>Review with your client and collect their signature below.</p>
+
+      {/* Contract box */}
+      <div style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, paddingBottom: 16, borderBottom: "2px solid #0f172a" }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#0f172a" }}>New Direction Construction</div>
+            <div style={{ fontSize: 11, color: "#64748b" }}>820 Worth Rd, Jacksonville, FL 32259</div>
+            <div style={{ fontSize: 11, color: "#64748b" }}>(904) 891-9980 | Lic# CBC059304</div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#0ea5e9", textTransform: "uppercase", marginBottom: 4 }}>Prepared For</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{state.customer.name}</div>
+            <div style={{ fontSize: 11, color: "#64748b" }}>{state.customer.address}</div>
+            <div style={{ fontSize: 11, color: "#64748b" }}>{state.customer.phone}</div>
+            <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>Date: {today}</div>
+          </div>
+        </div>
+
+        {/* Project Summary */}
+        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Project Summary</div>
+          {state.services.includes("siding")  && <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.8 }}>- James Hardie {state.siding.sidingType || "Siding"} installation per manufacturer specifications</div>}
+          {state.services.includes("soffit")  && <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.8 }}>- Soffit installation — {state.soffit.items.reduce((a,i) => a + parseFloat(i.linearFt||0), 0).toFixed(0)} linear feet</div>}
+          {state.services.includes("fascia")  && <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.8 }}>- Fascia installation — {state.fascia.items.reduce((a,i) => a + parseFloat(i.linearFt||0), 0).toFixed(0)} linear feet</div>}
+          {state.services.includes("paint")   && <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.8 }}>- Exterior paint — four directional spray method</div>}
+          {state.services.includes("windows") && <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.8 }}>- Window installation — {state.windows.reduce((a,w) => a + parseFloat(w.qty||0), 0)} unit(s) per schedule</div>}
+          {state.services.includes("misc")    && <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.8 }}>- Miscellaneous items per scope</div>}
+        </div>
+
+        {/* Agreed Investment */}
+        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Agreed Investment</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: 12, color: "#334155", fontWeight: 600 }}>{pricingLabel}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a" }}>{fmt(chosenTotal)}</div>
+          </div>
+        </div>
+
+        {/* Payment Schedule */}
+        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Agreed Payment Schedule</div>
+          {schedule.map((row, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "6px 0", borderBottom: "1px solid #f8fafc" }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#0f172a" }}>{row.label}</div>
+                <div style={{ fontSize: 10, color: "#64748b" }}>{row.note}</div>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#0ea5e9" }}>{row.amount}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Legal Payment Terms */}
+        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Payment Terms & Agreement</div>
+          <div style={{ fontSize: 10, color: "#475569", lineHeight: 1.8 }}>
+            Client agrees to remit payment per the schedule outlined above. All payments are due on the date specified. Failure to remit payment on the date due shall constitute a material breach of this agreement, and New Direction Construction reserves the right to suspend all work until payment is received in full.
+          </div>
+          <div style={{ fontSize: 10, color: "#475569", lineHeight: 1.8, marginTop: 8 }}>
+            A late fee of 1.5% per month may be assessed on any balance outstanding beyond 10 days of the due date. In the event of non-payment, Client shall be responsible for all costs of collection including reasonable attorney fees. New Direction Construction shall have the right to file a construction lien on the property per Florida Statute 713.
+          </div>
+          <div style={{ fontSize: 10, color: "#475569", lineHeight: 1.8, marginTop: 8 }}>
+            By signing below, Client acknowledges receipt of this contract, agrees to all payment terms, scope of work, and the Terms & Conditions included in this proposal. This agreement is binding upon signature by both parties.
+          </div>
+        </div>
+
+        {/* Draw to Sign */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Client Signature</div>
+          <div style={{ fontSize: 10, color: "#64748b", marginBottom: 8 }}>Sign with your finger in the box below</div>
+          <div style={{ position: "relative", border: "1.5px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", overflow: "hidden" }}>
+            <canvas
+              ref={canvasRef}
+              width={340}
+              height={120}
+              style={{ display: "block", width: "100%", height: 120, touchAction: "none", cursor: "crosshair" }}
+              onMouseDown={startDraw}
+              onMouseMove={draw}
+              onMouseUp={endDraw}
+              onTouchStart={startDraw}
+              onTouchMove={draw}
+              onTouchEnd={endDraw}
+            />
+            {!hasSigned && (
+              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 12, color: "#cbd5e1", pointerEvents: "none", fontStyle: "italic" }}>
+                Sign here
+              </div>
+            )}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+            <div style={{ fontSize: 10, color: "#64748b" }}>{state.customer.name} &nbsp;|&nbsp; {today}</div>
+            <button onClick={clearSignature} style={{ fontSize: 10, color: "#94a3b8", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Clear</button>
+          </div>
+        </div>
+
+        {/* NDC Signature line */}
+        <div style={{ display: "flex", gap: 16 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ borderBottom: "1.5px solid #0f172a", minHeight: 30, marginBottom: 4 }} />
+            <div style={{ fontSize: 10, color: "#64748b" }}>New Direction Construction Representative</div>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ borderBottom: "1.5px solid #0f172a", minHeight: 30, marginBottom: 4 }} />
+            <div style={{ fontSize: 10, color: "#64748b" }}>Date</div>
+          </div>
+        </div>
+      </div>
+
+      {hasSigned && (
+        <div style={{ background: "#dcfce7", border: "1.5px solid #86efac", borderRadius: 8, padding: "12px 16px", marginBottom: 12, fontSize: 12, fontWeight: 700, color: "#166534", textAlign: "center" }}>
+          Contract Signed — Ready to Send!
+        </div>
+      )}
+
+      <button
+        style={{ background: hasSigned ? "linear-gradient(135deg,#0ea5e9,#0369a1)" : "#e2e8f0", color: hasSigned ? "white" : "#94a3b8", border: "none", borderRadius: 10, padding: "14px 24px", fontWeight: 700, fontSize: 15, cursor: hasSigned ? "pointer" : "default", width: "100%" }}
+        onClick={() => hasSigned && setStep(steps.findIndex(s => s.key === "preview"))}
+      >
+        {hasSigned ? "Back to Preview & Send" : "Sign Contract to Continue"}
+      </button>
+    </div>
+  );
+}
+
 function buildSteps(services) {
   const steps = [
     { key: "services", label: "Services" },
@@ -1892,6 +2156,7 @@ function buildSteps(services) {
   if (services.includes("misc"))    steps.push({ key: "misc",    label: "Misc" });
   steps.push({ key: "financing", label: "Financing" });
   steps.push({ key: "notes",   label: "Notes"   });
+  steps.push({ key: "contract", label: "Contract" });
   steps.push({ key: "preview", label: "Preview" });
   return steps;
 }
