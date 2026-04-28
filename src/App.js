@@ -1949,6 +1949,7 @@ function MiniField({ label, value, onChange }) {
 
 
 function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }) {
+  const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const canvasRef = useRef(null);
   const [isSigning, setIsSigning] = useState(false);
   const [hasSigned, setHasSigned] = useState(false);
@@ -1965,7 +1966,6 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
   const opt33_1 = chosenTotal * 0.33;
   const opt33_2 = chosenTotal * 0.33;
   const opt33_3 = chosenTotal - (opt33_1 + opt33_2);
-  const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
 
   const startDraw = (e) => {
