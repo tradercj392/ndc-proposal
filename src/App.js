@@ -2044,7 +2044,7 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
       <p style={S.stepSub}>Review with your client and collect their signature below.</p>
 
       {/* Contract box */}
-      <div style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+      <div id="contract-content" style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 20, marginBottom: 16 }}>
 
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, paddingBottom: 16, borderBottom: "2px solid #0f172a" }}>
@@ -2295,6 +2295,41 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
         <div style={{ background: "#dcfce7", border: "1.5px solid #86efac", borderRadius: 8, padding: "12px 16px", marginBottom: 12, fontSize: 12, fontWeight: 700, color: "#166534", textAlign: "center" }}>
           Contract Signed — Ready to Send!
         </div>
+      )}
+
+      {hasSigned && (
+        <button
+          style={{ background: "white", color: "#0f172a", border: "1.5px solid #0f172a", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 14, cursor: "pointer", width: "100%", marginBottom: 10 }}
+          onClick={() => {
+            const contractDiv = document.getElementById("contract-content");
+            const canvas = canvasRef.current;
+            // Replace canvas with img in a clone
+            const clone = contractDiv.cloneNode(true);
+            const cloneCanvas = clone.querySelector("canvas");
+            if (cloneCanvas && signatureData) {
+              const img = document.createElement("img");
+              img.src = signatureData;
+              img.style.cssText = "width:100%;height:120px;display:block;border:1.5px solid #e2e8f0;border-radius:8px;background:#f8fafc;";
+              cloneCanvas.parentNode.replaceChild(img, cloneCanvas);
+            }
+            // Also fill rep name/date
+            const repInputs = clone.querySelectorAll("input");
+            repInputs.forEach(input => {
+              const span = document.createElement("span");
+              span.textContent = input.value;
+              span.style.cssText = "font-size:14px;font-family:Georgia,serif;border-bottom:1.5px solid #0f172a;display:block;padding-bottom:2px;";
+              input.parentNode.replaceChild(span, input);
+            });
+            const newWin = window.open("", "_blank");
+            newWin.document.write("<html><head><style>body{font-family:Georgia,serif;padding:20px;max-width:800px;margin:0 auto}@media print{body{padding:0}}</style></head><body>");
+            newWin.document.write(clone.innerHTML);
+            newWin.document.write("</body></html>");
+            newWin.document.close();
+            setTimeout(() => { newWin.focus(); newWin.print(); }, 800);
+          }}
+        >
+          Save Contract as PDF
+        </button>
       )}
 
       <button
