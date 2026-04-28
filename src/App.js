@@ -1033,7 +1033,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
   html += ".opt.selected{border-color:#0ea5e9;background:#f0f9ff}";
   html += ".sig-box{border:1.5px solid #e2e8f0;border-radius:8px;padding:16px;margin-top:12px}";
   html += ".sig-line{border-bottom:1.5px solid #0f172a;min-height:30px;margin-bottom:12px;font-family:cursive;font-size:18px;color:#0f172a;padding:4px}";
-  html += "@media print{.no-print{display:none}}</style></head><body>";
+  html += "@media print{.no-print{display:none}" + (selectedOption === 'standard' ? ".admin-only{display:none}" : "") + "}</style></head><body>";
 
   var monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
 
@@ -1567,8 +1567,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
   var opt33_3 = priority - (opt33_1 + opt33_2);
 
   // ADMIN SAVINGS CREDIT PAGE - after all service pages
-  html += "<div class='page'>";
-  html += "<div style='font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>Project Investment Options</div>";
+  html += "<div class='page admin-only'>";
 
   // Clickable option boxes
   var oc_std = "onclick='selectOption(\"standard\")'";
@@ -1589,7 +1588,6 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
   if (stdMonthly) html += "<div style='font-size:11px;color:#64748b;font-weight:600'>Financing: $" + stdMonthly.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "/mo</div>";
   html += "</div></div></div>";
 
-  if (selectedOption !== 'standard') {
   // ADMIN SAVINGS CREDIT REVEAL (clickable)
   html += "<div " + oc_pri + " style='background:" + (priSelected ? '#f0f9ff' : 'white') + ";border:2px solid " + (priSelected ? '#0ea5e9' : '#e2e8f0') + ";border-radius:10px;padding:18px;cursor:pointer'>";
   html += "<div style='display:flex;align-items:center;gap:10px;margin-bottom:12px'>";
@@ -1673,7 +1671,6 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
 
   html += "</div>"; // end admin savings page
 
-  } // end admin savings incentive block
 
   if (selectedOption === 'priority') {
   // TERMS PAGE - Official NDC Terms & Conditions
