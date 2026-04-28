@@ -1870,15 +1870,25 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
           <button
             style={{ background: "white", color: "#0f172a", border: "1.5px solid #0f172a", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
             onClick={() => {
-              const iframe = document.querySelector("iframe[title='Proposal']");
-              if (iframe) {
-                const clientName = state.customer.name ? state.customer.name.replace(/[^a-zA-Z0-9 ]/g, "").trim().replace(/ /g, "_") : "Client";
-                const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
-                const filename = "NDC_Proposal_" + clientName + "_" + dateStr;
-                iframe.contentWindow.document.title = filename;
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-                setTimeout(() => { iframe.contentWindow.document.title = "Proposal"; }, 2000);
+              const clientName = state.customer.name ? state.customer.name.replace(/[^a-zA-Z0-9 ]/g, "").trim().replace(/ /g, "_") : "Client";
+              const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
+              const filename = "NDC_Proposal_" + clientName + "_" + dateStr;
+              const newWin = window.open("", "_blank");
+              if (newWin) {
+                newWin.document.write(html);
+                newWin.document.close();
+                newWin.document.title = filename;
+                setTimeout(() => {
+                  newWin.focus();
+                  newWin.print();
+                }, 800);
+              } else {
+                const iframe = document.querySelector("iframe[title='Proposal']");
+                if (iframe) {
+                  iframe.contentWindow.document.title = filename;
+                  iframe.contentWindow.focus();
+                  iframe.contentWindow.print();
+                }
               }
             }}
           >
@@ -2203,7 +2213,8 @@ function App() {
         {currentKey === "misc"     && <MiscStep data={state.misc} onChange={(v) => setState((s) => ({ ...s, misc: v }))} />}
         {currentKey === "financing" && <FinancingStep data={state.financing} onChange={(v) => setState((s) => ({ ...s, financing: v }))} state={state} />}
         {currentKey === "notes"    && <NotesStep notes={state.notes} onChange={(v) => setState((s) => ({ ...s, notes: v }))} />}
-        {currentKey === "preview"  && <PreviewStep state={state} />}
+        {currentKey === "preview"   && <PreviewStep state={state} setStep={setStep} steps={steps} selectedOption={selectedOption} setSelectedOption={setSelectedOption} selectedPayment={selectedPayment} setSelectedPayment={setSelectedPayment} />}
+        {currentKey === "contract"  && <ContractStep state={state} selectedOption={selectedOption} selectedPayment={selectedPayment} setStep={setStep} steps={steps} />}
       </div>
       {step < lastStep && (
         <div style={S.nav}>
