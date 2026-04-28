@@ -2086,10 +2086,14 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
             <div key={i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- Fascia — {item.material || 'Material TBD'}, {item.linearFt || '0'} linear ft{item.notes ? ' — ' + item.notes : ''}</div>
           ))}
           {state.services.includes('paint') && [
-            ...state.paint.walls.filter(a => a.paintProduct || a.colorName).map((a,i) => <div key={'pw'+i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- Wall Paint — {a.paintProduct || ''} {a.colorName || ''}{a.notes ? ' — ' + a.notes : ''}</div>),
-            ...state.paint.trim.filter(a => a.paintProduct || a.colorName).map((a,i) => <div key={'pt'+i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- Trim Paint — {a.paintProduct || ''} {a.colorName || ''}{a.notes ? ' — ' + a.notes : ''}</div>),
-            ...((state.paint.other || []).filter(a => a.paintProduct || a.colorName || a.notes).map((a,i) => <div key={'po'+i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- Other Paint — {a.paintProduct || ''} {a.colorName || ''}{a.notes ? ' — ' + a.notes : ''}</div>)),
-          ]}
+          {state.services.includes('paint') && (
+            <div style={{ marginBottom: 4 }}>
+              {state.paint.combinedSqft && <div style={{ fontSize: 10, fontWeight: 700, color: '#0f172a', marginBottom: 2 }}>Exterior Paint — {state.paint.combinedSqft} sq ft total</div>}
+              {state.paint.walls.filter(a => a.paintProduct || a.colorName).map((a,i) => <div key={'pw'+i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- Wall Paint — {a.paintProduct || ''} {a.colorName || ''}{a.sqft ? ', '+a.sqft+' sq ft' : ''}{a.notes ? ' — ' + a.notes : ''}</div>)}
+              {state.paint.trim.filter(a => a.paintProduct || a.colorName).map((a,i) => <div key={'pt'+i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- Trim Paint — {a.paintProduct || ''} {a.colorName || ''}{a.notes ? ' — ' + a.notes : ''}</div>)}
+              {(state.paint.other || []).filter(a => a.paintProduct || a.colorName || a.notes).map((a,i) => <div key={'po'+i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- Other Paint — {a.paintProduct || ''} {a.colorName || ''}{a.notes ? ' — '+a.notes : ''}</div>)}
+            </div>
+          )}
           {state.services.includes('windows') && state.windows.map((w,i) => (
             <div key={i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- {w.label || 'Window '+(i+1)} — {w.manufacturer || ''} {w.style || ''} {w.width && w.height ? w.width+'x'+w.height : ''} qty: {w.qty || 1}{w.notes ? ' — ' + w.notes : ''}</div>
           ))}
@@ -2306,7 +2310,13 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
             if (state.services.includes("siding")) state.siding.walls.forEach(w => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- ${w.location} — ${state.siding.sidingType||"Siding"}, ${w.sqft||0} sq ft${w.notes?" — "+w.notes:""}</div>`; });
             if (state.services.includes("soffit")) state.soffit.items.forEach(item => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- Soffit — ${item.material||"TBD"}, ${item.linearFt||0} linear ft${item.notes?" — "+item.notes:""}</div>`; });
             if (state.services.includes("fascia")) state.fascia.items.forEach(item => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- Fascia — ${item.material||"TBD"}, ${item.linearFt||0} linear ft${item.notes?" — "+item.notes:""}</div>`; });
-            if (state.services.includes("paint")) { state.paint.walls.filter(a=>a.paintProduct||a.colorName).forEach(a => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- Wall Paint — ${a.paintProduct||""} ${a.colorName||""}${a.notes?" — "+a.notes:""}</div>`; }); state.paint.trim.filter(a=>a.paintProduct||a.colorName).forEach(a => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- Trim Paint — ${a.paintProduct||""} ${a.colorName||""}${a.notes?" — "+a.notes:""}</div>`; }); (state.paint.other||[]).filter(a=>a.paintProduct||a.colorName||a.notes).forEach(a => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- Other Paint — ${a.paintProduct||""} ${a.colorName||""}${a.notes?" — "+a.notes:""}</div>`; }); }
+            if (state.services.includes("paint")) { 
+              const paintTotal = state.paint.combinedSqft ? `— ${state.paint.combinedSqft} sq ft total` : "";
+              scopeRows += `<div style="font-size:11px;font-weight:700;color:#0f172a;margin-bottom:2px">Exterior Paint ${paintTotal}</div>`;
+              state.paint.walls.filter(a=>a.paintProduct||a.colorName).forEach(a => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- Wall Paint — ${a.paintProduct||""} ${a.colorName||""}${a.sqft?", "+a.sqft+" sq ft":""}${a.notes?" — "+a.notes:""}</div>`; }); 
+              state.paint.trim.filter(a=>a.paintProduct||a.colorName).forEach(a => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- Trim Paint — ${a.paintProduct||""} ${a.colorName||""}${a.notes?" — "+a.notes:""}</div>`; }); 
+              (state.paint.other||[]).filter(a=>a.paintProduct||a.colorName||a.notes).forEach(a => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- Other Paint — ${a.paintProduct||""} ${a.colorName||""}${a.notes?" — "+a.notes:""}</div>`; }); 
+            }
             if (state.services.includes("windows")) state.windows.forEach((w,i) => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- ${w.label||"Window "+(i+1)} — ${w.manufacturer||""} ${w.style||""} ${w.width&&w.height?w.width+"x"+w.height:""} qty:${w.qty||1}${w.notes?" — "+w.notes:""}</div>`; });
             if (state.services.includes("misc")) state.misc.items.forEach((item,i) => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- ${item.description||"Misc "+(i+1)}${item.notes?" — "+item.notes:""}</div>`; });
 
