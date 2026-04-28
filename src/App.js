@@ -1757,8 +1757,7 @@ function buildProposalHTML(state, selectedOption, signature) {
   return html;
 }
 
-function PreviewStep({ state, setStep, steps }) {
-  const [selectedOption, setSelectedOption] = useState(null);
+function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption, selectedPayment, setSelectedPayment }) {
   const [signature, setSignature] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -1795,8 +1794,6 @@ function PreviewStep({ state, setStep, steps }) {
     }
     setSending(false);
   };
-
-  const [selectedPayment, setSelectedPayment] = useState(null);
 
   // Listen for selections from iframe
   useEffect(() => {
@@ -2164,6 +2161,8 @@ function buildSteps(services) {
 function App() {
   const [step, setStep] = useState(0);
   const [state, setState] = useState(makeInitialState());
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [selectedPayment, setSelectedPayment] = useState(null);
   const steps = buildSteps(state.services);
   const currentKey = steps[step] && steps[step].key;
   const lastStep = steps.length - 1;
