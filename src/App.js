@@ -2231,12 +2231,12 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
         <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Client Signature</div>
           <div style={{ fontSize: 10, color: "#64748b", marginBottom: 8 }}>Sign with your finger in the box below</div>
-          <div style={{ position: "relative", border: "1.5px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", overflow: "hidden" }}>
+          <div style={{ position: "relative", border: "1.5px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", overflow: "hidden", height: 120 }}>
             <canvas
               ref={canvasRef}
-              width={340}
+              width={600}
               height={120}
-              style={{ display: "block", width: "100%", height: 120, touchAction: "none", cursor: "crosshair" }}
+              style={{ display: "block", width: "100%", height: 120, touchAction: "none", cursor: "crosshair", position: "relative", zIndex: 1 }}
               onMouseDown={startDraw}
               onMouseMove={draw}
               onMouseUp={endDraw}
@@ -2245,13 +2245,9 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
               onTouchEnd={endDraw}
             />
             {!hasSigned && (
-              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 12, color: "#cbd5e1", pointerEvents: "none", fontStyle: "italic" }}>
+              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 12, color: "#cbd5e1", pointerEvents: "none", fontStyle: "italic", zIndex: 0 }}>
                 Sign here
               </div>
-            )}
-            {/* Signature image for PDF */}
-            {signatureData && (
-              <img src={signatureData} alt="sig" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", display: "none" }} className="sig-print" />
             )}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
@@ -2304,34 +2300,88 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
             const clientName = state.customer.name || "Client";
             const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
             const schedRows = schedule.map(row => `<tr><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:700">${row.label}</td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#64748b;font-size:12px">${row.note}</td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:800;color:#0ea5e9;text-align:right">${row.amount}</td></tr>`).join("");
+
+            // Build scope of work
+            let scopeRows = "";
+            if (state.services.includes("siding")) state.siding.walls.forEach(w => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- ${w.location} — ${state.siding.sidingType||"Siding"}, ${w.sqft||0} sq ft${w.notes?" — "+w.notes:""}</div>`; });
+            if (state.services.includes("soffit")) state.soffit.items.forEach(item => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- Soffit — ${item.material||"TBD"}, ${item.linearFt||0} linear ft${item.notes?" — "+item.notes:""}</div>`; });
+            if (state.services.includes("fascia")) state.fascia.items.forEach(item => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- Fascia — ${item.material||"TBD"}, ${item.linearFt||0} linear ft${item.notes?" — "+item.notes:""}</div>`; });
+            if (state.services.includes("paint")) { state.paint.walls.filter(a=>a.paintProduct||a.colorName).forEach(a => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- Wall Paint — ${a.paintProduct||""} ${a.colorName||""}${a.notes?" — "+a.notes:""}</div>`; }); state.paint.trim.filter(a=>a.paintProduct||a.colorName).forEach(a => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- Trim Paint — ${a.paintProduct||""} ${a.colorName||""}${a.notes?" — "+a.notes:""}</div>`; }); (state.paint.other||[]).filter(a=>a.paintProduct||a.colorName||a.notes).forEach(a => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- Other Paint — ${a.paintProduct||""} ${a.colorName||""}${a.notes?" — "+a.notes:""}</div>`; }); }
+            if (state.services.includes("windows")) state.windows.forEach((w,i) => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- ${w.label||"Window "+(i+1)} — ${w.manufacturer||""} ${w.style||""} ${w.width&&w.height?w.width+"x"+w.height:""} qty:${w.qty||1}${w.notes?" — "+w.notes:""}</div>`; });
+            if (state.services.includes("misc")) state.misc.items.forEach((item,i) => { scopeRows += `<div style="font-size:11px;color:#334155;line-height:1.8">- ${item.description||"Misc "+(i+1)}${item.notes?" — "+item.notes:""}</div>`; });
+
+            // Build price breakdown
+            let priceRows = "";
+            if (state.services.includes("siding"))  priceRows += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px"><span>James Hardie Siding</span><span style="font-weight:800">${fmt(t.sid)}</span></div>`;
+            if (state.services.includes("soffit"))  priceRows += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px"><span>Soffit Installation</span><span style="font-weight:800">${fmt(t.sof)}</span></div>`;
+            if (state.services.includes("fascia"))  priceRows += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px"><span>Fascia Installation</span><span style="font-weight:800">${fmt(t.fas)}</span></div>`;
+            if (state.services.includes("paint"))   priceRows += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px"><span>Exterior Paint</span><span style="font-weight:800">${fmt(t.pnt)}</span></div>`;
+            if (state.services.includes("windows")) priceRows += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px"><span>Window Installation</span><span style="font-weight:800">${fmt(t.win)}</span></div>`;
+            if (state.services.includes("misc"))    priceRows += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px"><span>Miscellaneous</span><span style="font-weight:800">${fmt(t.msc)}</span></div>`;
+            priceRows += `<div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px"><span style="font-weight:800">Total (${pricingLabel})</span><span style="font-weight:800;color:#0ea5e9">${fmt(chosenTotal)}</span></div>`;
+
+            // Build materials
+            let matsRows = "";
+            if (state.services.includes("siding")) state.siding.walls.forEach((w,i) => { matsRows += `<tr style="background:${i%2===0?"white":"#f8fafc"}"><td style="padding:5px 8px;border-bottom:1px solid #f1f5f9">Siding — ${w.location}</td><td style="padding:5px 8px;border-bottom:1px solid #f1f5f9">${w.sqft||0} sq ft</td><td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;color:#64748b">${state.siding.sidingType||""}</td></tr>`; });
+            if (state.services.includes("soffit")) state.soffit.items.forEach((item,i) => { matsRows += `<tr style="background:${i%2===0?"white":"#f8fafc"}"><td style="padding:5px 8px;border-bottom:1px solid #f1f5f9">Soffit</td><td style="padding:5px 8px;border-bottom:1px solid #f1f5f9">${item.linearFt||0} linear ft</td><td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;color:#64748b">${item.material||""}</td></tr>`; });
+            if (state.services.includes("fascia")) state.fascia.items.forEach((item,i) => { matsRows += `<tr style="background:${i%2===0?"white":"#f8fafc"}"><td style="padding:5px 8px;border-bottom:1px solid #f1f5f9">Fascia</td><td style="padding:5px 8px;border-bottom:1px solid #f1f5f9">${item.linearFt||0} linear ft</td><td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;color:#64748b">${item.material||""}</td></tr>`; });
+            if (state.services.includes("paint")) { state.paint.walls.filter(a=>a.paintProduct||a.colorName).forEach((a,i) => { matsRows += `<tr style="background:${i%2===0?"white":"#f8fafc"}"><td style="padding:5px 8px;border-bottom:1px solid #f1f5f9">Wall Paint</td><td style="padding:5px 8px;border-bottom:1px solid #f1f5f9">${a.sqft||0} sq ft</td><td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;color:#64748b">${a.paintProduct||""} ${a.colorName||""}</td></tr>`; }); }
+            if (state.services.includes("windows")) state.windows.forEach((w,i) => { matsRows += `<tr style="background:${i%2===0?"white":"#f8fafc"}"><td style="padding:5px 8px;border-bottom:1px solid #f1f5f9">${w.label||"Window "+(i+1)}</td><td style="padding:5px 8px;border-bottom:1px solid #f1f5f9">qty ${w.qty||1}</td><td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;color:#64748b">${w.manufacturer||""} ${w.style||""} ${w.width&&w.height?w.width+"x"+w.height:""}</td></tr>`; });
+
             const html = `<!DOCTYPE html><html><head><title>NDC_Contract_${clientName}_${dateStr}</title>
 <style>
-  body{font-family:Georgia,serif;padding:32px;max-width:800px;margin:0 auto;color:#0f172a}
+  body{font-family:Georgia,serif;padding:32px;max-width:800px;margin:0 auto;color:#0f172a;font-size:11px}
   h2{font-size:18px;margin:0 0 4px}
   .section{margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #e2e8f0}
   .label{font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
-  .row{display:flex;justify-content:space-between;padding:4px 0;font-size:11px}
   table{width:100%;border-collapse:collapse;font-size:11px}
-  th{background:#0f172a;color:white;padding:8px 12px;text-align:left}
+  th{background:#0f172a;color:white;padding:8px 12px;text-align:left;font-size:10px}
   .sig-box{border:1.5px solid #e2e8f0;border-radius:8px;background:#f8fafc;height:120px;overflow:hidden}
   .sig-box img{width:100%;height:120px;object-fit:contain;display:block}
   .rep-line{border-bottom:1.5px solid #0f172a;padding-bottom:2px;font-size:14px;font-family:Georgia,serif;margin-bottom:4px}
   @media print{body{padding:16px}}
 </style></head><body>
-<div class="section" style="display:flex;justify-content:space-between">
-  <div><h2>New Direction Construction</h2><div style="font-size:11px;color:#64748b">820 Worth Rd, Jacksonville, FL 32259<br>(904) 891-9980 | Lic# CBC059304</div></div>
-  <div style="text-align:right"><div style="font-size:10px;font-weight:800;color:#0ea5e9">PREPARED FOR</div><div style="font-size:16px;font-weight:800">${clientName}</div><div style="font-size:11px;color:#64748b">${state.customer.address || ""}<br>${state.customer.phone || ""}</div><div style="font-size:11px;color:#64748b">Date: ${today}</div></div>
+<div class="section" style="display:flex;justify-content:space-between;align-items:flex-start">
+  <div><h2>New Direction Construction</h2><div style="color:#64748b;line-height:1.8">820 Worth Rd, Jacksonville, FL 32259<br>(904) 891-9980 | Lic# CBC059304</div></div>
+  <div style="text-align:right"><div style="font-size:10px;font-weight:800;color:#0ea5e9">PREPARED FOR</div><div style="font-size:16px;font-weight:800">${clientName}</div><div style="color:#64748b;line-height:1.8">${state.customer.address||""}<br>${state.customer.phone||""}</div><div style="color:#64748b">Date: ${today}</div></div>
 </div>
+<div class="section"><div class="label">Scope of Work</div>${scopeRows}</div>
+<div class="section"><div class="label">Price Breakdown</div>${priceRows}</div>
+<div class="section"><div class="label">Materials List</div><table><thead><tr><th>Item</th><th>Quantity</th><th>Details</th></tr></thead><tbody>${matsRows}</tbody></table></div>
 <div class="section"><div class="label">Agreed Investment</div><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">${pricingLabel}</span><span style="font-size:22px;font-weight:800">${fmt(chosenTotal)}</span></div></div>
 <div class="section"><div class="label">Agreed Payment Schedule</div><table><thead><tr><th>Milestone</th><th>Note</th><th style="text-align:right">Amount</th></tr></thead><tbody>${schedRows}</tbody></table></div>
 <div class="section"><div class="label">Payment Terms & Agreement</div>
-<p style="font-size:11px;line-height:1.8">Client agrees to remit payment per the schedule outlined above. All payments are due on the date specified. Failure to remit payment on the date due shall constitute a material breach of this agreement, and New Direction Construction reserves the right to suspend all work until payment is received in full.</p>
-<p style="font-size:11px;line-height:1.8">A late fee of 1.5% per month may be assessed on any balance outstanding beyond 10 days of the due date. In the event of non-payment, Client shall be responsible for all costs of collection including reasonable attorney fees. New Direction Construction shall have the right to file a construction lien on the property per Florida Statute 713.</p>
-<p style="font-size:11px;line-height:1.8">By signing below, Client acknowledges receipt of this contract, agrees to all payment terms, scope of work, and the Terms & Conditions included in this proposal. This agreement is binding upon signature by both parties.</p>
+<p style="line-height:1.8">Client agrees to remit payment per the schedule outlined above. All payments are due on the date specified. Failure to remit payment on the date due shall constitute a material breach of this agreement, and New Direction Construction reserves the right to suspend all work until payment is received in full.</p>
+<p style="line-height:1.8">A late fee of 1.5% per month may be assessed on any balance outstanding beyond 10 days of the due date. In the event of non-payment, Client shall be responsible for all costs of collection including reasonable attorney fees. New Direction Construction shall have the right to file a construction lien on the property per Florida Statute 713.</p>
+<p style="line-height:1.8">By signing below, Client acknowledges receipt of this contract, agrees to all payment terms, scope of work, and the Terms & Conditions included in this proposal. This agreement is binding upon signature by both parties.</p>
+</div>
+<div class="section" style="columns:2;column-gap:20px;font-size:9.5px;line-height:1.7"><div class="label" style="-webkit-column-span:all;column-span:all">Terms & Conditions</div>
+<p><strong>1. Office Approval</strong> All contracts are subject to approval by Company manager and/or officer of the Company.</p>
+<p><strong>2. Damages for Cancelation</strong> You have a limited right to cancel this contract. You may do so only in the time stated in the contract or allowed by law.</p>
+<p><strong>3. Amount of Cancelation Damages</strong> The agreed damages are 25% of the contract price.</p>
+<p><strong>4. Access</strong> You will permit us to go onto the premises including land and buildings.</p>
+<p><strong>5. Insurance</strong> We have Public Liability Insurance, Property Damage Insurance and Workers Compensation Insurance.</p>
+<p><strong>6. Debris</strong> We will remove the job related debris.</p>
+<p><strong>7. Interference and Performance</strong> We are not responsible for any interference with our performance caused by you or others not under our control.</p>
+<p><strong>8. Warranties</strong> The only express warranties which apply are those stated in this contract. All implied warranties are excluded to the extent permitted by law.</p>
+<p><strong>9. Option to Declare Balance Due</strong> We may declare the contract cancelled by you and collect both for work completed and agreed damages if you sell, mortgage, or transfer any interest in the premises before full payment.</p>
+<p><strong>10. Consumer Credit Contract Notice</strong> If this document applies to a consumer credit contract, this notice applies.</p>
+<p><strong>11. Entire Agreement</strong> This contract sets forth the entire agreement between the parties and supersedes all prior understandings.</p>
+<p><strong>12. Compliance with Law</strong> If any provision is invalid, the remaining provisions shall not be affected.</p>
+<p><strong>13. Florida Homeowners Construction Recovery Fund (F.S.489)</strong> Payment may be available for the Homeowners Construction Recovery Fund if you lose money on a project performed under contract.</p>
+<p><strong>14. Binding Arbitration Agreement</strong> Any disputes arising in any manner relating to this agreement shall be subject to mandatory exclusive and binding arbitration.</p>
+<p><strong>15. Transfer</strong> You may not transfer your duties under this contract without written consent by the Company.</p>
+<p><strong>16. Successors</strong> This contract binds your heirs, executors and administrators.</p>
+<p><strong>17. Verification</strong> Our construction specialists check the measurements and specifications of the work to be done.</p>
+<p><strong>18. Notice to all Florida Residents</strong> Florida law contains important requirements you must follow before you may file a lawsuit for defective construction.</p>
+<p><strong>19. Direct Contract Mandatory Provisions (F.S. 713)</strong> According to Floridas Construction Lien Law, those who work on your property and have not been paid in full have a right to enforce their claim for payment against your property.</p>
+</div>
+<div class="section"><div class="label">Notice of Cancellation</div>
+<p style="line-height:1.8">You may cancel this transaction without any penalty or obligation, within three business days from the above date. If you cancel, any property traded in, any payments made by you under the contract or sale, and any negotiable instrument executed by you will be returned to you within 10 business days following receipt by the seller of your cancellation notice. To cancel this transaction, mail or deliver a signed and dated copy of this cancellation notice to: New Direction Construction, 820 Worth Rd., Jacksonville FL 32259.</p>
 </div>
 <div class="section"><div class="label">Client Signature</div>
 <div class="sig-box"><img src="${signatureData}" alt="Client Signature"/></div>
-<div style="font-size:11px;color:#64748b;margin-top:6px">${clientName} &nbsp;|&nbsp; ${today}</div>
+<div style="color:#64748b;margin-top:6px">${clientName} &nbsp;|&nbsp; ${today}</div>
 </div>
 <div style="display:flex;gap:24px;margin-top:16px">
   <div style="flex:2"><div class="rep-line">${repName}</div><div style="font-size:10px;color:#64748b">New Direction Construction Representative</div></div>
