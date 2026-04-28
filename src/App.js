@@ -2085,7 +2085,6 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
           {state.services.includes('fascia') && state.fascia.items.map((item,i) => (
             <div key={i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- Fascia — {item.material || 'Material TBD'}, {item.linearFt || '0'} linear ft{item.notes ? ' — ' + item.notes : ''}</div>
           ))}
-          {state.services.includes('paint') && [
           {state.services.includes('paint') && (
             <div style={{ marginBottom: 4 }}>
               {state.paint.combinedSqft && <div style={{ fontSize: 10, fontWeight: 700, color: '#0f172a', marginBottom: 2 }}>Exterior Paint — {state.paint.combinedSqft} sq ft total</div>}
