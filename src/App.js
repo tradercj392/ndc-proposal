@@ -2109,43 +2109,45 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
         {/* Materials List */}
         <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #f1f5f9' }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>Materials List</div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
-            <thead><tr style={{ background: '#0f172a' }}>
-              <th style={{ padding: '5px 8px', color: 'white', textAlign: 'left', fontWeight: 700 }}>Material</th>
-              <th style={{ padding: '5px 8px', color: 'white', textAlign: 'left', fontWeight: 700 }}>Qty</th>
-              <th style={{ padding: '5px 8px', color: 'white', textAlign: 'left', fontWeight: 700 }}>Notes</th>
-            </tr></thead>
-            <tbody>
-              {state.services.includes('siding') && buildHardieMaterials(state.siding).map((m,i) => (
-                <tr key={'sm'+i} style={{ background: i%2===0?'white':'#f8fafc' }}>
-                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9' }}>{m[0]}</td>
-                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9', color: '#0ea5e9', fontWeight: 700 }}>{m[1]}</td>
-                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9', color: '#64748b' }}>{m[2]}</td>
-                </tr>
-              ))}
-              {state.services.includes('soffit') && buildSoffitMaterials(state.soffit).map((m,i) => (
-                <tr key={'sof'+i} style={{ background: i%2===0?'white':'#f8fafc' }}>
-                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9' }}>{m[0]}</td>
-                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9', color: '#0ea5e9', fontWeight: 700 }}>{m[1]}</td>
-                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9', color: '#64748b' }}>{m[2]}</td>
-                </tr>
-              ))}
-              {state.services.includes('fascia') && buildFasciaMaterials(state.fascia).map((m,i) => (
-                <tr key={'fas'+i} style={{ background: i%2===0?'white':'#f8fafc' }}>
-                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9' }}>{m[0]}</td>
-                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9', color: '#0ea5e9', fontWeight: 700 }}>{m[1]}</td>
-                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9', color: '#64748b' }}>{m[2]}</td>
-                </tr>
-              ))}
-              {state.services.includes('windows') && buildWindowMaterials(state.windows).map((m,i) => (
-                <tr key={'win'+i} style={{ background: i%2===0?'white':'#f8fafc' }}>
-                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9' }}>{m[0]}</td>
-                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9', color: '#0ea5e9', fontWeight: 700 }}>{m[1]}</td>
-                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9', color: '#64748b' }}>{m[2]}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div style={{ fontSize: 10, color: '#64748b', marginBottom: 8 }}>Full materials list is included in the detailed proposal. Key items per service:</div>
+          {state.services.includes('siding') && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>Siding — {state.siding.sidingType || 'James Hardie'}</div>
+              {state.siding.walls.map((w,i) => <div key={i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- {w.location}: {w.sqft || 0} sq ft, {w.osb === 'Yes - Full Wall OSB Replacement' ? 'Full OSB replacement' : 'No OSB'}</div>)}
+            </div>
+          )}
+          {state.services.includes('soffit') && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>Soffit</div>
+              {state.soffit.items.map((item,i) => <div key={i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- {item.material || 'Material TBD'}: {item.linearFt || 0} linear ft</div>)}
+            </div>
+          )}
+          {state.services.includes('fascia') && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>Fascia</div>
+              {state.fascia.items.map((item,i) => <div key={i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- {item.material || 'Material TBD'}: {item.linearFt || 0} linear ft</div>)}
+            </div>
+          )}
+          {state.services.includes('paint') && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>Paint</div>
+              {state.paint.walls.filter(a=>a.paintProduct||a.colorName).map((a,i) => <div key={i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- Wall: {a.paintProduct || ''} {a.colorName || ''}, {a.sqft || 0} sq ft</div>)}
+              {state.paint.trim.filter(a=>a.paintProduct||a.colorName).map((a,i) => <div key={i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- Trim: {a.paintProduct || ''} {a.colorName || ''}</div>)}
+              {(state.paint.other||[]).filter(a=>a.paintProduct||a.colorName||a.notes).map((a,i) => <div key={i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- Other: {a.paintProduct || ''} {a.colorName || ''}{a.notes ? ' — '+a.notes : ''}</div>)}
+            </div>
+          )}
+          {state.services.includes('windows') && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>Windows</div>
+              {state.windows.map((w,i) => <div key={i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- {w.label || 'Window '+(i+1)}: {w.manufacturer || ''} {w.style || ''} {w.width && w.height ? w.width+'x'+w.height : ''}, qty {w.qty || 1}</div>)}
+            </div>
+          )}
+          {state.services.includes('misc') && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>Miscellaneous</div>
+              {state.misc.items.map((item,i) => <div key={i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- {item.description || 'Item '+(i+1)}: qty {item.qty || 1}</div>)}
+            </div>
+          )}
         </div>
 
 
