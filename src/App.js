@@ -760,6 +760,10 @@ function WindowsStep({ windows, onChange }) {
               <MiniField label="Price Installed ($)" value={win.priceInstalled} onChange={(v) => update(win.id, "priceInstalled", v)} />
               {lineTotal > 0 && <div style={{ paddingBottom: 6 }}><span style={{ fontSize: 13, color: "#0369a1", fontWeight: 700, fontFamily: "monospace" }}>{fmt(lineTotal)}</span></div>}
             </div>
+            <div style={{ marginBottom: 6 }}>
+              <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>NOTES</label>
+              <textarea style={{ ...S.input, height: 60, resize: "vertical", fontSize: 13 }} value={win.notes || ""} onChange={(e) => update(win.id, "notes", e.target.value)} placeholder="e.g. egress requirement, special trim, existing frame condition..." />
+            </div>
           </div>
         );
       })}
@@ -1253,6 +1257,8 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
       html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:" + (i%2===0?"white":"#f8fafc") + ";border-bottom:1px solid #f1f5f9'>" + s + "</div>";
     });
     html += "</div>";
+    // Siding wall notes
+    state.siding.walls.forEach(function(w,i) { if (w.notes) { html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:#f0f9ff;border-top:1px solid #bae6fd'>Note " + (i+1) + ": " + w.notes + "</div>"; } });
 
     // Installation Standards callout
     html += "<div style='background:#f0f9ff;border-left:4px solid #0ea5e9;padding:12px 16px;margin-bottom:20px;border-radius:0 6px 6px 0'>";
@@ -1335,6 +1341,8 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
       html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:" + (i%2===0?"white":"#f8fafc") + ";border-bottom:1px solid #f1f5f9'>" + s + "</div>";
     });
     html += "</div>";
+    // Soffit area notes
+    state.soffit.items.forEach(function(item,i) { if (item.notes) { html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:#f0f9ff;border-top:1px solid #bae6fd'>Note " + (i+1) + ": " + item.notes + "</div>"; } });
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Area Breakdown</div>";
     html += "<table><thead><tr><th>Area</th><th>Current Material</th><th>New Material</th><th>Linear Ft</th><th>Notes</th></tr></thead><tbody>";
@@ -1380,6 +1388,8 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
       html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:" + (i%2===0?"white":"#f8fafc") + ";border-bottom:1px solid #f1f5f9'>" + s + "</div>";
     });
     html += "</div>";
+    // Fascia area notes
+    state.fascia.items.forEach(function(item,i) { if (item.notes) { html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:#f0f9ff;border-top:1px solid #bae6fd'>Note " + (i+1) + ": " + item.notes + "</div>"; } });
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Area Breakdown</div>";
     html += "<table><thead><tr><th>Area</th><th>Current Material</th><th>New Material</th><th>Linear Ft</th><th>Notes</th></tr></thead><tbody>";
@@ -1456,11 +1466,13 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
     // Paint selections
     var hasWalls = state.paint.walls.some(function(a){return a.colorName||a.paintProduct;});
     var hasTrim = state.paint.trim.some(function(a){return a.colorName||a.paintProduct;});
-    if (hasWalls || hasTrim) {
+    var hasOther = state.paint.other && state.paint.other.some(function(a){return a.colorName||a.paintProduct||a.notes;});
+    if (hasWalls || hasTrim || hasOther) {
       html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 8px'>Paint Selections</div>";
       html += "<table><thead><tr><th>Area</th><th>Product</th><th>Color</th><th>Notes</th></tr></thead><tbody>";
       if (hasWalls) state.paint.walls.forEach(function(a,i){ html += "<tr style='background:" + (i%2===0?"white":"#f8fafc") + "'><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9;font-weight:600'>Wall</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (a.paintProduct||"-") + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (a.colorName||"-") + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9;color:#64748b'>" + (a.notes||"-") + "</td></tr>"; });
       if (hasTrim) state.paint.trim.forEach(function(a,i){ html += "<tr style='background:" + (i%2===0?"#f8fafc":"white") + "'><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9;font-weight:600'>Trim</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (a.paintProduct||"-") + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (a.colorName||"-") + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9;color:#64748b'>" + (a.notes||"-") + "</td></tr>"; });
+      if (hasOther) state.paint.other.forEach(function(a,i){ html += "<tr style='background:" + (i%2===0?"white":"#f8fafc") + "'><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9;font-weight:600'>Other</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (a.paintProduct||"-") + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (a.colorName||"-") + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9;color:#64748b'>" + (a.notes||"-") + "</td></tr>"; });
       html += "</tbody></table>";
     }
 
@@ -1507,6 +1519,10 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
       html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:" + (i%2===0?"white":"#f8fafc") + ";border-bottom:1px solid #f1f5f9'>" + s + "</div>";
     });
     html += "</div>";
+    var winNoteNum = windowSteps.length + 1;
+    state.windows.forEach(function(w) { if (w.notes) { html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:#f0f9ff;border-top:1px solid #bae6fd'>" + winNoteNum++ + ". " + (w.label||'Window') + " Note - " + w.notes + "</div>"; } });
+    // Misc item notes
+    if (state.services.includes('misc')) { state.misc.items.forEach(function(item,i) { if (item.notes) { html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:#f0f9ff;border-top:1px solid #bae6fd'>Misc Note " + (i+1) + ": " + item.notes + "</div>"; } }); }
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Window Schedule</div>";
     html += "<table><thead><tr><th>Label</th><th>Location</th><th>Manufacturer</th><th>Style</th><th>Frame</th><th>Color</th><th>Glass Type</th><th>Glass Pack</th><th>Grids</th><th>Size</th><th>Qty</th></tr></thead><tbody>";
