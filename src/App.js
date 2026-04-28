@@ -1796,18 +1796,30 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
   };
 
   // Listen for selections from iframe
-  useEffect(() => {
+  React.useEffect(() => {
     function handler(e) {
-      if (e.data && e.data.type === "selectOption") setSelectedOption(e.data.option);
-      if (e.data && e.data.type === "selectPayment") setSelectedPayment(e.data.payment);
+      if (!e.data) return;
+      if (e.data.type === "selectOption") setSelectedOption(e.data.option);
+      if (e.data.type === "selectPayment") setSelectedPayment(e.data.payment);
+      if (e.data.type === "customPayment") { setSelectedPayment("optE"); setState && setState(s => ({ ...s, financing: { ...s.financing, customPayment: e.data.value } })); }
     }
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, []);
 
-  // Inject selectedPayment into state.financing for the HTML builder
-  const stateWithPayment = { ...state, financing: { ...(state.financing||{}), selectedPayment: selectedPayment } };
-  const html = buildProposalHTML(stateWithPayment, selectedOption, signature);
+  // Build proposal HTML safely
+  let html = "<html><body style='font-family:sans-serif;padding:20px'><h2>Building preview...</h2></body></html>";
+  try {
+    const stateWithPayment = { ...state, financing: { ...(state.financing||{}), selectedPayment: selectedPayment } };
+    const built = buildProposalHTML(stateWithPayment, selectedOption, signature);
+    if (built && built.length > 100) {
+      html = built;
+    } else {
+      html = "<html><body style='font-family:sans-serif;padding:20px'><h2>Error: HTML too short (" + (built ? built.length : 0) + " chars)</h2></body></html>";
+    }
+  } catch(e) {
+    html = "<html><body style='font-family:sans-serif;padding:20px'><h2>Preview Error</h2><p style='color:red'>" + e.message + "</p><pre>" + e.stack + "</pre></body></html>";
+  }
   const t = calcGrandTotal(state);
   const priority = t.total;
   const standard = t.total * 1.0835;
