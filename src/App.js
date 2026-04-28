@@ -1033,7 +1033,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
   html += ".opt.selected{border-color:#0ea5e9;background:#f0f9ff}";
   html += ".sig-box{border:1.5px solid #e2e8f0;border-radius:8px;padding:16px;margin-top:12px}";
   html += ".sig-line{border-bottom:1.5px solid #0f172a;min-height:30px;margin-bottom:12px;font-family:cursive;font-size:18px;color:#0f172a;padding:4px}";
-  html += "@media print{.no-print{display:none}" + (selectedOption === 'standard' ? ".admin-only{display:none}" : "") + "}</style></head><body>";
+  html += "@media print{.no-print{display:none}" + (selectedOption === 'standard' ? ".admin-only{display:none}" : selectedOption === 'priority' ? ".standard-only{display:none}" : "") + "}</style></head><body>";
 
   var monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
 
@@ -1103,7 +1103,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
   // BOTTOM HALF - Single pricing box
   // BOTTOM HALF - Pricing reveal
   var savings = standard - priority;
-  html += "<div style='border:2px solid #e2e8f0;border-radius:12px;padding:24px;background:white;flex:1'>";
+  html += "<div class='standard-only' style='border:2px solid #e2e8f0;border-radius:12px;padding:24px;background:white;flex:1'>";
 
   // Standard price - big first
   html += "<div style='margin-bottom:18px;padding-bottom:18px;border-bottom:2px solid #f1f5f9'>";
@@ -1577,7 +1577,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
   var stdMonthly = monthlyPayment ? monthlyPayment + 47 : null;
 
   // Standard pricing box (clickable)
-  html += "<div " + oc_std + " style='border:2px solid " + (stdSelected ? '#475569' : '#e2e8f0') + ";border-radius:10px;padding:18px;margin-bottom:16px;cursor:pointer;background:" + (stdSelected ? '#f8fafc' : 'white') + "'>";
+  html += "<div " + oc_std + " class='standard-only' style='border:2px solid " + (stdSelected ? '#475569' : '#e2e8f0') + ";border-radius:10px;padding:18px;margin-bottom:16px;cursor:pointer;background:" + (stdSelected ? '#f8fafc' : 'white') + "'>";
   html += "<div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px'>";
   html += "<div style='display:flex;align-items:center;gap:10px'>";
   html += "<div style='width:22px;height:22px;border-radius:50%;border:2px solid " + (stdSelected ? '#475569' : '#cbd5e1') + ";background:" + (stdSelected ? '#475569' : 'white') + ";display:flex;align-items:center;justify-content:center;flex-shrink:0'>";
