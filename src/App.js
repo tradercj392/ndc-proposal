@@ -2080,6 +2080,40 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
           </div>
         </div>
 
+        {/* Terms & Conditions */}
+        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Terms & Conditions</div>
+          <div style={{ columns: 2, columnGap: 16, fontSize: 8.5, color: "#334155", lineHeight: 1.7 }}>
+            <p><strong>1. Office Approval</strong> All contracts are subject to approval by Company manager and/or officer of the Company.</p>
+            <p><strong>2. Damages for Cancelation</strong> You have a limited right to cancel this contract. You may do so only in the time stated in the contract or allowed by law.</p>
+            <p><strong>3. Amount of Cancelation Damages</strong> The agreed damages are 25% of the contract price.</p>
+            <p><strong>4. Access</strong> You will permit us to go onto the premises including land and buildings.</p>
+            <p><strong>5. Insurance</strong> We have Public Liability Insurance, Property Damage Insurance and Workers' Compensation Insurance.</p>
+            <p><strong>6. Debris</strong> We will remove the job related debris.</p>
+            <p><strong>7. Interference and Performance</strong> We are not responsible for any interference with our performance caused by you or others not under our control.</p>
+            <p><strong>8. Warranties</strong> The only express warranties which apply are those stated in this contract. All implied warranties are excluded to the extent permitted by law.</p>
+            <p><strong>9. Option to Declare Balance Due</strong> We may declare the contract cancelled by you and collect both for work completed and agreed damages if you sell, mortgage, or transfer any interest in the premises before full payment.</p>
+            <p><strong>10. Consumer Credit Contract Notice</strong> If this document applies to a consumer credit contract, this notice applies.</p>
+            <p><strong>11. Entire Agreement</strong> This contract sets forth the entire agreement between the parties and supersedes all prior understandings.</p>
+            <p><strong>12. Compliance with Law</strong> If any provision is invalid, the remaining provisions shall not be affected.</p>
+            <p><strong>13. Florida Homeowner's Construction Recovery Fund (F.S.489)</strong> Payment may be available for the Homeowner's Construction Recovery Fund if you lose money on a project performed under contract.</p>
+            <p><strong>14. Binding Arbitration Agreement</strong> Any disputes arising in any manner relating to this agreement shall be subject to mandatory exclusive and binding arbitration.</p>
+            <p><strong>15. Transfer</strong> You may not transfer your duties under this contract to any person without written consent by the Company.</p>
+            <p><strong>16. Successors</strong> This contract binds your heirs, executors and administrators.</p>
+            <p><strong>17. Verification</strong> Our construction specialists check the measurements and specifications of the work to be done.</p>
+            <p><strong>18. Notice to all Florida Residents</strong> Florida law contains important requirements you must follow before you may file a lawsuit for defective construction.</p>
+            <p><strong>19. Direct Contract Mandatory Provisions (F.S. 713)</strong> According to Florida's Construction Lien Law, those who work on your property and have not been paid in full have a right to enforce their claim for payment against your property.</p>
+          </div>
+        </div>
+
+        {/* Notice of Cancellation */}
+        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Notice of Cancellation</div>
+          <div style={{ fontSize: 9, color: "#334155", lineHeight: 1.7 }}>
+            You may cancel this transaction without any penalty or obligation, within three business days from the above date. If you cancel, any property traded in, any payments made by you under the contract or sale, and any negotiable instrument executed by you will be returned to you within 10 business days following receipt by the seller of your cancellation notice and any security interest arising out of the transaction will be cancelled. If you cancel, you must make available to the seller of your cancellation notice at your residence, in substantially as good condition as when received, any good delivered to you under the contract or sale, or if you wish, comply with the instructions of the seller regarding the return shipment of the goods at the sellers expense and risk. To cancel this transaction, mail or deliver a signed and dated copy of this cancellation notice to: New Direction Construction, 820 Worth Rd., Jacksonville FL 32259.
+          </div>
+        </div>
+
         {/* Draw to Sign */}
         <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Client Signature</div>
