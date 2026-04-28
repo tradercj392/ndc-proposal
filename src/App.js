@@ -1108,12 +1108,10 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
   // Standard price - big first
   html += "<div style='margin-bottom:18px;padding-bottom:18px;border-bottom:2px solid #f1f5f9'>";
   html += "<div style='font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px'>Standard Pricing</div>";
-  html += "<div style='display:flex;justify-content:space-between;align-items:flex-end'>";
-  html += "<div style='font-size:32px;font-weight:800;color:#0f172a'>" + fmt(standard) + "</div>";
+  html += "<div style='font-size:32px;font-weight:800;color:#0f172a;margin-bottom:4px'>" + fmt(standard) + "</div>";
   if (standardMonthly) {
-    html += "<div style='text-align:right;padding-bottom:6px'><div style='font-size:11px;color:#64748b;font-weight:600'>Financing</div><div style='font-size:18px;font-weight:800;color:#64748b'>$" + standardMonthly.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "<span style='font-size:10px;font-weight:600'>/mo</span></div></div>";
+    html += "<div style='font-size:12px;color:#475569;font-weight:600;margin-top:4px'>Financing Available: <span style='color:#0f172a;font-weight:800'>$" + standardMonthly.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "/mo</span> &nbsp;—&nbsp; Subject to credit approval</div>";
   }
-  html += "</div>";
   html += "<div style='font-size:10px;color:#94a3b8;margin-top:4px'>Full project investment based on current scope of work</div>";
   html += "</div>";
 
