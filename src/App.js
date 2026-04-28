@@ -1002,7 +1002,7 @@ function calcSidingTotal(state) {
   return state.siding.walls.reduce(function(a, w) { return a + parseFloat(w.sqft || 0) * parseFloat(w.pricePerSqFt || 0); }, 0);
 }
 
-function buildProposalHTML(state, selectedOption, signature) {
+function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
   var t = calcGrandTotal(state);
   var today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   var priority = t.total;
@@ -1783,7 +1783,7 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
   let html = "<html><body style='font-family:sans-serif;padding:20px'><h2>Building preview...</h2></body></html>";
   try {
     const stateWithPayment = { ...state, financing: { ...(state.financing||{}), selectedPayment: selectedPayment } };
-    const built = buildProposalHTML(stateWithPayment, selectedOption, signature);
+    const built = buildProposalHTML(stateWithPayment, selectedOption, signature, selectedPayment);
     if (built && built.length > 100) {
       html = built;
     } else {
