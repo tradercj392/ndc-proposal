@@ -1534,6 +1534,13 @@ function buildProposalHTML(state, selectedOption, signature) {
 
 
 
+  // Payment calculation variables
+  var opt50_1 = priority * 0.50;
+  var opt50_2 = priority * 0.50;
+  var opt33_1 = priority * 0.33;
+  var opt33_2 = priority * 0.33;
+  var opt33_3 = priority - (opt33_1 + opt33_2);
+
   // ADMIN SAVINGS CREDIT PAGE - after all service pages
   html += "<div class='page'>";
   html += "<div style='font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>Project Investment Options</div>";
@@ -1589,6 +1596,54 @@ function buildProposalHTML(state, selectedOption, signature) {
     html += "<div style='font-size:9px;color:#94a3b8'>Subject to credit approval</div></div>";
   }
   html += "</div>";
+
+  // Payment options appear only when admin is selected
+  if (selectedOption === 'priority') {
+    html += "<div style='margin-top:20px'>";
+    html += "<div style='font-size:11px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px'>Select Your Payment Schedule</div>";
+    html += "<div style='display:flex;flex-direction:column;gap:10px'>";
+
+    var oc_a = "onclick='selectPayment(\"optA\")'";
+    var oc_b = "onclick='selectPayment(\"optB\")'";
+    var oc_c = "onclick='selectPayment(\"optC\")'";
+    var oc_d = "onclick='selectPayment(\"optD\")'";
+
+    var pA = selectedPayment === 'optA';
+    var pB = selectedPayment === 'optB';
+    var pC = selectedPayment === 'optC';
+    var pD = selectedPayment === 'optD';
+    var pE = selectedPayment === 'optE';
+
+    // Option A
+    html += "<div " + oc_a + " style='border:2px solid " + (pA?'#0ea5e9':'#e2e8f0') + ";border-radius:10px;padding:12px 16px;cursor:pointer;background:" + (pA?'#f0f9ff':'white') + ";display:flex;align-items:center;gap:12px'>";
+    html += "<div style='width:20px;height:20px;border-radius:50%;border:2px solid " + (pA?'#0ea5e9':'#cbd5e1') + ";background:" + (pA?'#0ea5e9':'white') + ";flex-shrink:0;display:flex;align-items:center;justify-content:center'>" + (pA?"<div style='width:7px;height:7px;border-radius:50%;background:white'></div>":"") + "</div>";
+    html += "<div><div style='font-size:11px;font-weight:800;color:#0f172a'>Option A - 50 / 50</div><div style='font-size:10px;color:#64748b'>" + fmt(opt50_1) + " at signing &nbsp;|&nbsp; " + fmt(opt50_2) + " at completion</div></div></div>";
+
+    // Option B
+    html += "<div " + oc_b + " style='border:2px solid " + (pB?'#0ea5e9':'#e2e8f0') + ";border-radius:10px;padding:12px 16px;cursor:pointer;background:" + (pB?'#f0f9ff':'white') + ";display:flex;align-items:center;gap:12px'>";
+    html += "<div style='width:20px;height:20px;border-radius:50%;border:2px solid " + (pB?'#0ea5e9':'#cbd5e1') + ";background:" + (pB?'#0ea5e9':'white') + ";flex-shrink:0;display:flex;align-items:center;justify-content:center'>" + (pB?"<div style='width:7px;height:7px;border-radius:50%;background:white'></div>":"") + "</div>";
+    html += "<div><div style='font-size:11px;font-weight:800;color:#0f172a'>Option B - 33 / 33 / 33</div><div style='font-size:10px;color:#64748b'>" + fmt(opt33_1) + " at signing &nbsp;|&nbsp; " + fmt(opt33_2) + " crew starts &nbsp;|&nbsp; " + fmt(opt33_3) + " at completion</div></div></div>";
+
+    // Option C
+    html += "<div " + oc_c + " style='border:2px solid " + (pC?'#0ea5e9':'#e2e8f0') + ";border-radius:10px;padding:12px 16px;cursor:pointer;background:" + (pC?'#f0f9ff':'white') + ";display:flex;align-items:center;gap:12px'>";
+    html += "<div style='width:20px;height:20px;border-radius:50%;border:2px solid " + (pC?'#0ea5e9':'#cbd5e1') + ";background:" + (pC?'#0ea5e9':'white') + ";flex-shrink:0;display:flex;align-items:center;justify-content:center'>" + (pC?"<div style='width:7px;height:7px;border-radius:50%;background:white'></div>":"") + "</div>";
+    html += "<div><div style='font-size:11px;font-weight:800;color:#0f172a'>Option C - No Money Down</div><div style='font-size:10px;color:#64748b'>$0.00 at signing &nbsp;|&nbsp; " + fmt(priority) + " at completion</div></div></div>";
+
+    // Option D - Financing (only if monthly payment entered)
+    if (monthlyPayment) {
+      html += "<div " + oc_d + " style='border:2px solid " + (pD?'#0ea5e9':'#e2e8f0') + ";border-radius:10px;padding:12px 16px;cursor:pointer;background:" + (pD?'#f0f9ff':'white') + ";display:flex;align-items:center;gap:12px'>";
+      html += "<div style='width:20px;height:20px;border-radius:50%;border:2px solid " + (pD?'#0ea5e9':'#cbd5e1') + ";background:" + (pD?'#0ea5e9':'white') + ";flex-shrink:0;display:flex;align-items:center;justify-content:center'>" + (pD?"<div style='width:7px;height:7px;border-radius:50%;background:white'></div>":"") + "</div>";
+      html += "<div><div style='font-size:11px;font-weight:800;color:#0f172a'>Option D - Financing</div><div style='font-size:10px;color:#64748b'>$" + monthlyPayment.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "/mo &nbsp;|&nbsp; Subject to credit approval</div></div></div>";
+    }
+
+    // Option E - Custom
+    html += "<div style='border:2px solid " + (pE?'#0ea5e9':'#e2e8f0') + ";border-radius:10px;padding:12px 16px;background:" + (pE?'#f0f9ff':'white') + "'>";
+    html += "<div style='font-size:11px;font-weight:800;color:#0f172a;margin-bottom:6px'>Option E - Custom Payment Terms</div>";
+    html += "<input id='customPaymentInput' placeholder='Type custom terms here...' style='width:100%;border:1.5px solid #e2e8f0;border-radius:6px;padding:7px 10px;font-size:10px;color:#0f172a;outline:none;box-sizing:border-box' oninput='updateCustomPayment(this.value)' value='" + (state.financing && state.financing.customPayment ? state.financing.customPayment.replace(/'/g,'') : '') + "'/>";
+    html += "</div>";
+
+    html += "</div></div>"; // end payment options
+  }
 
   html += "</div>"; // end admin savings page
 
