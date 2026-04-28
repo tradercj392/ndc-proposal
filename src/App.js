@@ -859,7 +859,7 @@ function FinancingStep({ data, onChange, state }) {
   return (
     <div style={S.stepWrap}>
       <h2 style={S.stepTitle}>Financing Option</h2>
-      <p style={S.stepSub}>Enter the monthly payment amount to display in Administrative Savings Credit on the proposal. Leave blank if not offering financing.</p>
+      <p style={S.stepSub}>Enter the monthly payment amount to display in Administrative Savings Incentive on the proposal. Leave blank if not offering financing.</p>
 
       <div style={{ ...S.summaryBox, flexDirection: "column", alignItems: "flex-start", marginBottom: 16 }}>
         <div style={{ fontSize: 11, color: "#0369a1", fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>Total Job Cost</div>
@@ -889,7 +889,7 @@ function FinancingStep({ data, onChange, state }) {
             <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a" }}>
               {"$" + parseFloat(data.monthlyPayment).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/month"}
             </div>
-            <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>Shown under Administrative Savings Credit - Administrative Savings Credit</div>
+            <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>Shown under Administrative Savings Incentive - Administrative Savings Incentive</div>
           </div>
         )}
       </div>
@@ -1591,7 +1591,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
   html += "<div style='width:22px;height:22px;border-radius:50%;border:2px solid " + (priSelected ? '#0ea5e9' : '#cbd5e1') + ";background:" + (priSelected ? '#0ea5e9' : 'white') + ";display:flex;align-items:center;justify-content:center;flex-shrink:0'>";
   html += priSelected ? "<div style='width:8px;height:8px;border-radius:50%;background:white'></div>" : "";
   html += "</div>";
-  html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px'>Administrative Savings Credit — Sign Contract Today</div></div>";
+  html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px'>Administrative Savings Incentive — Sign Contract Today</div></div>";
   html += "<div style='display:flex;align-items:baseline;gap:12px;margin-bottom:4px'>";
   html += "<div style='font-size:30px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div>";
   html += "<div style='background:#dcfce7;color:#166534;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px'>You save " + fmt(savings) + "</div></div>";
@@ -1843,7 +1843,7 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
       <div style={{ padding: "16px 24px 0" }}>
         {selectedOption && (
           <div style={{ background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 8, padding: "10px 14px", marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#0369a1" }}>{selectedOption === "priority" ? "Administrative Savings Credit" : "Standard Pricing"}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#0369a1" }}>{selectedOption === "priority" ? "Administrative Savings Incentive" : "Standard Pricing"}</span>
             <span style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{selectedOption === "priority" ? fmt(priority) : fmt(standard)}</span>
           </div>
         )}
@@ -2027,7 +2027,7 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
   };
 
   const schedule = getPaymentSchedule();
-  const pricingLabel = selectedOption === "standard" ? "Standard Pricing" : "Administrative Savings Credit";
+  const pricingLabel = selectedOption === "standard" ? "Standard Pricing" : "Administrative Savings Incentive";
 
   return (
     <div style={S.stepWrap}>
@@ -2063,6 +2063,44 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
           {state.services.includes("windows") && <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.8 }}>- Window installation — {state.windows.reduce((a,w) => a + parseFloat(w.qty||0), 0)} unit(s) per schedule</div>}
           {state.services.includes("misc")    && <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.8 }}>- Miscellaneous items per scope</div>}
         </div>
+
+        {/* Scope of Work */}
+        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #f1f5f9' }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>Scope of Work</div>
+          {state.services.includes('siding') && state.siding.walls.map((w,i) => (
+            <div key={i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- {w.location} — {state.siding.sidingType || 'Siding'}, {w.sqft || '0'} sq ft{w.notes ? ' — ' + w.notes : ''}</div>
+          ))}
+          {state.services.includes('soffit') && state.soffit.items.map((item,i) => (
+            <div key={i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- Soffit — {item.material || 'Material TBD'}, {item.linearFt || '0'} linear ft{item.notes ? ' — ' + item.notes : ''}</div>
+          ))}
+          {state.services.includes('fascia') && state.fascia.items.map((item,i) => (
+            <div key={i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- Fascia — {item.material || 'Material TBD'}, {item.linearFt || '0'} linear ft{item.notes ? ' — ' + item.notes : ''}</div>
+          ))}
+          {state.services.includes('paint') && [
+            ...state.paint.walls.filter(a => a.paintProduct || a.colorName).map((a,i) => <div key={'pw'+i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- Wall Paint — {a.paintProduct || ''} {a.colorName || ''}{a.notes ? ' — ' + a.notes : ''}</div>),
+            ...state.paint.trim.filter(a => a.paintProduct || a.colorName).map((a,i) => <div key={'pt'+i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- Trim Paint — {a.paintProduct || ''} {a.colorName || ''}{a.notes ? ' — ' + a.notes : ''}</div>),
+            ...((state.paint.other || []).filter(a => a.paintProduct || a.colorName || a.notes).map((a,i) => <div key={'po'+i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- Other Paint — {a.paintProduct || ''} {a.colorName || ''}{a.notes ? ' — ' + a.notes : ''}</div>)),
+          ]}
+          {state.services.includes('windows') && state.windows.map((w,i) => (
+            <div key={i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- {w.label || 'Window '+(i+1)} — {w.manufacturer || ''} {w.style || ''} {w.width && w.height ? w.width+'x'+w.height : ''} qty: {w.qty || 1}{w.notes ? ' — ' + w.notes : ''}</div>
+          ))}
+          {state.services.includes('misc') && state.misc.items.map((item,i) => (
+            <div key={i} style={{ fontSize: 10, color: '#334155', lineHeight: 1.8 }}>- {item.description || 'Misc item'}{item.notes ? ' — ' + item.notes : ''}</div>
+          ))}
+        </div>
+
+        {/* Price Breakdown */}
+        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #f1f5f9' }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>Price Breakdown</div>
+          {state.services.includes('siding')  && <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9', fontSize: 11 }}><span style={{ color: '#334155' }}>James Hardie Siding</span><span style={{ fontWeight: 700 }}>{fmt(t.sid)}</span></div>}
+          {state.services.includes('soffit')  && <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9', fontSize: 11 }}><span style={{ color: '#334155' }}>Soffit Installation</span><span style={{ fontWeight: 700 }}>{fmt(t.sof)}</span></div>}
+          {state.services.includes('fascia')  && <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9', fontSize: 11 }}><span style={{ color: '#334155' }}>Fascia Installation</span><span style={{ fontWeight: 700 }}>{fmt(t.fas)}</span></div>}
+          {state.services.includes('paint')   && <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9', fontSize: 11 }}><span style={{ color: '#334155' }}>Exterior Paint</span><span style={{ fontWeight: 700 }}>{fmt(t.pnt)}</span></div>}
+          {state.services.includes('windows') && <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9', fontSize: 11 }}><span style={{ color: '#334155' }}>Window Installation</span><span style={{ fontWeight: 700 }}>{fmt(t.win)}</span></div>}
+          {state.services.includes('misc')    && <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9', fontSize: 11 }}><span style={{ color: '#334155' }}>Miscellaneous</span><span style={{ fontWeight: 700 }}>{fmt(t.msc)}</span></div>}
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0 0', fontSize: 13 }}><span style={{ fontWeight: 800 }}>Total (Admin Savings Incentive)</span><span style={{ fontWeight: 800, color: '#0ea5e9' }}>{fmt(priority)}</span></div>
+        </div>
+
 
         {/* Agreed Investment */}
         <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
