@@ -1550,7 +1550,7 @@ function buildProposalHTML(state, selectedOption, signature) {
 
   if (selectedOption) {
     html += "<div style='background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center'>";
-    html += "<div style='font-size:12px;font-weight:700;color:#0369a1'>" + (selectedOption==="priority"?"Administrative Savings Credit - Administrative Savings Credit Selected":"Option 2 - Standard Scheduling Selected") + "</div>";
+    html += "<div style='font-size:12px;font-weight:700;color:#0369a1'>" + (selectedOption==="priority"?"Administrative Savings Credit Selected":"Standard Scheduling Selected") + "</div>";
     html += "<div style='font-size:16px;font-weight:800;color:#0f172a'>" + fmt(selectedOption==="priority"?priority:standard) + "</div></div>";
   }
   html += "</div>";
@@ -1760,7 +1760,7 @@ function PreviewStep({ state, setStep, steps }) {
       <div style={{ padding: "16px 24px 0" }}>
         {selectedOption && (
           <div style={{ background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 8, padding: "10px 14px", marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#0369a1" }}>{selectedOption === "priority" ? "Administrative Savings Credit" : "Option 2 - Standard"}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#0369a1" }}>{selectedOption === "priority" ? "Administrative Savings Credit" : "Standard Scheduling"}</span>
             <span style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{selectedOption === "priority" ? fmt(priority) : fmt(standard)}</span>
           </div>
         )}
