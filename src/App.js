@@ -1089,45 +1089,78 @@ function buildProposalHTML(state, selectedOption, signature) {
 
   // BOTTOM HALF - Pricing side by side
   // BOTTOM HALF - Single pricing box
-  html += "<div style='flex:1'>";
-  html += "<div style='border:2px solid #0ea5e9;border-radius:12px;padding:24px;background:#f0f9ff;height:100%'>";
+  // BOTTOM HALF - Pricing reveal
+  var savings = standard - priority;
+  html += "<div style='border:2px solid #e2e8f0;border-radius:12px;padding:24px;background:white;flex:1'>";
 
-  // Total price at top
-  html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:16px;border-bottom:1.5px solid #bae6fd'>";
-  html += "<div><div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px'>Total Project Investment</div>";
-  html += "<div style='font-size:28px;font-weight:800;color:#0ea5e9'>" + fmt(standard) + "</div></div>";
-  if (monthlyPayment) {
-    html += "<div style='background:white;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;text-align:right'>";
-    html += "<div style='font-size:9px;font-weight:700;color:#0369a1;text-transform:uppercase;margin-bottom:2px'>Financing Available</div>";
-    html += "<div style='font-size:20px;font-weight:800;color:#0f172a'>$" + monthlyPayment.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "<span style='font-size:11px;color:#64748b;font-weight:600'>/mo</span></div>";
-    html += "<div style='font-size:8px;color:#94a3b8'>Subject to credit approval</div></div>";
+  // Standard price - big first
+  var standardMonthly = monthlyPayment ? monthlyPayment + 47 : null;
+  html += "<div style='margin-bottom:18px;padding-bottom:18px;border-bottom:2px solid #f1f5f9'>";
+  html += "<div style='font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px'>Standard Pricing</div>";
+  html += "<div style='font-size:32px;font-weight:800;color:#0f172a;margin-bottom:4px'>" + fmt(standard) + "</div>";
+  if (standardMonthly) {
+    html += "<div style='display:flex;align-items:baseline;gap:6px;margin-top:6px'>";
+    html += "<div style='font-size:10px;color:#64748b;font-weight:600'>Financing:</div>";
+    html += "<div style='font-size:16px;font-weight:800;color:#64748b'>$" + standardMonthly.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "<span style='font-size:9px;font-weight:600'>/mo</span></div>";
+    html += "</div>";
   }
+  html += "<div style='font-size:10px;color:#94a3b8;margin-top:4px'>Full project investment based on current scope of work</div>";
   html += "</div>";
 
-  // Scope of work bullets
-  html += "<div style='margin-bottom:20px'>";
-  html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Scope of Work</div>";
+  // Scope of work
+  html += "<div style='margin-bottom:18px;padding-bottom:18px;border-bottom:2px solid #f1f5f9'>";
+  html += "<div style='font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Scope of Work</div>";
   html += "<div style='columns:2;column-gap:16px'>";
   overviewItems.forEach(function(item) {
     html += "<div style='font-size:10px;color:#334155;line-height:1.8;break-inside:avoid;margin-bottom:2px'>- " + item + "</div>";
   });
   html += "</div></div>";
 
-  // Service price breakdown
-  html += "<div style='background:white;border-radius:8px;padding:14px;border:1px solid #bae6fd'>";
-  html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px'>Service Breakdown</div>";
-  if (state.services.includes('siding'))  html += "<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>James Hardie Siding</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.sid) + "</span></div>";
-  if (state.services.includes('soffit'))  html += "<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Soffit Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.sof) + "</span></div>";
-  if (state.services.includes('fascia'))  html += "<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Fascia Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.fas) + "</span></div>";
-  if (state.services.includes('paint'))   html += "<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Exterior Paint</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.pnt) + "</span></div>";
-  if (state.services.includes('windows')) html += "<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Window Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.win) + "</span></div>";
-  if (state.services.includes('misc'))    html += "<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Miscellaneous</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.msc) + "</span></div>";
-  html += "<div style='display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px'><span style='color:#0f172a;font-weight:800'>Total</span><span style='color:#0ea5e9;font-weight:800'>" + fmt(standard) + "</span></div>";
+  // Service breakdown
+  html += "<div style='margin-bottom:18px;padding-bottom:18px;border-bottom:2px solid #f1f5f9'>";
+  html += "<div style='font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px'>Service Breakdown</div>";
+  if (state.services.includes('siding'))  html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>James Hardie Siding</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.sid) + "</span></div>";
+  if (state.services.includes('soffit'))  html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Soffit Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.sof) + "</span></div>";
+  if (state.services.includes('fascia'))  html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Fascia Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.fas) + "</span></div>";
+  if (state.services.includes('paint'))   html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Exterior Paint</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.pnt) + "</span></div>";
+  if (state.services.includes('windows')) html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Window Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.win) + "</span></div>";
+  if (state.services.includes('misc'))    html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Miscellaneous</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.msc) + "</span></div>";
+  html += "<div style='display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px'><span style='color:#0f172a;font-weight:800'>Total</span><span style='color:#0f172a;font-weight:800'>" + fmt(standard) + "</span></div>";
+  html += "</div>";
+
+  // ADMIN SAVINGS CREDIT REVEAL
+  html += "<div style='background:#f0f9ff;border:2px solid #0ea5e9;border-radius:10px;padding:18px'>";
+  html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Administrative Savings Credit Applied</div>";
+  html += "<div style='display:flex;align-items:baseline;gap:12px;margin-bottom:4px'>";
+  html += "<div style='font-size:30px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div>";
+  html += "<div style='background:#dcfce7;color:#166534;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px'>You save " + fmt(savings) + "</div></div>";
+  html += "<div style='font-size:10px;color:#475569;margin-bottom:12px;font-style:italic'>When projects move forward during the initial consultation, it allows us to pass these savings directly to you:</div>";
+  var creditBullets = [
+    ['Reduced Follow-Up Workload', 'Eliminates multiple calls, emails, and scheduling touchpoints typically required to re-engage undecided clients.'],
+    ['Lower Administrative Overhead', 'Minimizes time spent on proposal revisions, price re-confirmations, and extended client management cycles.'],
+    ['Improved Resource Allocation', 'Frees up administrative staff to focus on coordinating active jobs rather than managing uncommitted prospects.'],
+    ['Reduced Pipeline Congestion', 'Prevents backlog of pending estimates that require ongoing attention without guaranteed conversion.'],
+  ];
+  html += "<div style='display:flex;flex-direction:column;gap:8px'>";
+  creditBullets.forEach(function(b) {
+    html += "<div style='display:flex;gap:10px;align-items:flex-start'>";
+    html += "<div style='width:6px;height:6px;min-width:6px;background:#0ea5e9;border-radius:50%;margin-top:4px'></div>";
+    html += "<div><div style='font-size:10px;font-weight:800;color:#0f172a'>" + b[0] + "</div>";
+    html += "<div style='font-size:9px;color:#64748b;line-height:1.6'>" + b[1] + "</div></div></div>";
+  });
+  html += "</div>";
+  if (monthlyPayment) {
+    html += "<div style='margin-top:14px;padding-top:12px;border-top:1px solid #bae6fd;display:flex;align-items:baseline;gap:8px'>";
+    html += "<div style='font-size:10px;font-weight:700;color:#0369a1'>Financing Available:</div>";
+    html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>$" + monthlyPayment.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "<span style='font-size:10px;color:#64748b'>/mo</span></div>";
+    html += "<div style='font-size:9px;color:#94a3b8'>Subject to credit approval</div></div>";
+  }
   html += "</div>";
 
   html += "</div>"; // end pricing box
   html += "</div>"; // end bottom half
   html += "</div>"; // end page
+
 
   // PAGE 2+ - SERVICE SECTIONS
   function scopePage(title, total, steps, tableHeaders, tableRows) {
