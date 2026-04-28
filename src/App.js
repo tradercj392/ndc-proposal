@@ -5,6 +5,33 @@ const NDC_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABdwAAAXcCAYAAAA4
 
 const fmt = (n) => Number(n).toLocaleString("en-US", { style: "currency", currency: "USD" });
 
+
+// Compress image before storing to reduce memory usage
+function compressImage(file, callback) {
+  var maxWidth = 800;
+  var quality = 0.7;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      var width = img.width;
+      var height = img.height;
+      if (width > maxWidth) {
+        height = Math.round(height * maxWidth / width);
+        width = maxWidth;
+      }
+      canvas.width = width;
+      canvas.height = height;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      callback(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 const ALL_SERVICES = [
   { id: "siding",   emoji: "🏠", label: "Siding",             sub: "HardiePlank, Board & Batten, Shingle" },
   { id: "soffit",   emoji: "🪵", label: "Soffits",             sub: "Vented soffit panels & installation" },
@@ -227,7 +254,7 @@ function CustomerStep({ data, onChange }) {
           <span>{data.photo ? "Photo attached - tap to replace" : "Tap to take photo or upload street view"}</span>
           <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => {
             const file = e.target.files[0]; if (!file) return;
-            const r = new FileReader(); r.onload = (ev) => onChange("photo", ev.target.result); r.readAsDataURL(file);
+            compressImage(file, function(compressed) { onChange("photo", compressed); });
           }} />
         </label>
         {data.photo && (
@@ -447,7 +474,7 @@ function SidingStep({ data, onChange, onSidingTypeChange }) {
                 <span>{wall.photo ? "Photo attached - tap to replace" : "Tap to take photo or upload"}</span>
                 <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => {
                   const file = e.target.files[0]; if (!file) return;
-                  const r = new FileReader(); r.onload = (ev) => updateWall(wall.id, "photo", ev.target.result); r.readAsDataURL(file);
+                  compressImage(file, function(compressed) { updateWall(wall.id, "photo", compressed); });
                 }} />
               </label>
               {wall.photo && (
@@ -828,7 +855,7 @@ function FinancingStep({ data, onChange, state }) {
   return (
     <div style={S.stepWrap}>
       <h2 style={S.stepTitle}>Financing Option</h2>
-      <p style={S.stepSub}>Enter the monthly payment amount to display in Option 1 on the proposal. Leave blank if not offering financing.</p>
+      <p style={S.stepSub}>Enter the monthly payment amount to display in Administrative Savings Credit on the proposal. Leave blank if not offering financing.</p>
 
       <div style={{ ...S.summaryBox, flexDirection: "column", alignItems: "flex-start", marginBottom: 16 }}>
         <div style={{ fontSize: 11, color: "#0369a1", fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>Total Job Cost</div>
@@ -858,7 +885,7 @@ function FinancingStep({ data, onChange, state }) {
             <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a" }}>
               {"$" + parseFloat(data.monthlyPayment).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/month"}
             </div>
-            <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>Shown under Option 1 - Priority Client Reservation</div>
+            <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>Shown under Administrative Savings Credit - Administrative Savings Credit</div>
           </div>
         )}
       </div>
@@ -1511,9 +1538,9 @@ function buildProposalHTML(state, selectedOption, signature) {
   
   html += "<div class='opt" + (selectedOption==="priority"?" selected":"") + "' onclick=\'selectOption(\"priority\")\'>";
   html += "<div style='display:flex;justify-content:space-between;align-items:flex-start'>";
-  html += "<div><div style='font-size:14px;font-weight:800'>Option 1 - Priority Client Reservation</div><div style='font-size:10px;color:#0369a1;font-weight:700;margin-top:2px'>RECOMMENDED</div></div>";
+  html += "<div><div style='font-size:14px;font-weight:800'>Administrative Savings Credit - Administrative Savings Credit</div><div style='font-size:10px;color:#0369a1;font-weight:700;margin-top:2px'>BEST VALUE</div></div>";
   html += "<div style='text-align:right'><div style='font-size:22px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div><div style='font-size:10px;color:#64748b'>Best Available Rate</div></div></div>";
-  html += "<ul style='margin:12px 0 0;padding-left:18px'><li style='font-size:11px;color:#334155;line-height:1.8'>Lock in your project start date today</li><li style='font-size:11px;color:#334155;line-height:1.8'>Best available pricing - priority rate guaranteed</li><li style='font-size:11px;color:#334155;line-height:1.8'>Priority scheduling - front of our queue</li><li style='font-size:11px;color:#334155;line-height:1.8'>Full manufacturer warranty on all materials</li><li style='font-size:11px;color:#334155;line-height:1.8'>Priority scheduling and pricing are limited and subject to current project availability</li></ul></div>";
+  html += "<ul style='margin:12px 0 0;padding-left:18px'><li style='font-size:11px;color:#334155;line-height:1.8'>Lock in your administrative savings credit rate today</li><li style='font-size:11px;color:#334155;line-height:1.8'>Best available pricing - administrative savings credit rate guaranteed</li><li style='font-size:11px;color:#334155;line-height:1.8'>Administrative savings credit - priority scheduling</li><li style='font-size:11px;color:#334155;line-height:1.8'>Full manufacturer warranty on all materials</li><li style='font-size:11px;color:#334155;line-height:1.8'>Administrative savings credit is limited and subject to current project availability</li></ul></div>";
   
   html += "<div class='opt" + (selectedOption==="standard"?" selected":"") + "' onclick=\'selectOption(\"standard\")\'>";
   html += "<div style='display:flex;justify-content:space-between;align-items:flex-start'>";
@@ -1523,7 +1550,7 @@ function buildProposalHTML(state, selectedOption, signature) {
 
   if (selectedOption) {
     html += "<div style='background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center'>";
-    html += "<div style='font-size:12px;font-weight:700;color:#0369a1'>" + (selectedOption==="priority"?"Option 1 - Priority Client Reservation Selected":"Option 2 - Standard Scheduling Selected") + "</div>";
+    html += "<div style='font-size:12px;font-weight:700;color:#0369a1'>" + (selectedOption==="priority"?"Administrative Savings Credit - Administrative Savings Credit Selected":"Option 2 - Standard Scheduling Selected") + "</div>";
     html += "<div style='font-size:16px;font-weight:800;color:#0f172a'>" + fmt(selectedOption==="priority"?priority:standard) + "</div></div>";
   }
   html += "</div>";
@@ -1545,7 +1572,7 @@ function buildProposalHTML(state, selectedOption, signature) {
   html += section("Selected Option");
   html += "<div style='display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap'>";
   html += "<div onclick=\'selectOption(\"priority\")\' style='flex:1;min-width:140px;border:2px solid " + (selectedOption==="priority"?"#0ea5e9":"#e2e8f0") + ";border-radius:8px;padding:10px 14px;cursor:pointer;background:" + (selectedOption==="priority"?"#f0f9ff":"white") + "'>";
-  html += "<div style='font-size:11px;font-weight:700;color:" + (selectedOption==="priority"?"#0ea5e9":"#64748b") + "'>" + (selectedOption==="priority"?"Check ":"O ") + "Option 1 - Priority - " + fmt(priority) + "</div></div>";
+  html += "<div style='font-size:11px;font-weight:700;color:" + (selectedOption==="priority"?"#0ea5e9":"#64748b") + "'>" + (selectedOption==="priority"?"Check ":"O ") + "Administrative Savings Credit - " + fmt(priority) + "</div></div>";
   html += "<div onclick=\'selectOption(\"standard\")\' style='flex:1;min-width:140px;border:2px solid " + (selectedOption==="standard"?"#475569":"#e2e8f0") + ";border-radius:8px;padding:10px 14px;cursor:pointer;background:" + (selectedOption==="standard"?"#f8fafc":"white") + "'>";
   html += "<div style='font-size:11px;font-weight:700;color:" + (selectedOption==="standard"?"#334155":"#64748b") + "'>" + (selectedOption==="standard"?"Check ":"O ") + "Option 2 - Standard - " + fmt(standard) + "</div></div></div>";
 
@@ -1733,7 +1760,7 @@ function PreviewStep({ state, setStep, steps }) {
       <div style={{ padding: "16px 24px 0" }}>
         {selectedOption && (
           <div style={{ background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 8, padding: "10px 14px", marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#0369a1" }}>{selectedOption === "priority" ? "Option 1 - Priority" : "Option 2 - Standard"}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#0369a1" }}>{selectedOption === "priority" ? "Administrative Savings Credit" : "Option 2 - Standard"}</span>
             <span style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{selectedOption === "priority" ? fmt(priority) : fmt(standard)}</span>
           </div>
         )}
