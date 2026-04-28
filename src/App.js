@@ -1953,6 +1953,8 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
   const [isSigning, setIsSigning] = useState(false);
   const [hasSigned, setHasSigned] = useState(false);
   const [signatureData, setSignatureData] = useState(null);
+  const [repName, setRepName] = useState("CJ Shires");
+  const [repDate, setRepDate] = useState(today);
 
   const t = calcGrandTotal(state);
   const priority = t.total;
@@ -1995,8 +1997,11 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
   const endDraw = () => {
     setIsSigning(false);
     const canvas = canvasRef.current;
-    setSignatureData(canvas.toDataURL());
+    const data = canvas.toDataURL('image/png');
+    setSignatureData(data);
     setHasSigned(true);
+    // Replace canvas with image for printing
+    canvas.style.printColorAdjust = 'exact';
   };
 
   const clearSignature = () => {
@@ -2244,6 +2249,10 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
                 Sign here
               </div>
             )}
+            {/* Signature image for PDF */}
+            {signatureData && (
+              <img src={signatureData} alt="sig" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", display: "none" }} className="sig-print" />
+            )}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
             <div style={{ fontSize: 10, color: "#64748b" }}>{state.customer.name} &nbsp;|&nbsp; {today}</div>
@@ -2252,16 +2261,34 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
         </div>
 
         {/* NDC Signature line */}
-        <div style={{ display: "flex", gap: 16 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ borderBottom: "1.5px solid #0f172a", minHeight: 30, marginBottom: 4 }} />
+        <div style={{ display: "flex", gap: 16, marginTop: 8 }}>
+          <div style={{ flex: 2 }}>
+            <input
+              value={repName}
+              onChange={e => setRepName(e.target.value)}
+              style={{ width: "100%", borderBottom: "1.5px solid #0f172a", borderTop: "none", borderLeft: "none", borderRight: "none", outline: "none", fontSize: 14, fontFamily: "Georgia, serif", color: "#0f172a", marginBottom: 4, background: "transparent", boxSizing: "border-box" }}
+              placeholder="Representative name"
+            />
             <div style={{ fontSize: 10, color: "#64748b" }}>New Direction Construction Representative</div>
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ borderBottom: "1.5px solid #0f172a", minHeight: 30, marginBottom: 4 }} />
+            <input
+              value={repDate}
+              onChange={e => setRepDate(e.target.value)}
+              style={{ width: "100%", borderBottom: "1.5px solid #0f172a", borderTop: "none", borderLeft: "none", borderRight: "none", outline: "none", fontSize: 13, color: "#0f172a", marginBottom: 4, background: "transparent", boxSizing: "border-box" }}
+            />
             <div style={{ fontSize: 10, color: "#64748b" }}>Date</div>
           </div>
         </div>
+        {/* Hidden signature image for PDF printing */}
+        {signatureData && (
+          <img
+            src={signatureData}
+            alt="Client Signature"
+            className="print-sig"
+            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}
+          />
+        )}
       </div>
 
       {hasSigned && (
