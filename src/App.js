@@ -2102,6 +2102,49 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
         </div>
 
 
+        {/* Materials List */}
+        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #f1f5f9' }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>Materials List</div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
+            <thead><tr style={{ background: '#0f172a' }}>
+              <th style={{ padding: '5px 8px', color: 'white', textAlign: 'left', fontWeight: 700 }}>Material</th>
+              <th style={{ padding: '5px 8px', color: 'white', textAlign: 'left', fontWeight: 700 }}>Qty</th>
+              <th style={{ padding: '5px 8px', color: 'white', textAlign: 'left', fontWeight: 700 }}>Notes</th>
+            </tr></thead>
+            <tbody>
+              {state.services.includes('siding') && buildHardieMaterials(state.siding).map((m,i) => (
+                <tr key={'sm'+i} style={{ background: i%2===0?'white':'#f8fafc' }}>
+                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9' }}>{m[0]}</td>
+                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9', color: '#0ea5e9', fontWeight: 700 }}>{m[1]}</td>
+                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9', color: '#64748b' }}>{m[2]}</td>
+                </tr>
+              ))}
+              {state.services.includes('soffit') && buildSoffitMaterials(state.soffit).map((m,i) => (
+                <tr key={'sof'+i} style={{ background: i%2===0?'white':'#f8fafc' }}>
+                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9' }}>{m[0]}</td>
+                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9', color: '#0ea5e9', fontWeight: 700 }}>{m[1]}</td>
+                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9', color: '#64748b' }}>{m[2]}</td>
+                </tr>
+              ))}
+              {state.services.includes('fascia') && buildFasciaMaterials(state.fascia).map((m,i) => (
+                <tr key={'fas'+i} style={{ background: i%2===0?'white':'#f8fafc' }}>
+                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9' }}>{m[0]}</td>
+                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9', color: '#0ea5e9', fontWeight: 700 }}>{m[1]}</td>
+                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9', color: '#64748b' }}>{m[2]}</td>
+                </tr>
+              ))}
+              {state.services.includes('windows') && buildWindowMaterials(state.windows).map((m,i) => (
+                <tr key={'win'+i} style={{ background: i%2===0?'white':'#f8fafc' }}>
+                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9' }}>{m[0]}</td>
+                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9', color: '#0ea5e9', fontWeight: 700 }}>{m[1]}</td>
+                  <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9', color: '#64748b' }}>{m[2]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+
         {/* Agreed Investment */}
         <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Agreed Investment</div>
