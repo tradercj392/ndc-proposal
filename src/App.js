@@ -1007,6 +1007,13 @@ function buildProposalHTML(state, selectedOption, signature) {
   var today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   var priority = t.total;
   var standard = t.total * 1.0835;
+  var scale = t.total > 0 ? standard / t.total : 1;
+  var s_sid = t.sid * scale;
+  var s_sof = t.sof * scale;
+  var s_fas = t.fas * scale;
+  var s_pnt = t.pnt * scale;
+  var s_win = t.win * scale;
+  var s_msc = t.msc * scale;
   var chosen = selectedOption === "priority" ? priority : selectedOption === "standard" ? standard : null;
 
   function row(label, val) { return "<tr><td style='padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#334155'>" + label + "</td><td style='padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#334155;text-align:right'>" + val + "</td></tr>"; }
@@ -1119,42 +1126,13 @@ function buildProposalHTML(state, selectedOption, signature) {
   // Service breakdown
   html += "<div style='margin-bottom:18px;padding-bottom:18px;border-bottom:2px solid #f1f5f9'>";
   html += "<div style='font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px'>Service Breakdown</div>";
-  if (state.services.includes('siding'))  html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>James Hardie Siding</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.sid) + "</span></div>";
-  if (state.services.includes('soffit'))  html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Soffit Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.sof) + "</span></div>";
-  if (state.services.includes('fascia'))  html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Fascia Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.fas) + "</span></div>";
-  if (state.services.includes('paint'))   html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Exterior Paint</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.pnt) + "</span></div>";
-  if (state.services.includes('windows')) html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Window Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.win) + "</span></div>";
-  if (state.services.includes('misc'))    html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Miscellaneous</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.msc) + "</span></div>";
+  if (state.services.includes('siding'))  html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>James Hardie Siding</span><span style='color:#0f172a;font-weight:800'>" + fmt(s_sid) + "</span></div>";
+  if (state.services.includes('soffit'))  html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Soffit Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(s_sof) + "</span></div>";
+  if (state.services.includes('fascia'))  html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Fascia Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(s_fas) + "</span></div>";
+  if (state.services.includes('paint'))   html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Exterior Paint</span><span style='color:#0f172a;font-weight:800'>" + fmt(s_pnt) + "</span></div>";
+  if (state.services.includes('windows')) html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Window Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(s_win) + "</span></div>";
+  if (state.services.includes('misc'))    html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Miscellaneous</span><span style='color:#0f172a;font-weight:800'>" + fmt(s_msc) + "</span></div>";
   html += "<div style='display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px'><span style='color:#0f172a;font-weight:800'>Total</span><span style='color:#0f172a;font-weight:800'>" + fmt(standard) + "</span></div>";
-  html += "</div>";
-
-  // ADMIN SAVINGS CREDIT REVEAL
-  html += "<div style='background:#f0f9ff;border:2px solid #0ea5e9;border-radius:10px;padding:18px'>";
-  html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Administrative Savings Credit Applied</div>";
-  html += "<div style='display:flex;align-items:baseline;gap:12px;margin-bottom:4px'>";
-  html += "<div style='font-size:30px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div>";
-  html += "<div style='background:#dcfce7;color:#166534;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px'>You save " + fmt(savings) + "</div></div>";
-  html += "<div style='font-size:10px;color:#475569;margin-bottom:12px;font-style:italic'>When projects move forward during the initial consultation, it allows us to pass these savings directly to you:</div>";
-  var creditBullets = [
-    ['Reduced Follow-Up Workload', 'Eliminates multiple calls, emails, and scheduling touchpoints typically required to re-engage undecided clients.'],
-    ['Lower Administrative Overhead', 'Minimizes time spent on proposal revisions, price re-confirmations, and extended client management cycles.'],
-    ['Improved Resource Allocation', 'Frees up administrative staff to focus on coordinating active jobs rather than managing uncommitted prospects.'],
-    ['Reduced Pipeline Congestion', 'Prevents backlog of pending estimates that require ongoing attention without guaranteed conversion.'],
-  ];
-  html += "<div style='display:flex;flex-direction:column;gap:8px'>";
-  creditBullets.forEach(function(b) {
-    html += "<div style='display:flex;gap:10px;align-items:flex-start'>";
-    html += "<div style='width:6px;height:6px;min-width:6px;background:#0ea5e9;border-radius:50%;margin-top:4px'></div>";
-    html += "<div><div style='font-size:10px;font-weight:800;color:#0f172a'>" + b[0] + "</div>";
-    html += "<div style='font-size:9px;color:#64748b;line-height:1.6'>" + b[1] + "</div></div></div>";
-  });
-  html += "</div>";
-  if (monthlyPayment) {
-    html += "<div style='margin-top:14px;padding-top:12px;border-top:1px solid #bae6fd;display:flex;align-items:baseline;gap:8px'>";
-    html += "<div style='font-size:10px;font-weight:700;color:#0369a1'>Financing Available:</div>";
-    html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>$" + monthlyPayment.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "<span style='font-size:10px;color:#64748b'>/mo</span></div>";
-    html += "<div style='font-size:9px;color:#94a3b8'>Subject to credit approval</div></div>";
-  }
   html += "</div>";
 
   html += "</div>"; // end pricing box
@@ -1275,7 +1253,7 @@ function buildProposalHTML(state, selectedOption, signature) {
     html += "<div class='page'>";
     html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
     html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>James Hardie " + (state.siding.sidingType||"Siding") + "</div>";
-    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(t.sid) + "</div></div>";
+    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(s_sid) + "</div></div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:16px'>Per James Hardie Installation Manual - All work performed to manufacturer specifications</div>";
 
     // Scope of Work
@@ -1311,7 +1289,7 @@ function buildProposalHTML(state, selectedOption, signature) {
       html += "<tr><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + w.label + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.location||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.currentSiding||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.removalRequired||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.osbSheathing||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + prod + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.hardieSize||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.hardieTexture||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px;font-weight:700'>" + (w.sqft||"-") + " sq ft</td></tr>";
       if (w.notes) html += "<tr><td colspan='9' style='padding:4px 8px 8px;font-size:10px;color:#78350f;background:#fffbeb'>Note: " + w.notes + "</td></tr>";
     });
-    html += "</tbody><tfoot><tr><td colspan='8' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL SIDING</td><td style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + fmt(t.sid) + "</td></tr></tfoot></table>";
+    html += "</tbody><tfoot><tr><td colspan='8' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL SIDING</td><td style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + fmt(s_sid) + "</td></tr></tfoot></table>";
 
     // Wall Photos
     var photoWalls = state.siding.walls.filter(function(w){return w.photo;});
@@ -1358,7 +1336,7 @@ function buildProposalHTML(state, selectedOption, signature) {
     html += "<div class='page'>";
     html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
     html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>Soffit Installation</div>";
-    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(t.sof) + "</div></div>";
+    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(s_sof) + "</div></div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:16px'>Vented soffit panels and accessories - " + totalSoffitLnFt2.toFixed(0) + " linear feet</div>";
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Scope of Work</div>";
@@ -1373,7 +1351,7 @@ function buildProposalHTML(state, selectedOption, signature) {
     state.soffit.items.forEach(function(item,i){
       html += "<tr style='background:" + (i%2===0?"white":"#f8fafc") + "'><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + item.label + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (item.currentMaterial||"-") + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (item.newMaterial||"-") + "</td><td style='padding:6px 8px;font-size:10px;font-weight:700;border-bottom:1px solid #f1f5f9'>" + (item.linearFt||"-") + " lf</td><td style='padding:6px 8px;font-size:10px;color:#78350f;border-bottom:1px solid #f1f5f9'>" + (item.notes||"-") + "</td></tr>";
     });
-    html += "</tbody><tfoot><tr><td colspan='3' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL SOFFITS</td><td colspan='2' style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + fmt(t.sof) + "</td></tr></tfoot></table>";
+    html += "</tbody><tfoot><tr><td colspan='3' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL SOFFITS</td><td colspan='2' style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + fmt(s_sof) + "</td></tr></tfoot></table>";
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 8px'>Materials List</div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:8px'>Based on " + totalSoffitLnFt2.toFixed(0) + " total linear feet. Quantities include waste factors.</div>";
@@ -1403,7 +1381,7 @@ function buildProposalHTML(state, selectedOption, signature) {
     html += "<div class='page'>";
     html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
     html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>Fascia Installation</div>";
-    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(t.fas) + "</div></div>";
+    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(s_fas) + "</div></div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:16px'>Fascia boards and trim - " + totalFasciaLnFt2.toFixed(0) + " linear feet</div>";
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Scope of Work</div>";
@@ -1418,7 +1396,7 @@ function buildProposalHTML(state, selectedOption, signature) {
     state.fascia.items.forEach(function(item,i){
       html += "<tr style='background:" + (i%2===0?"white":"#f8fafc") + "'><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + item.label + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (item.currentMaterial||"-") + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (item.newMaterial||"-") + "</td><td style='padding:6px 8px;font-size:10px;font-weight:700;border-bottom:1px solid #f1f5f9'>" + (item.linearFt||"-") + " lf</td><td style='padding:6px 8px;font-size:10px;color:#78350f;border-bottom:1px solid #f1f5f9'>" + (item.notes||"-") + "</td></tr>";
     });
-    html += "</tbody><tfoot><tr><td colspan='3' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL FASCIA</td><td colspan='2' style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + fmt(t.fas) + "</td></tr></tfoot></table>";
+    html += "</tbody><tfoot><tr><td colspan='3' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL FASCIA</td><td colspan='2' style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + fmt(s_fas) + "</td></tr></tfoot></table>";
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 8px'>Materials List</div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:8px'>Based on " + totalFasciaLnFt2.toFixed(0) + " total linear feet.</div>";
@@ -1461,7 +1439,7 @@ function buildProposalHTML(state, selectedOption, signature) {
     html += "<div class='page'>";
     html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
     html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>Exterior Paint</div>";
-    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(t.pnt) + "</div></div>";
+    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(s_pnt) + "</div></div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:16px'>Full exterior paint application using directional spray technique</div>";
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Scope of Work</div>";
@@ -1525,7 +1503,7 @@ function buildProposalHTML(state, selectedOption, signature) {
     html += "<div class='page'>";
     html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
     html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>Window Installation</div>";
-    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(t.win) + "</div></div>";
+    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(s_win) + "</div></div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:16px'>" + totalWinQty + " unit(s) - per manufacturer installation specifications</div>";
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Scope of Work</div>";
@@ -1542,7 +1520,7 @@ function buildProposalHTML(state, selectedOption, signature) {
       var sz = w.width&&w.height?w.width+"x"+w.height+"in":"-";
       html += "<tr style='background:" + (i%2===0?"white":"#f8fafc") + "'><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9;font-weight:600'>" + w.label + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.location||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + mfr + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.style||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.frameType||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.frameColor||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.glassType||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.glassPack||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.grids||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9;font-weight:700'>" + sz + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9;font-weight:700;color:#0369a1'>" + (w.qty||"-") + "</td></tr>";
     });
-    html += "</tbody><tfoot><tr><td colspan='10' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL WINDOWS</td><td style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + fmt(t.win) + "</td></tr></tfoot></table>";
+    html += "</tbody><tfoot><tr><td colspan='10' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL WINDOWS</td><td style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + fmt(s_win) + "</td></tr></tfoot></table>";
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 8px'>Materials List</div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:8px'>Based on " + totalWinQty + " total window units.</div>";
@@ -1564,119 +1542,47 @@ function buildProposalHTML(state, selectedOption, signature) {
     html += "</div>";
   }
 
-  // PRICING PAGE
-  html += "<div class='page'>";
-  html += "<div style='font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px'>Project Investment Options</div>";
-  html += "<div style='font-size:11px;color:#64748b;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #0f172a'>Both options include the full scope of work, materials, and warranty outlined in this proposal.</div>";
-  
-  html += "<div class='opt" + (selectedOption==="priority"?" selected":"") + "' onclick=\'selectOption(\"priority\")\'>";
-  html += "<div style='display:flex;justify-content:space-between;align-items:flex-start'>";
-  html += "<div><div style='font-size:14px;font-weight:800'>Administrative Savings Credit - Administrative Savings Credit</div><div style='font-size:10px;color:#0369a1;font-weight:700;margin-top:2px'>BEST VALUE</div></div>";
-  html += "<div style='text-align:right'><div style='font-size:22px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div><div style='font-size:10px;color:#64748b'>Best Available Rate</div></div></div>";
-  html += "<ul style='margin:12px 0 0;padding-left:18px'><li style='font-size:11px;color:#334155;line-height:1.8'>Lock in your administrative savings credit rate today</li><li style='font-size:11px;color:#334155;line-height:1.8'>Best available pricing - administrative savings credit rate guaranteed</li><li style='font-size:11px;color:#334155;line-height:1.8'>Administrative savings credit - priority scheduling</li><li style='font-size:11px;color:#334155;line-height:1.8'>Full manufacturer warranty on all materials</li><li style='font-size:11px;color:#334155;line-height:1.8'>Administrative savings credit is limited and subject to current project availability</li></ul></div>";
-  
-  html += "<div class='opt" + (selectedOption==="standard"?" selected":"") + "' onclick=\'selectOption(\"standard\")\'>";
-  html += "<div style='display:flex;justify-content:space-between;align-items:flex-start'>";
-  html += "<div><div style='font-size:14px;font-weight:800'>Standard Pricing Pricing</div><div style='font-size:10px;color:#64748b;font-weight:600;margin-top:2px'>STANDARD PRICING</div></div>";
-  html += "<div style='text-align:right'><div style='font-size:22px;font-weight:800;color:#334155'>" + fmt(standard) + "</div><div style='font-size:10px;color:#94a3b8'>Standard Rate</div></div></div>";
-  html += "<ul style='margin:12px 0 0;padding-left:18px'><li style='font-size:11px;color:#334155;line-height:1.8'>Full scope of work as outlined in this proposal</li><li style='font-size:11px;color:#334155;line-height:1.8'>Priced at our standard rate</li><li style='font-size:11px;color:#334155;line-height:1.8'>Price valid for 30 days due to material cost variability and schedule availability</li><li style='font-size:11px;color:#334155;line-height:1.8'>Full manufacturer warranty on all materials</li></ul></div>";
 
-  if (selectedOption) {
-    html += "<div style='background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center'>";
-    html += "<div style='font-size:12px;font-weight:700;color:#0369a1'>" + (selectedOption==="priority"?"Administrative Savings Credit Selected":"Standard Pricing Selected") + "</div>";
-    html += "<div style='font-size:16px;font-weight:800;color:#0f172a'>" + fmt(selectedOption==="priority"?priority:standard) + "</div></div>";
+
+  // ADMIN SAVINGS CREDIT PAGE - after all service pages
+  html += "<div class='page'>";
+  html += "<div style='font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>Project Investment Options</div>";
+
+  // Standard pricing box
+  html += "<div style='border:1.5px solid #e2e8f0;border-radius:10px;padding:18px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-start'>";
+  html += "<div><div style='font-size:14px;font-weight:800'>Standard Pricing</div><div style='font-size:10px;color:#64748b;font-weight:600;margin-top:2px'>STANDARD PRICING</div></div>";
+  html += "<div style='text-align:right'><div style='font-size:22px;font-weight:800;color:#334155'>" + fmt(standard) + "</div><div style='font-size:10px;color:#94a3b8'>Standard Rate</div></div></div>";
+
+  // ADMIN SAVINGS CREDIT REVEAL
+  html += "<div style='background:#f0f9ff;border:2px solid #0ea5e9;border-radius:10px;padding:18px'>";
+  html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Administrative Savings Credit Applied</div>";
+  html += "<div style='display:flex;align-items:baseline;gap:12px;margin-bottom:4px'>";
+  html += "<div style='font-size:30px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div>";
+  html += "<div style='background:#dcfce7;color:#166534;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px'>You save " + fmt(savings) + "</div></div>";
+  html += "<div style='font-size:10px;color:#475569;margin-bottom:12px;font-style:italic'>When projects move forward during the initial consultation, it allows us to pass these savings directly to you:</div>";
+  var creditBullets = [
+    ['Reduced Follow-Up Workload', 'Eliminates multiple calls, emails, and scheduling touchpoints typically required to re-engage undecided clients.'],
+    ['Lower Administrative Overhead', 'Minimizes time spent on proposal revisions, price re-confirmations, and extended client management cycles.'],
+    ['Improved Resource Allocation', 'Frees up administrative staff to focus on coordinating active jobs rather than managing uncommitted prospects.'],
+    ['Reduced Pipeline Congestion', 'Prevents backlog of pending estimates that require ongoing attention without guaranteed conversion.'],
+  ];
+  html += "<div style='display:flex;flex-direction:column;gap:8px'>";
+  creditBullets.forEach(function(b) {
+    html += "<div style='display:flex;gap:10px;align-items:flex-start'>";
+    html += "<div style='width:6px;height:6px;min-width:6px;background:#0ea5e9;border-radius:50%;margin-top:4px'></div>";
+    html += "<div><div style='font-size:10px;font-weight:800;color:#0f172a'>" + b[0] + "</div>";
+    html += "<div style='font-size:9px;color:#64748b;line-height:1.6'>" + b[1] + "</div></div></div>";
+  });
+  html += "</div>";
+  if (monthlyPayment) {
+    html += "<div style='margin-top:14px;padding-top:12px;border-top:1px solid #bae6fd;display:flex;align-items:baseline;gap:8px'>";
+    html += "<div style='font-size:10px;font-weight:700;color:#0369a1'>Financing Available:</div>";
+    html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>$" + monthlyPayment.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "<span style='font-size:10px;color:#64748b'>/mo</span></div>";
+    html += "<div style='font-size:9px;color:#94a3b8'>Subject to credit approval</div></div>";
   }
   html += "</div>";
 
-  // AGREEMENT PAGE
-  html += "<div class='page'>";
-  html += "<div style='font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px'>Agreement & Authorization</div>";
-  html += "<div style='font-size:11px;color:#64748b;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #0f172a'>Please review and sign to authorize this project.</div>";
-  
-  html += "<div style='background:#fef9c3;border:1px solid #fde68a;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:11px;color:#78350f;line-height:1.7'>";
-  html += "<strong>Binding Agreement:</strong> This document constitutes a legally binding agreement between the Client and New Direction Construction upon signature by both parties.</div>";
-
-  html += section("Project Timeline");
-  html += "<table><tbody>" + row("Proposal Date", today) + row("Valid Until", "30 days from issue date") + row("Estimated Start Date", "To be confirmed upon signing") + row("Estimated Completion", "To be confirmed based on scope") + "</tbody></table>";
-
-  html += section("Warranty");
-  html += "<table><tbody>" + row("James Hardie Product Warranty", "30-year limited (transferable)") + row("Paint / Finish Warranty", "Per manufacturer specification") + row("NDC Workmanship Warranty", "2 years from completion date") + "</tbody></table>";
-
-  html += section("Selected Option");
-  html += "<div style='display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap'>";
-  html += "<div onclick=\'selectOption(\"priority\")\' style='flex:1;min-width:140px;border:2px solid " + (selectedOption==="priority"?"#0ea5e9":"#e2e8f0") + ";border-radius:8px;padding:10px 14px;cursor:pointer;background:" + (selectedOption==="priority"?"#f0f9ff":"white") + "'>";
-  html += "<div style='font-size:11px;font-weight:700;color:" + (selectedOption==="priority"?"#0ea5e9":"#64748b") + "'>" + (selectedOption==="priority"?"Check ":"O ") + "Administrative Savings Credit - " + fmt(priority) + "</div></div>";
-  html += "<div onclick=\'selectOption(\"standard\")\' style='flex:1;min-width:140px;border:2px solid " + (selectedOption==="standard"?"#475569":"#e2e8f0") + ";border-radius:8px;padding:10px 14px;cursor:pointer;background:" + (selectedOption==="standard"?"#f8fafc":"white") + "'>";
-  html += "<div style='font-size:11px;font-weight:700;color:" + (selectedOption==="standard"?"#334155":"#64748b") + "'>" + (selectedOption==="standard"?"Check ":"O ") + "Standard Pricing - " + fmt(standard) + "</div></div></div>";
-
-  // Payment Options
-  var chosenTotal = selectedOption === "priority" ? priority : selectedOption === "standard" ? standard : priority;
-  var opt50_1 = chosenTotal * 0.50;
-  var opt50_2 = chosenTotal * 0.50;
-  var opt33_1 = chosenTotal * 0.33;
-  var opt33_2 = chosenTotal * 0.33;
-  var opt33_3 = chosenTotal - (opt33_1 + opt33_2);
-  var selectedPayment = state.financing && state.financing.selectedPayment ? state.financing.selectedPayment : null;
-
-  if (!selectedPayment) {
-    // No selection - show tappable options
-    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px'>Select Payment Schedule</div>";
-    html += "<div style='display:flex;flex-direction:column;gap:10px;margin-bottom:16px'>";
-    var oc_a = "onclick='selectPayment(\\x22optA\\x22)'";
-    var oc_b = "onclick='selectPayment(\\x22optB\\x22)'";
-    var oc_c = "onclick='selectPayment(\\x22optC\\x22)'";
-    html += "<div " + oc_a + " style='border:2px solid #e2e8f0;border-radius:10px;padding:12px 16px;cursor:pointer;background:white;display:flex;align-items:center;gap:12px'>";
-    html += "<div style='width:20px;height:20px;border-radius:4px;border:2px solid #cbd5e1;background:white;flex-shrink:0'></div>";
-    html += "<div><div style='font-size:11px;font-weight:800;color:#0f172a'>Option A - 50 / 50</div><div style='font-size:10px;color:#64748b'>" + fmt(opt50_1) + " at signing &nbsp;|&nbsp; " + fmt(opt50_2) + " at completion</div></div></div>";
-    html += "<div " + oc_b + " style='border:2px solid #e2e8f0;border-radius:10px;padding:12px 16px;cursor:pointer;background:white;display:flex;align-items:center;gap:12px'>";
-    html += "<div style='width:20px;height:20px;border-radius:4px;border:2px solid #cbd5e1;background:white;flex-shrink:0'></div>";
-    html += "<div><div style='font-size:11px;font-weight:800;color:#0f172a'>Option B - 33 / 33 / 33</div><div style='font-size:10px;color:#64748b'>" + fmt(opt33_1) + " at signing &nbsp;|&nbsp; " + fmt(opt33_2) + " crew starts &nbsp;|&nbsp; " + fmt(opt33_3) + " at completion</div></div></div>";
-    html += "<div " + oc_c + " style='border:2px solid #e2e8f0;border-radius:10px;padding:12px 16px;cursor:pointer;background:white;display:flex;align-items:center;gap:12px'>";
-    html += "<div style='width:20px;height:20px;border-radius:4px;border:2px solid #cbd5e1;background:white;flex-shrink:0'></div>";
-    html += "<div><div style='font-size:11px;font-weight:800;color:#0f172a'>Option C - No Money Down</div><div style='font-size:10px;color:#64748b'>$0.00 at signing &nbsp;|&nbsp; " + fmt(chosenTotal) + " at completion</div></div></div>";
-
-    // Option D - Financing
-    if (monthlyPayment) {
-      html += "<div onclick='selectPayment(\"optD\")' style='border:2px solid #e2e8f0;border-radius:10px;padding:12px 16px;cursor:pointer;background:white;display:flex;align-items:center;gap:12px'>";
-      html += "<div style='width:20px;height:20px;border-radius:4px;border:2px solid #cbd5e1;background:white;flex-shrink:0'></div>";
-      html += "<div><div style='font-size:11px;font-weight:800;color:#0f172a'>Option D - Financing</div><div style='font-size:10px;color:#64748b'>$" + monthlyPayment.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "/mo &nbsp;|&nbsp; Subject to credit approval</div></div></div>";
-    }
-
-    // Option E - Custom
-    html += "<div style='border:2px solid #e2e8f0;border-radius:10px;padding:12px 16px;background:white'>";
-    html += "<div style='font-size:11px;font-weight:800;color:#0f172a;margin-bottom:8px'>Option E - Custom Payment Terms</div>";
-    html += "<input id='customPayment' placeholder='Type custom payment terms here...' style='width:100%;border:1.5px solid #e2e8f0;border-radius:6px;padding:8px 12px;font-size:11px;color:#0f172a;outline:none;box-sizing:border-box' oninput='updateCustomPayment(this.value)' value='" + (window._customPayment||'') + "'/>";
-    html += "</div>";
-
-    html += "</div>";
-  } else {
-    // Payment selected - show clean professional table only
-    html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px'>Agreed Payment Schedule</div>";
-    html += "<div style='border:1.5px solid #0ea5e9;border-radius:10px;overflow:hidden;margin-bottom:16px'>";
-    html += "<div style='background:#0f172a;padding:10px 16px;display:flex;justify-content:space-between'>";
-    html += "<span style='font-size:11px;font-weight:800;color:white'>Payment Milestone</span>";
-    html += "<span style='font-size:11px;font-weight:800;color:#7dd3fc'>Amount Due</span></div>";
-    if (selectedPayment === 'optA') {
-      html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:white'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due at Signing</div><div style='font-size:9px;color:#64748b'>Payment due day of signing</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(opt50_1) + "</div></div>";
-      html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:#f8fafc'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due at Completion</div><div style='font-size:9px;color:#64748b'>Payment due day of project completion</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(opt50_2) + "</div></div>";
-    } else if (selectedPayment === 'optB') {
-      html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:white'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due at Signing</div><div style='font-size:9px;color:#64748b'>Payment due day of signing</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(opt33_1) + "</div></div>";
-      html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:#f8fafc'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due When Crew Starts</div><div style='font-size:9px;color:#64748b'>Payment due day crew mobilizes on site</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(opt33_2) + "</div></div>";
-      html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:white'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due at Completion</div><div style='font-size:9px;color:#64748b'>Payment due day of project completion</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(opt33_3) + "</div></div>";
-    } else if (selectedPayment === 'optD') {
-      html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:white'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Monthly Financing Payment</div><div style='font-size:9px;color:#64748b'>Subject to credit approval</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>$" + (monthlyPayment ? monthlyPayment.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '-') + "/mo</div></div>";
-    } else if (selectedPayment === 'optE') {
-      html += "<div style='padding:12px 16px;background:white'><div style='font-size:11px;font-weight:700;color:#0f172a;margin-bottom:4px'>Custom Payment Terms</div><div style='font-size:11px;color:#334155'>" + (state.financing.customPayment || 'See agreed terms') + "</div></div>";
-    } else {
-      html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:white'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due at Signing</div><div style='font-size:9px;color:#64748b'>No deposit required</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>$0.00</div></div>";
-      html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;background:#f8fafc'><div><div style='font-size:11px;font-weight:700;color:#0f172a'>Due at Completion</div><div style='font-size:9px;color:#64748b'>Payment due day of project completion</div></div><div style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(chosenTotal) + "</div></div>";
-    }
-    html += "<div style='display:flex;justify-content:space-between;padding:12px 16px;background:#0f172a'>";
-    html += "<span style='font-size:12px;font-weight:800;color:white'>Total Project Investment</span>";
-    html += "<span style='font-size:14px;font-weight:800;color:#0ea5e9'>" + fmt(chosenTotal) + "</span></div>";
-    html += "</div>";
-  }
-  html += "</div></div>";
+  html += "</div>"; // end admin savings page
 
   // TERMS PAGE - Official NDC Terms & Conditions
   html += "<div class='page'>";
@@ -1854,10 +1760,6 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
             <span style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{selectedOption === "priority" ? fmt(priority) : fmt(standard)}</span>
           </div>
         )}
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>Customer Signature (type to sign)</label>
-          <input style={{ width: "100%", boxSizing: "border-box", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 20, fontFamily: "cursive", color: "#0f172a", outline: "none" }} placeholder="Type full name to sign" value={signature} onChange={e => setSignature(e.target.value)} />
-        </div>
         {/* Email fields */}
         <div style={{ marginBottom: 10 }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>To — Customer Email</label>
