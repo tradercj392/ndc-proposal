@@ -2156,8 +2156,8 @@ function buildSteps(services) {
   if (services.includes("misc"))    steps.push({ key: "misc",    label: "Misc" });
   steps.push({ key: "financing", label: "Financing" });
   steps.push({ key: "notes",   label: "Notes"   });
+  steps.push({ key: "preview",  label: "Preview"  });
   steps.push({ key: "contract", label: "Contract" });
-  steps.push({ key: "preview", label: "Preview" });
   return steps;
 }
 
