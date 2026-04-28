@@ -1637,7 +1637,7 @@ function buildProposalHTML(state, selectedOption, signature) {
 
     // Option D - Financing
     if (monthlyPayment) {
-      html += "<div onclick='selectPayment("optD")' style='border:2px solid #e2e8f0;border-radius:10px;padding:12px 16px;cursor:pointer;background:white;display:flex;align-items:center;gap:12px'>";
+      html += "<div onclick='selectPayment(\"optD\")' style='border:2px solid #e2e8f0;border-radius:10px;padding:12px 16px;cursor:pointer;background:white;display:flex;align-items:center;gap:12px'>";
       html += "<div style='width:20px;height:20px;border-radius:4px;border:2px solid #cbd5e1;background:white;flex-shrink:0'></div>";
       html += "<div><div style='font-size:11px;font-weight:800;color:#0f172a'>Option D - Financing</div><div style='font-size:10px;color:#64748b'>$" + monthlyPayment.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "/mo &nbsp;|&nbsp; Subject to credit approval</div></div></div>";
     }
