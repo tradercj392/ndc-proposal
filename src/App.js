@@ -1438,6 +1438,11 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
       html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:" + (i%2===0?"white":"#f8fafc") + ";border-bottom:1px solid #f1f5f9'>" + s + "</div>";
     });
     html += "</div>";
+    // Add notes from each paint area to scope
+    var paintNoteNum = paintSteps.length + 1;
+    state.paint.walls.forEach(function(a) { if (a.notes) { html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:#f0f9ff;border-top:1px solid #bae6fd'>" + paintNoteNum++ + ". Wall Note - " + a.notes + "</div>"; } });
+    state.paint.trim.forEach(function(a) { if (a.notes) { html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:#f0f9ff;border-top:1px solid #bae6fd'>" + paintNoteNum++ + ". Trim Note - " + a.notes + "</div>"; } });
+    state.paint.other.forEach(function(a) { if (a.notes) { html += "<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:#f0f9ff;border-top:1px solid #bae6fd'>" + paintNoteNum++ + ". Additional Note - " + a.notes + "</div>"; } });
 
     if (state.paint.combinedSqft || state.paint.combinedPrice) {
       var combinedTotal = parseFloat(state.paint.combinedSqft||0)*parseFloat(state.paint.combinedPrice||0);
