@@ -1095,7 +1095,7 @@ function buildProposalHTML(state, selectedOption, signature) {
   // Total price at top
   html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:16px;border-bottom:1.5px solid #bae6fd'>";
   html += "<div><div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px'>Total Project Investment</div>";
-  html += "<div style='font-size:28px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div></div>";
+  html += "<div style='font-size:28px;font-weight:800;color:#0ea5e9'>" + fmt(standard) + "</div></div>";
   if (monthlyPayment) {
     html += "<div style='background:white;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;text-align:right'>";
     html += "<div style='font-size:9px;font-weight:700;color:#0369a1;text-transform:uppercase;margin-bottom:2px'>Financing Available</div>";
@@ -1122,7 +1122,7 @@ function buildProposalHTML(state, selectedOption, signature) {
   if (state.services.includes('paint'))   html += "<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Exterior Paint</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.pnt) + "</span></div>";
   if (state.services.includes('windows')) html += "<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Window Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.win) + "</span></div>";
   if (state.services.includes('misc'))    html += "<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Miscellaneous</span><span style='color:#0f172a;font-weight:800'>" + fmt(t.msc) + "</span></div>";
-  html += "<div style='display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px'><span style='color:#0f172a;font-weight:800'>Total</span><span style='color:#0ea5e9;font-weight:800'>" + fmt(priority) + "</span></div>";
+  html += "<div style='display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px'><span style='color:#0f172a;font-weight:800'>Total</span><span style='color:#0ea5e9;font-weight:800'>" + fmt(standard) + "</span></div>";
   html += "</div>";
 
   html += "</div>"; // end pricing box
@@ -1544,13 +1544,13 @@ function buildProposalHTML(state, selectedOption, signature) {
   
   html += "<div class='opt" + (selectedOption==="standard"?" selected":"") + "' onclick=\'selectOption(\"standard\")\'>";
   html += "<div style='display:flex;justify-content:space-between;align-items:flex-start'>";
-  html += "<div><div style='font-size:14px;font-weight:800'>Option 2 - Standard Scheduling</div><div style='font-size:10px;color:#64748b;font-weight:600;margin-top:2px'>FLEXIBLE START DATE</div></div>";
+  html += "<div><div style='font-size:14px;font-weight:800'>Standard Pricing Pricing</div><div style='font-size:10px;color:#64748b;font-weight:600;margin-top:2px'>STANDARD PRICING</div></div>";
   html += "<div style='text-align:right'><div style='font-size:22px;font-weight:800;color:#334155'>" + fmt(standard) + "</div><div style='font-size:10px;color:#94a3b8'>Standard Rate</div></div></div>";
-  html += "<ul style='margin:12px 0 0;padding-left:18px'><li style='font-size:11px;color:#334155;line-height:1.8'>Full scope of work as outlined in this proposal</li><li style='font-size:11px;color:#334155;line-height:1.8'>Scheduled based on next available opening</li><li style='font-size:11px;color:#334155;line-height:1.8'>Price valid for 30 days due to material cost variability and schedule availability</li><li style='font-size:11px;color:#334155;line-height:1.8'>Full manufacturer warranty on all materials</li></ul></div>";
+  html += "<ul style='margin:12px 0 0;padding-left:18px'><li style='font-size:11px;color:#334155;line-height:1.8'>Full scope of work as outlined in this proposal</li><li style='font-size:11px;color:#334155;line-height:1.8'>Priced at our standard rate</li><li style='font-size:11px;color:#334155;line-height:1.8'>Price valid for 30 days due to material cost variability and schedule availability</li><li style='font-size:11px;color:#334155;line-height:1.8'>Full manufacturer warranty on all materials</li></ul></div>";
 
   if (selectedOption) {
     html += "<div style='background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center'>";
-    html += "<div style='font-size:12px;font-weight:700;color:#0369a1'>" + (selectedOption==="priority"?"Administrative Savings Credit Selected":"Standard Scheduling Selected") + "</div>";
+    html += "<div style='font-size:12px;font-weight:700;color:#0369a1'>" + (selectedOption==="priority"?"Administrative Savings Credit Selected":"Standard Pricing Selected") + "</div>";
     html += "<div style='font-size:16px;font-weight:800;color:#0f172a'>" + fmt(selectedOption==="priority"?priority:standard) + "</div></div>";
   }
   html += "</div>";
@@ -1574,7 +1574,7 @@ function buildProposalHTML(state, selectedOption, signature) {
   html += "<div onclick=\'selectOption(\"priority\")\' style='flex:1;min-width:140px;border:2px solid " + (selectedOption==="priority"?"#0ea5e9":"#e2e8f0") + ";border-radius:8px;padding:10px 14px;cursor:pointer;background:" + (selectedOption==="priority"?"#f0f9ff":"white") + "'>";
   html += "<div style='font-size:11px;font-weight:700;color:" + (selectedOption==="priority"?"#0ea5e9":"#64748b") + "'>" + (selectedOption==="priority"?"Check ":"O ") + "Administrative Savings Credit - " + fmt(priority) + "</div></div>";
   html += "<div onclick=\'selectOption(\"standard\")\' style='flex:1;min-width:140px;border:2px solid " + (selectedOption==="standard"?"#475569":"#e2e8f0") + ";border-radius:8px;padding:10px 14px;cursor:pointer;background:" + (selectedOption==="standard"?"#f8fafc":"white") + "'>";
-  html += "<div style='font-size:11px;font-weight:700;color:" + (selectedOption==="standard"?"#334155":"#64748b") + "'>" + (selectedOption==="standard"?"Check ":"O ") + "Option 2 - Standard - " + fmt(standard) + "</div></div></div>";
+  html += "<div style='font-size:11px;font-weight:700;color:" + (selectedOption==="standard"?"#334155":"#64748b") + "'>" + (selectedOption==="standard"?"Check ":"O ") + "Standard Pricing - " + fmt(standard) + "</div></div></div>";
 
   // Payment Options
   var chosenTotal = selectedOption === "priority" ? priority : selectedOption === "standard" ? standard : priority;
@@ -1760,7 +1760,7 @@ function PreviewStep({ state, setStep, steps }) {
       <div style={{ padding: "16px 24px 0" }}>
         {selectedOption && (
           <div style={{ background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 8, padding: "10px 14px", marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#0369a1" }}>{selectedOption === "priority" ? "Administrative Savings Credit" : "Standard Scheduling"}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#0369a1" }}>{selectedOption === "priority" ? "Administrative Savings Credit" : "Standard Pricing"}</span>
             <span style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{selectedOption === "priority" ? fmt(priority) : fmt(standard)}</span>
           </div>
         )}
