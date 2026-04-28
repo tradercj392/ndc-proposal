@@ -2301,34 +2301,47 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
         <button
           style={{ background: "white", color: "#0f172a", border: "1.5px solid #0f172a", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 14, cursor: "pointer", width: "100%", marginBottom: 10 }}
           onClick={() => {
-            const contractDiv = document.getElementById("contract-content");
-            const canvas = canvasRef.current;
-            // Replace canvas with img in a clone
-            const clone = contractDiv.cloneNode(true);
-            const cloneCanvas = clone.querySelector("canvas");
-            if (cloneCanvas && signatureData) {
-              const img = document.createElement("img");
-              img.src = signatureData;
-              img.className = "sig-img";
-              img.style.cssText = "width:100%;max-height:120px;display:block;object-fit:contain;border:1.5px solid #e2e8f0;border-radius:8px;background:#f8fafc;";
-              cloneCanvas.parentNode.style.position = "static";
-              cloneCanvas.parentNode.replaceChild(img, cloneCanvas);
-            }
-            // Remove any remaining canvases
-            clone.querySelectorAll("canvas").forEach(c => c.remove());
-            // Also fill rep name/date
-            const repInputs = clone.querySelectorAll("input");
-            repInputs.forEach(input => {
-              const span = document.createElement("span");
-              span.textContent = input.value;
-              span.style.cssText = "font-size:14px;font-family:Georgia,serif;border-bottom:1.5px solid #0f172a;display:block;padding-bottom:2px;";
-              input.parentNode.replaceChild(span, input);
-            });
+            const clientName = state.customer.name || "Client";
+            const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
+            const schedRows = schedule.map(row => `<tr><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:700">${row.label}</td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#64748b;font-size:12px">${row.note}</td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:800;color:#0ea5e9;text-align:right">${row.amount}</td></tr>`).join("");
+            const html = `<!DOCTYPE html><html><head><title>NDC_Contract_${clientName}_${dateStr}</title>
+<style>
+  body{font-family:Georgia,serif;padding:32px;max-width:800px;margin:0 auto;color:#0f172a}
+  h2{font-size:18px;margin:0 0 4px}
+  .section{margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #e2e8f0}
+  .label{font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+  .row{display:flex;justify-content:space-between;padding:4px 0;font-size:11px}
+  table{width:100%;border-collapse:collapse;font-size:11px}
+  th{background:#0f172a;color:white;padding:8px 12px;text-align:left}
+  .sig-box{border:1.5px solid #e2e8f0;border-radius:8px;background:#f8fafc;height:120px;overflow:hidden}
+  .sig-box img{width:100%;height:120px;object-fit:contain;display:block}
+  .rep-line{border-bottom:1.5px solid #0f172a;padding-bottom:2px;font-size:14px;font-family:Georgia,serif;margin-bottom:4px}
+  @media print{body{padding:16px}}
+</style></head><body>
+<div class="section" style="display:flex;justify-content:space-between">
+  <div><h2>New Direction Construction</h2><div style="font-size:11px;color:#64748b">820 Worth Rd, Jacksonville, FL 32259<br>(904) 891-9980 | Lic# CBC059304</div></div>
+  <div style="text-align:right"><div style="font-size:10px;font-weight:800;color:#0ea5e9">PREPARED FOR</div><div style="font-size:16px;font-weight:800">${clientName}</div><div style="font-size:11px;color:#64748b">${state.customer.address || ""}<br>${state.customer.phone || ""}</div><div style="font-size:11px;color:#64748b">Date: ${today}</div></div>
+</div>
+<div class="section"><div class="label">Agreed Investment</div><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">${pricingLabel}</span><span style="font-size:22px;font-weight:800">${fmt(chosenTotal)}</span></div></div>
+<div class="section"><div class="label">Agreed Payment Schedule</div><table><thead><tr><th>Milestone</th><th>Note</th><th style="text-align:right">Amount</th></tr></thead><tbody>${schedRows}</tbody></table></div>
+<div class="section"><div class="label">Payment Terms & Agreement</div>
+<p style="font-size:11px;line-height:1.8">Client agrees to remit payment per the schedule outlined above. All payments are due on the date specified. Failure to remit payment on the date due shall constitute a material breach of this agreement, and New Direction Construction reserves the right to suspend all work until payment is received in full.</p>
+<p style="font-size:11px;line-height:1.8">A late fee of 1.5% per month may be assessed on any balance outstanding beyond 10 days of the due date. In the event of non-payment, Client shall be responsible for all costs of collection including reasonable attorney fees. New Direction Construction shall have the right to file a construction lien on the property per Florida Statute 713.</p>
+<p style="font-size:11px;line-height:1.8">By signing below, Client acknowledges receipt of this contract, agrees to all payment terms, scope of work, and the Terms & Conditions included in this proposal. This agreement is binding upon signature by both parties.</p>
+</div>
+<div class="section"><div class="label">Client Signature</div>
+<div class="sig-box"><img src="${signatureData}" alt="Client Signature"/></div>
+<div style="font-size:11px;color:#64748b;margin-top:6px">${clientName} &nbsp;|&nbsp; ${today}</div>
+</div>
+<div style="display:flex;gap:24px;margin-top:16px">
+  <div style="flex:2"><div class="rep-line">${repName}</div><div style="font-size:10px;color:#64748b">New Direction Construction Representative</div></div>
+  <div style="flex:1"><div class="rep-line">${repDate}</div><div style="font-size:10px;color:#64748b">Date</div></div>
+</div>
+</body></html>`;
             const newWin = window.open("", "_blank");
-            newWin.document.write("<html><head><style>body{font-family:Georgia,serif;padding:20px;max-width:800px;margin:0 auto}@media print{body{padding:0}canvas{display:none!important}.sig-img{display:block!important}}</style></head><body>");
-            newWin.document.write(clone.innerHTML);
-            newWin.document.write("</body></html>");
+            newWin.document.write(html);
             newWin.document.close();
+            newWin.document.title = "NDC_Contract_" + clientName + "_" + dateStr;
             setTimeout(() => { newWin.focus(); newWin.print(); }, 800);
           }}
         >
