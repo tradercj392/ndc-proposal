@@ -2309,7 +2309,10 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
             if (cloneCanvas && signatureData) {
               const img = document.createElement("img");
               img.src = signatureData;
-              img.style.cssText = "width:100%;height:120px;display:block;border:1.5px solid #e2e8f0;border-radius:8px;background:#f8fafc;";
+              img.style.cssText = "width:100%;height:120px;display:block;object-fit:contain;border:1.5px solid #e2e8f0;border-radius:8px;background:#f8fafc;";
+              cloneCanvas.parentNode.style.position = "relative";
+              cloneCanvas.parentNode.style.height = "120px";
+              cloneCanvas.parentNode.style.overflow = "hidden";
               cloneCanvas.parentNode.replaceChild(img, cloneCanvas);
             }
             // Also fill rep name/date
