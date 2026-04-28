@@ -1749,7 +1749,7 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
           user_id: "E8HiQe2t7ABVkhaHw",
           template_params: {
             to_email: emailOverride,
-            bcc_email: bccEmail || "",
+            ...(bccEmail ? { bcc_email: bccEmail } : {}),
             from_email: "4xhelp@gmail.com",
             message: "Please find your project proposal from New Direction Construction attached below.\n\nClient: " + state.customer.name + "\nAddress: " + state.customer.address + "\nTotal Investment: " + fmt(calcGrandTotal(state).total) + "\n\nPlease contact us at (904) 891-9980 with any questions.\n\nThank you for choosing New Direction Construction!",
           }
