@@ -1101,16 +1101,9 @@ function buildProposalHTML(state, selectedOption, signature) {
   html += "<div style='border:2px solid #e2e8f0;border-radius:12px;padding:24px;background:white;flex:1'>";
 
   // Standard price - big first
-  var standardMonthly = monthlyPayment ? monthlyPayment + 47 : null;
   html += "<div style='margin-bottom:18px;padding-bottom:18px;border-bottom:2px solid #f1f5f9'>";
   html += "<div style='font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px'>Standard Pricing</div>";
   html += "<div style='font-size:32px;font-weight:800;color:#0f172a;margin-bottom:4px'>" + fmt(standard) + "</div>";
-  if (standardMonthly) {
-    html += "<div style='display:flex;align-items:baseline;gap:6px;margin-top:6px'>";
-    html += "<div style='font-size:10px;color:#64748b;font-weight:600'>Financing:</div>";
-    html += "<div style='font-size:16px;font-weight:800;color:#64748b'>$" + standardMonthly.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "<span style='font-size:9px;font-weight:600'>/mo</span></div>";
-    html += "</div>";
-  }
   html += "<div style='font-size:10px;color:#94a3b8;margin-top:4px'>Full project investment based on current scope of work</div>";
   html += "</div>";
 
@@ -1201,7 +1194,6 @@ function buildProposalHTML(state, selectedOption, signature) {
       ["Metal Starter Strip", "Measure on site", "Base of each wall - level and plumb"],
       ["Corrosion-Resistant Nails 6d or 8d (Hot-Dipped Galvanized or Stainless)", nailLbs + " lb(s)", "No electro-plated nails - per James Hardie fastener requirements"],
       ["Paintable Elastomeric Caulk (OSI Quad or equivalent)", caulkTubes + " tube(s)", "All trim-to-siding joints, penetrations, and transitions"],
-      ["Exterior Paint", paintGal + " gal", "~350 sq ft per gallon coverage"],
     ];
     if (needsOSB) {
       sidingMatLap.push(["OSB Sheathing (7/16 or 15/32 inch)", osbSheets + " sheet(s)", osbSqft.toFixed(0) + " sq ft of replacement sheathing required"]);
@@ -1222,7 +1214,6 @@ function buildProposalHTML(state, selectedOption, signature) {
       ["Metal Starter Strip", "Measure on site", "Base of each wall"],
       ["Corrosion-Resistant Nails 6d or 8d (Hot-Dipped Galvanized or Stainless)", nailLbs + " lb(s)", "Per James Hardie fastener requirements"],
       ["Paintable Elastomeric Caulk (OSI Quad or equivalent)", caulkTubes + " tube(s)", "All joints, batten edges, penetrations"],
-      ["Exterior Paint", paintGal + " gal", "~350 sq ft per gallon"],
     ];
     if (needsOSB) {
       sidingMatPanel.push(["OSB Sheathing (7/16 or 15/32 inch)", osbSheets + " sheet(s)", osbSqft.toFixed(0) + " sq ft replacement"]);
@@ -1240,7 +1231,6 @@ function buildProposalHTML(state, selectedOption, signature) {
       ["Kick-Out Flashing", "As needed", "Roof-wall intersections"],
       ["Starter Course / Starter Strip", "Measure on site", "Base of each wall"],
       ["Corrosion-Resistant Stainless Steel or Hot-Dipped Galvanized Nails", nailLbs + " lb(s)", "2 nails per shingle per course - no face nailing"],
-      ["Exterior Paint", paintGal + " gal", "~350 sq ft per gallon"],
     ];
     if (needsOSB) {
       sidingMatShake.push(["OSB Sheathing (7/16 or 15/32 inch)", osbSheets + " sheet(s)", osbSqft.toFixed(0) + " sq ft replacement"]);
@@ -1548,14 +1538,32 @@ function buildProposalHTML(state, selectedOption, signature) {
   html += "<div class='page'>";
   html += "<div style='font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>Project Investment Options</div>";
 
-  // Standard pricing box
-  html += "<div style='border:1.5px solid #e2e8f0;border-radius:10px;padding:18px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-start'>";
-  html += "<div><div style='font-size:14px;font-weight:800'>Standard Pricing</div><div style='font-size:10px;color:#64748b;font-weight:600;margin-top:2px'>STANDARD PRICING</div></div>";
-  html += "<div style='text-align:right'><div style='font-size:22px;font-weight:800;color:#334155'>" + fmt(standard) + "</div><div style='font-size:10px;color:#94a3b8'>Standard Rate</div></div></div>";
+  // Clickable option boxes
+  var oc_std = "onclick='selectOption(\"standard\")'";
+  var oc_pri = "onclick='selectOption(\"priority\")'";
+  var stdSelected = selectedOption === 'standard';
+  var priSelected = selectedOption === 'priority';
+  var stdMonthly = monthlyPayment ? monthlyPayment + 47 : null;
 
-  // ADMIN SAVINGS CREDIT REVEAL
-  html += "<div style='background:#f0f9ff;border:2px solid #0ea5e9;border-radius:10px;padding:18px'>";
-  html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Administrative Savings Credit Applied</div>";
+  // Standard pricing box (clickable)
+  html += "<div " + oc_std + " style='border:2px solid " + (stdSelected ? '#475569' : '#e2e8f0') + ";border-radius:10px;padding:18px;margin-bottom:16px;cursor:pointer;background:" + (stdSelected ? '#f8fafc' : 'white') + "'>";
+  html += "<div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px'>";
+  html += "<div style='display:flex;align-items:center;gap:10px'>";
+  html += "<div style='width:22px;height:22px;border-radius:50%;border:2px solid " + (stdSelected ? '#475569' : '#cbd5e1') + ";background:" + (stdSelected ? '#475569' : 'white') + ";display:flex;align-items:center;justify-content:center;flex-shrink:0'>";
+  html += stdSelected ? "<div style='width:8px;height:8px;border-radius:50%;background:white'></div>" : "";
+  html += "</div>";
+  html += "<div><div style='font-size:14px;font-weight:800;color:#0f172a'>Standard Pricing</div><div style='font-size:10px;color:#64748b;font-weight:600;margin-top:2px'>Email proposal — no contract today</div></div></div>";
+  html += "<div style='text-align:right'><div style='font-size:22px;font-weight:800;color:#334155'>" + fmt(standard) + "</div>";
+  if (stdMonthly) html += "<div style='font-size:11px;color:#64748b;font-weight:600'>Financing: $" + stdMonthly.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "/mo</div>";
+  html += "</div></div></div>";
+
+  // ADMIN SAVINGS CREDIT REVEAL (clickable)
+  html += "<div " + oc_pri + " style='background:" + (priSelected ? '#f0f9ff' : 'white') + ";border:2px solid " + (priSelected ? '#0ea5e9' : '#e2e8f0') + ";border-radius:10px;padding:18px;cursor:pointer'>";
+  html += "<div style='display:flex;align-items:center;gap:10px;margin-bottom:12px'>";
+  html += "<div style='width:22px;height:22px;border-radius:50%;border:2px solid " + (priSelected ? '#0ea5e9' : '#cbd5e1') + ";background:" + (priSelected ? '#0ea5e9' : 'white') + ";display:flex;align-items:center;justify-content:center;flex-shrink:0'>";
+  html += priSelected ? "<div style='width:8px;height:8px;border-radius:50%;background:white'></div>" : "";
+  html += "</div>";
+  html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px'>Administrative Savings Credit — Sign Contract Today</div></div>";
   html += "<div style='display:flex;align-items:baseline;gap:12px;margin-bottom:4px'>";
   html += "<div style='font-size:30px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div>";
   html += "<div style='background:#dcfce7;color:#166534;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px'>You save " + fmt(savings) + "</div></div>";
@@ -1584,6 +1592,7 @@ function buildProposalHTML(state, selectedOption, signature) {
 
   html += "</div>"; // end admin savings page
 
+  if (selectedOption === 'priority') {
   // TERMS PAGE - Official NDC Terms & Conditions
   html += "<div class='page'>";
   html += "<div style='text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
@@ -1653,6 +1662,8 @@ function buildProposalHTML(state, selectedOption, signature) {
 
   html += "<p style='font-size:9px;color:#94a3b8;text-align:center;margin-top:32px'>New Direction Construction - 820 Worth Rd, Jacksonville, FL 32259 - (904) 891-9980 - Lic# CBC059304</p>";
   html += "</div>";
+  } // end terms+cancellation
+
 
   html += "<script>";
   html += "function selectOption(opt) { var y = window.scrollY; window.parent.postMessage({type:'selectOption',option:opt,scrollY:y},'*'); }";
@@ -1759,6 +1770,15 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
             <span style={{ fontSize: 12, fontWeight: 700, color: "#0369a1" }}>{selectedOption === "priority" ? "Administrative Savings Credit" : "Standard Pricing"}</span>
             <span style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{selectedOption === "priority" ? fmt(priority) : fmt(standard)}</span>
           </div>
+        )}
+        {/* Proceed to Contract button - only when admin selected */}
+        {selectedOption === "priority" && (
+          <button
+            style={{ background: "linear-gradient(135deg,#0ea5e9,#0369a1)", color: "white", border: "none", borderRadius: 10, padding: "14px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%", marginBottom: 12 }}
+            onClick={() => setStep(steps.findIndex(s => s.key === "contract"))}
+          >
+            Proceed to Contract & Sign
+          </button>
         )}
         {/* Email fields */}
         <div style={{ marginBottom: 10 }}>
