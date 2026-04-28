@@ -1589,6 +1589,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
   if (stdMonthly) html += "<div style='font-size:11px;color:#64748b;font-weight:600'>Financing: $" + stdMonthly.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "/mo</div>";
   html += "</div></div></div>";
 
+  if (selectedOption !== 'standard') {
   // ADMIN SAVINGS CREDIT REVEAL (clickable)
   html += "<div " + oc_pri + " style='background:" + (priSelected ? '#f0f9ff' : 'white') + ";border:2px solid " + (priSelected ? '#0ea5e9' : '#e2e8f0') + ";border-radius:10px;padding:18px;cursor:pointer'>";
   html += "<div style='display:flex;align-items:center;gap:10px;margin-bottom:12px'>";
@@ -1671,6 +1672,8 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
   }
 
   html += "</div>"; // end admin savings page
+
+  } // end admin savings incentive block
 
   if (selectedOption === 'priority') {
   // TERMS PAGE - Official NDC Terms & Conditions
