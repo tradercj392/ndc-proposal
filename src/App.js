@@ -157,6 +157,7 @@ const makeInitialState = () => ({
   misc: { items: [{ id: uid(), description: "", qty: "", unitPrice: "", notes: "" }] },
   notes: "",
   financing: { monthlyPayment: "", customPayment: "" },
+  pricing: { sidingPerSqFt: "", soffitPerLinFt: "", fasciaPerLinFt: "", paintPerSqFt: "", windowPerUnit: "", miscMarkup: "", adminSavingsDiscount: "8.35", monthlyPayment: "" },
 });
 
 function calcSiding(siding) {
@@ -182,14 +183,115 @@ function calcWindows(windows) {
   return windows.map((w) => ({ ...w, total: (parseFloat(w.qty || 0) * parseFloat(w.priceInstalled || 0)).toFixed(2) }));
 }
 function calcGrandTotal(state) {
-  const sid = state.services.includes("siding") ? parseFloat(calcSiding(state.siding).totalCost) : 0;
-  const sof = state.services.includes("soffit") ? calcSoffit(state.soffit) : 0;
-  const fas = state.services.includes("fascia") ? calcSoffit(state.fascia) : 0;
-  const pnt = state.services.includes("paint") ? calcPaint(state.paint) : 0;
-  const win = state.services.includes("windows") ? calcWindows(state.windows).reduce((a, w) => a + parseFloat(w.total), 0) : 0;
-  const msc = state.services.includes("misc") ? (state.misc.items.reduce((a, i) => a + parseFloat(i.qty || 0) * parseFloat(i.unitPrice || 0), 0)) : 0;
-  return { sid, sof, fas, pnt, win, msc, total: sid + sof + fas + pnt + win + msc };
+  const p = state.pricing || {};
+  const sidingArea = state.siding.walls.reduce((a,w)=>a+parseFloat(w.sqft||0),0);
+  const sid = state.services.includes("siding") ? (p.sidingPerSqFt ? sidingArea * parseFloat(p.sidingPerSqFt) : parseFloat(calcSiding(state.siding).totalCost)) : 0;
+  const soffitLinFt = state.soffit.items.reduce((a,i)=>a+parseFloat(i.linearFt||0),0);
+  const sof = state.services.includes("soffit") ? (p.soffitPerLinFt ? soffitLinFt * parseFloat(p.soffitPerLinFt) : calcSoffit(state.soffit)) : 0;
+  const fasciaLinFt = state.fascia.items.reduce((a,i)=>a+parseFloat(i.linearFt||0),0);
+  const fas = state.services.includes("fascia") ? (p.fasciaPerLinFt ? fasciaLinFt * parseFloat(p.fasciaPerLinFt) : calcSoffit(state.fascia)) : 0;
+  const paintSqFt = parseFloat(state.paint.combinedSqft||0);
+  const pnt = state.services.includes("paint") ? (p.paintPerSqFt ? paintSqFt * parseFloat(p.paintPerSqFt) : calcPaint(state.paint)) : 0;
+  const totalWindows = state.windows.reduce((a,w)=>a+parseFloat(w.qty||1),0);
+  const win = state.services.includes("windows") ? (p.windowPerUnit ? totalWindows * parseFloat(p.windowPerUnit) : calcWindows(state.windows).reduce((a,w)=>a+parseFloat(w.total||0),0)) : 0;
+  const msc = state.services.includes("misc") ? state.misc.items.reduce((a,i)=>a+parseFloat(i.qty||0)*parseFloat(i.unitPrice||0),0) : 0;
+  return { sid, sof, fas, pnt, win, msc, total: sid+sof+fas+pnt+win+msc };
 }
+
+function PricingStep({ state, onChange }) {
+  const p = state.pricing || {};
+  const set = (k,v) => onChange({ ...p, [k]: v });
+  const services = state.services;
+  const sidingArea = state.siding.walls.reduce((a,w)=>a+parseFloat(w.sqft||0),0);
+  const soffitLinFt = state.soffit.items.reduce((a,i)=>a+parseFloat(i.linearFt||0),0);
+  const fasciaLinFt = state.fascia.items.reduce((a,i)=>a+parseFloat(i.linearFt||0),0);
+  const paintSqFt = parseFloat(state.paint.combinedSqft||0);
+  const totalWindows = state.windows.reduce((a,w)=>a+parseFloat(w.qty||1),0);
+  const miscTotal = state.misc.items.reduce((a,i)=>a+parseFloat(i.qty||0)*parseFloat(i.unitPrice||0),0);
+  const sidTotal = services.includes("siding") ? sidingArea * parseFloat(p.sidingPerSqFt||0) : 0;
+  const sofTotal = services.includes("soffit") ? soffitLinFt * parseFloat(p.soffitPerLinFt||0) : 0;
+  const fasTotal = services.includes("fascia") ? fasciaLinFt * parseFloat(p.fasciaPerLinFt||0) : 0;
+  const pntTotal = services.includes("paint") ? paintSqFt * parseFloat(p.paintPerSqFt||0) : 0;
+  const winTotal = services.includes("windows") ? totalWindows * parseFloat(p.windowPerUnit||0) : 0;
+  const grandTotal = sidTotal + sofTotal + fasTotal + pntTotal + winTotal + miscTotal;
+  const discount = parseFloat(p.adminSavingsDiscount||8.35) / 100;
+  const adminTotal = grandTotal * (1 - discount);
+  const PriceCard = ({label, total}) => (
+    <div style={{flex:1, background:"#f0f9ff", border:"1px solid #bae6fd", borderRadius:8, padding:"8px 12px"}}>
+      <div style={{fontSize:10, color:"#64748b", fontWeight:700}}>{label}</div>
+      <div style={{fontSize:16, fontWeight:800, color:"#0ea5e9"}}>{fmt(total)}</div>
+    </div>
+  );
+  const Row = ({label, qty, qtyLabel, rateKey, ratePlaceholder, total, label2}) => (
+    <div style={S.card}>
+      <div style={{fontSize:12, fontWeight:800, color:"#0f172a", marginBottom:6}}>{label}</div>
+      <div style={{fontSize:11, color:"#64748b", marginBottom:10}}>Total: <strong>{qty} {qtyLabel}</strong></div>
+      <div style={{display:"flex", gap:10, alignItems:"flex-end"}}>
+        <div style={{flex:1}}>
+          <label style={S.label}>{label2}</label>
+          <input style={S.input} type="number" value={p[rateKey]||""} onChange={e=>set(rateKey,e.target.value)} placeholder={ratePlaceholder}/>
+        </div>
+        <PriceCard label="TOTAL" total={total}/>
+      </div>
+    </div>
+  );
+  return (
+    <div style={S.stepWrap}>
+      <h2 style={S.stepTitle}>Job Pricing</h2>
+      <p style={S.stepSub}>Private — client does not see this step</p>
+      <div style={{background:"#fef9c3", border:"1.5px solid #fde68a", borderRadius:10, padding:"10px 14px", marginBottom:16, fontSize:12, color:"#92400e", fontWeight:600}}>
+        This step is for your eyes only. Enter your pricing rates below.
+      </div>
+      {services.includes("siding") && <Row label="James Hardie Siding" qty={sidingArea.toFixed(0)} qtyLabel="sq ft" rateKey="sidingPerSqFt" ratePlaceholder="e.g. 15.00" total={sidTotal} label2="Price per sq ft ($)"/>}
+      {services.includes("soffit") && <Row label="Soffit Installation" qty={soffitLinFt.toFixed(0)} qtyLabel="linear ft" rateKey="soffitPerLinFt" ratePlaceholder="e.g. 8.00" total={sofTotal} label2="Price per linear ft ($)"/>}
+      {services.includes("fascia") && <Row label="Fascia Installation" qty={fasciaLinFt.toFixed(0)} qtyLabel="linear ft" rateKey="fasciaPerLinFt" ratePlaceholder="e.g. 8.00" total={fasTotal} label2="Price per linear ft ($)"/>}
+      {services.includes("paint") && <Row label="Exterior Paint" qty={paintSqFt.toFixed(0)} qtyLabel="sq ft" rateKey="paintPerSqFt" ratePlaceholder="e.g. 2.50" total={pntTotal} label2="Price per sq ft ($)"/>}
+      {services.includes("windows") && <Row label="Window Installation" qty={totalWindows} qtyLabel="units" rateKey="windowPerUnit" ratePlaceholder="e.g. 450.00" total={winTotal} label2="Price per window ($)"/>}
+      {services.includes("misc") && miscTotal > 0 && (
+        <div style={S.card}>
+          <div style={{display:"flex", justifyContent:"space-between"}}>
+            <div style={{fontSize:12, fontWeight:800, color:"#0f172a"}}>Miscellaneous</div>
+            <div style={{fontSize:14, fontWeight:800, color:"#0ea5e9"}}>{fmt(miscTotal)}</div>
+          </div>
+        </div>
+      )}
+      <div style={S.card}>
+        <div style={{fontSize:12, fontWeight:800, color:"#0f172a", marginBottom:6}}>Administrative Savings Incentive Discount</div>
+        <div style={{display:"flex", gap:10, alignItems:"flex-end"}}>
+          <div style={{flex:1}}>
+            <label style={S.label}>Discount % (default 8.35%)</label>
+            <input style={S.input} type="number" value={p.adminSavingsDiscount||"8.35"} onChange={e=>set("adminSavingsDiscount",e.target.value)} placeholder="8.35"/>
+          </div>
+          <PriceCard label="ADMIN PRICE" total={adminTotal}/>
+        </div>
+      </div>
+      <div style={S.card}>
+        <div style={{fontSize:12, fontWeight:800, color:"#0f172a", marginBottom:6}}>Financing (Optional)</div>
+        <label style={S.label}>Monthly payment for Admin Savings price ($/mo)</label>
+        <input style={S.input} type="number" value={p.monthlyPayment||""} onChange={e=>set("monthlyPayment",e.target.value)} placeholder="e.g. 285.00"/>
+        {p.monthlyPayment && <div style={{fontSize:11, color:"#64748b", marginTop:6}}>Standard financing: <strong>{fmt(parseFloat(p.monthlyPayment)+47)}/mo</strong></div>}
+      </div>
+      <div style={{background:"linear-gradient(135deg,#0f172a,#1e293b)", borderRadius:12, padding:16, marginTop:4}}>
+        <div style={{fontSize:11, color:"rgba(255,255,255,0.6)", fontWeight:700, textTransform:"uppercase", marginBottom:8}}>Job Summary</div>
+        <div style={{display:"flex", justifyContent:"space-between", marginBottom:6}}>
+          <span style={{fontSize:13, color:"rgba(255,255,255,0.8)"}}>Standard Pricing</span>
+          <span style={{fontSize:16, fontWeight:800, color:"white"}}>{fmt(grandTotal)}</span>
+        </div>
+        <div style={{display:"flex", justifyContent:"space-between"}}>
+          <span style={{fontSize:13, color:"#7dd3fc"}}>Admin Savings Incentive</span>
+          <span style={{fontSize:16, fontWeight:800, color:"#7dd3fc"}}>{fmt(adminTotal)}</span>
+        </div>
+        {p.monthlyPayment && (
+          <div style={{display:"flex", justifyContent:"space-between", marginTop:6}}>
+            <span style={{fontSize:12, color:"rgba(255,255,255,0.5)"}}>Financing (Admin price)</span>
+            <span style={{fontSize:13, color:"rgba(255,255,255,0.7)"}}>{fmt(parseFloat(p.monthlyPayment))}/mo</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 
 function ServiceSelectStep({ selected, onChange }) {
   const toggle = (id) => {
@@ -1828,6 +1930,7 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
         <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>Tap any section to edit and come back</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           <button onClick={() => setStep(steps.findIndex(s => s.key === "customer"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Customer</button>
+          <button onClick={() => setStep(steps.findIndex(s => s.key === "pricing"))} style={{ background: "#fef9c3", border: "1.5px solid #fde68a", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#92400e", cursor: "pointer" }}>Edit Pricing</button>
           {state.services.includes("siding") && <button onClick={() => setStep(steps.findIndex(s => s.key === "siding"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Siding</button>}
           {state.services.includes("soffit") && <button onClick={() => setStep(steps.findIndex(s => s.key === "soffit"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Soffits</button>}
           {state.services.includes("fascia") && <button onClick={() => setStep(steps.findIndex(s => s.key === "fascia"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Fascia</button>}
@@ -2423,6 +2526,7 @@ function buildSteps(services) {
     { key: "services", label: "Services" },
 
     { key: "customer", label: "Customer" },
+    { key: "pricing",  label: "Pricing"  },
   ];
   if (services.includes("siding"))  steps.push({ key: "siding", label: "Siding" });
   if (services.includes("soffit"))  steps.push({ key: "soffit", label: "Soffits" });
