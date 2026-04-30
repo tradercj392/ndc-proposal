@@ -360,7 +360,7 @@ function CustomerStep({ data, onChange }) {
         }}>
           <span style={{ fontSize: 22 }}>{data.photo ? "IMG" : "CAM"}</span>
           <span>{data.photo ? "Photo attached - tap to replace" : "Tap to take photo or upload street view"}</span>
-          <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => {
+          <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
             const file = e.target.files[0]; if (!file) return;
             compressImage(file, function(compressed) { onChange("photo", compressed); });
           }} />
@@ -580,7 +580,7 @@ function SidingStep({ data, onChange, onSidingTypeChange }) {
               }}>
                 <span style={{ fontSize: 20 }}>{wall.photo ? "IMG" : "CAM"}</span>
                 <span>{wall.photo ? "Photo attached - tap to replace" : "Tap to take photo or upload"}</span>
-                <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => {
+                <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
                   const file = e.target.files[0]; if (!file) return;
                   compressImage(file, function(compressed) { updateWall(wall.id, "photo", compressed); });
                 }} />
@@ -661,6 +661,20 @@ function SoffitStep({ data, onChange, title = "Soffits & Fascia" }) {
               <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>NOTES</label>
               <textarea style={{ ...S.input, height: 60, resize: "vertical", fontSize: 13 }} value={item.notes || ""} onChange={(e) => update(item.id, "notes", e.target.value)} placeholder="e.g. rotted fascia on north side, add drip edge at roofline..." />
             </div>
+            <div style={{ marginTop: 10 }}>
+              <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>PHOTO</label>
+              {item.photo ? (
+                <div style={{ position: "relative", display: "inline-block", width: "100%" }}>
+                  <img src={item.photo} alt="photo" style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 8, border: "1px solid #e2e8f0" }} />
+                  <button onClick={() => update(item.id, "photo", "")} style={{ position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,0.5)", color: "white", border: "none", borderRadius: "50%", width: 24, height: 24, cursor: "pointer", fontSize: 14 }}>x</button>
+                </div>
+              ) : (
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", background: "#f8fafc", border: "1.5px dashed #cbd5e1", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#64748b" }}>
+                  Take or Upload Photo
+                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files[0]; if (f) compressImage(f, (img) => update(item.id, "photo", img)); }} />
+                </label>
+              )}
+            </div>
           </div>
         );
       })}
@@ -737,6 +751,20 @@ function PaintSection({ title, items, onChange, hidePrice = false }) {
             <div>
               <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>NOTES</label>
               <textarea style={{ ...S.input, height: 60, resize: "vertical", fontSize: 13 }} value={item.notes || ""} onChange={(e) => update(item.id, "notes", e.target.value)} placeholder="e.g. two coats required, prep work needed, accent color on shutters..." />
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>PHOTO</label>
+              {item.photo ? (
+                <div style={{ position: "relative", display: "inline-block", width: "100%" }}>
+                  <img src={item.photo} alt="paint" style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 8, border: "1px solid #e2e8f0" }} />
+                  <button onClick={() => update(item.id, "photo", "")} style={{ position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,0.5)", color: "white", border: "none", borderRadius: "50%", width: 24, height: 24, cursor: "pointer", fontSize: 14 }}>x</button>
+                </div>
+              ) : (
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", background: "#f8fafc", border: "1.5px dashed #cbd5e1", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#64748b" }}>
+                  Take or Upload Photo
+                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files[0]; if (f) compressImage(f, (img) => update(item.id, "photo", img)); }} />
+                </label>
+              )}
             </div>
           </div>
         );
@@ -871,6 +899,20 @@ function WindowsStep({ windows, onChange }) {
             <div style={{ marginBottom: 6 }}>
               <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>NOTES</label>
               <textarea style={{ ...S.input, height: 60, resize: "vertical", fontSize: 13 }} value={win.notes || ""} onChange={(e) => update(win.id, "notes", e.target.value)} placeholder="e.g. egress requirement, special trim, existing frame condition..." />
+            <div style={{ marginTop: 10 }}>
+              <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>PHOTO</label>
+              {win.photo ? (
+                <div style={{ position: "relative", display: "inline-block", width: "100%" }}>
+                  <img src={win.photo} alt="window" style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 8, border: "1px solid #e2e8f0" }} />
+                  <button onClick={() => update(win.id, "photo", "")} style={{ position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,0.5)", color: "white", border: "none", borderRadius: "50%", width: 24, height: 24, cursor: "pointer", fontSize: 14 }}>x</button>
+                </div>
+              ) : (
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", background: "#f8fafc", border: "1.5px dashed #cbd5e1", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#64748b" }}>
+                  Take or Upload Photo
+                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files[0]; if (f) compressImage(f, (img) => update(win.id, "photo", img)); }} />
+                </label>
+              )}
+            </div>
             </div>
           </div>
         );
@@ -947,6 +989,20 @@ function MiscStep({ data, onChange }) {
             <div>
               <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>NOTES</label>
               <textarea style={{ ...S.input, height: 60, resize: "vertical", fontSize: 13 }} value={item.notes || ""} onChange={(e) => update(item.id, "notes", e.target.value)} placeholder="Additional details..." />
+            <div style={{ marginTop: 10 }}>
+              <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>PHOTO</label>
+              {item.photo ? (
+                <div style={{ position: "relative", display: "inline-block", width: "100%" }}>
+                  <img src={item.photo} alt="item" style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 8, border: "1px solid #e2e8f0" }} />
+                  <button onClick={() => update(item.id, "photo", "")} style={{ position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,0.5)", color: "white", border: "none", borderRadius: "50%", width: 24, height: 24, cursor: "pointer", fontSize: 14 }}>x</button>
+                </div>
+              ) : (
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", background: "#f8fafc", border: "1.5px dashed #cbd5e1", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#64748b" }}>
+                  Take or Upload Photo
+                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files[0]; if (f) compressImage(f, (img) => update(item.id, "photo", img)); }} />
+                </label>
+              )}
+            </div>
             </div>
           </div>
         );
