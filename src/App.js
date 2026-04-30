@@ -223,7 +223,7 @@ function PricingStep({ state, onChange }) {
     </div>
   );
   const Row = ({label, qty, qtyLabel, rateKey, ratePlaceholder, total, label2}) => (
-    <div style={{ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: 12, padding: 16, marginBottom: 12 }}>
+    <div style={{ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: 12, padding: 16, marginBottom: 12 }}>>
       <div style={{fontSize:12, fontWeight:800, color:"#0f172a", marginBottom:6}}>{label}</div>
       <div style={{fontSize:11, color:"#64748b", marginBottom:10}}>Total: <strong>{qty} {qtyLabel}</strong></div>
       <div style={{display:"flex", gap:10, alignItems:"flex-end"}}>
