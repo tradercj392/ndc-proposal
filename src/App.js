@@ -223,22 +223,22 @@ function PricingStep({ state, onChange }) {
     </div>
   );
   const Row = ({label, qty, qtyLabel, rateKey, ratePlaceholder, total, label2}) => (
-    <div style={S.card}>
+    <div style={ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: 12, padding: 16, marginBottom: 12 }>
       <div style={{fontSize:12, fontWeight:800, color:"#0f172a", marginBottom:6}}>{label}</div>
       <div style={{fontSize:11, color:"#64748b", marginBottom:10}}>Total: <strong>{qty} {qtyLabel}</strong></div>
       <div style={{display:"flex", gap:10, alignItems:"flex-end"}}>
         <div style={{flex:1}}>
-          <label style={S.label}>{label2}</label>
-          <input style={S.input} type="number" value={p[rateKey]||""} onChange={e=>set(rateKey,e.target.value)} placeholder={ratePlaceholder}/>
+          <label style={ fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 4 }>{label2}</label>
+          <input style={ width: '100%', boxSizing: 'border-box', border: '1.5px solid #e2e8f0', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: '#0f172a', outline: 'none', background: 'white' } type="number" value={p[rateKey]||""} onChange={e=>set(rateKey,e.target.value)} placeholder={ratePlaceholder}/>
         </div>
         <PriceCard label="TOTAL" total={total}/>
       </div>
     </div>
   );
   return (
-    <div style={S.stepWrap}>
-      <h2 style={S.stepTitle}>Job Pricing</h2>
-      <p style={S.stepSub}>Private — client does not see this step</p>
+    <div style={ padding: '0 0 24px' }>
+      <h2 style={ fontSize: 18, fontWeight: 800, color: '#0f172a', margin: '0 0 4px' }>Job Pricing</h2>
+      <p style={ color: '#64748b', fontSize: 13, margin: '0 0 20px', lineHeight: 1.5 }>Private — client does not see this step</p>
       <div style={{background:"#fef9c3", border:"1.5px solid #fde68a", borderRadius:10, padding:"10px 14px", marginBottom:16, fontSize:12, color:"#92400e", fontWeight:600}}>
         This step is for your eyes only. Enter your pricing rates below.
       </div>
@@ -248,27 +248,27 @@ function PricingStep({ state, onChange }) {
       {services.includes("paint") && <Row label="Exterior Paint" qty={paintSqFt.toFixed(0)} qtyLabel="sq ft" rateKey="paintPerSqFt" ratePlaceholder="e.g. 2.50" total={pntTotal} label2="Price per sq ft ($)"/>}
       {services.includes("windows") && <Row label="Window Installation" qty={totalWindows} qtyLabel="units" rateKey="windowPerUnit" ratePlaceholder="e.g. 450.00" total={winTotal} label2="Price per window ($)"/>}
       {services.includes("misc") && miscTotal > 0 && (
-        <div style={S.card}>
+        <div style={ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: 12, padding: 16, marginBottom: 12 }>
           <div style={{display:"flex", justifyContent:"space-between"}}>
             <div style={{fontSize:12, fontWeight:800, color:"#0f172a"}}>Miscellaneous</div>
             <div style={{fontSize:14, fontWeight:800, color:"#0ea5e9"}}>{fmt(miscTotal)}</div>
           </div>
         </div>
       )}
-      <div style={S.card}>
+      <div style={ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: 12, padding: 16, marginBottom: 12 }>
         <div style={{fontSize:12, fontWeight:800, color:"#0f172a", marginBottom:6}}>Administrative Savings Incentive Discount</div>
         <div style={{display:"flex", gap:10, alignItems:"flex-end"}}>
           <div style={{flex:1}}>
-            <label style={S.label}>Discount % (default 8.35%)</label>
-            <input style={S.input} type="number" value={p.adminSavingsDiscount||"8.35"} onChange={e=>set("adminSavingsDiscount",e.target.value)} placeholder="8.35"/>
+            <label style={ fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 4 }>Discount % (default 8.35%)</label>
+            <input style={ width: '100%', boxSizing: 'border-box', border: '1.5px solid #e2e8f0', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: '#0f172a', outline: 'none', background: 'white' } type="number" value={p.adminSavingsDiscount||"8.35"} onChange={e=>set("adminSavingsDiscount",e.target.value)} placeholder="8.35"/>
           </div>
           <PriceCard label="ADMIN PRICE" total={adminTotal}/>
         </div>
       </div>
-      <div style={S.card}>
+      <div style={ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: 12, padding: 16, marginBottom: 12 }>
         <div style={{fontSize:12, fontWeight:800, color:"#0f172a", marginBottom:6}}>Financing (Optional)</div>
-        <label style={S.label}>Monthly payment for Admin Savings price ($/mo)</label>
-        <input style={S.input} type="number" value={p.monthlyPayment||""} onChange={e=>set("monthlyPayment",e.target.value)} placeholder="e.g. 285.00"/>
+        <label style={ fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 4 }>Monthly payment for Admin Savings price ($/mo)</label>
+        <input style={ width: '100%', boxSizing: 'border-box', border: '1.5px solid #e2e8f0', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: '#0f172a', outline: 'none', background: 'white' } type="number" value={p.monthlyPayment||""} onChange={e=>set("monthlyPayment",e.target.value)} placeholder="e.g. 285.00"/>
         {p.monthlyPayment && <div style={{fontSize:11, color:"#64748b", marginTop:6}}>Standard financing: <strong>{fmt(parseFloat(p.monthlyPayment)+47)}/mo</strong></div>}
       </div>
       <div style={{background:"linear-gradient(135deg,#0f172a,#1e293b)", borderRadius:12, padding:16, marginTop:4}}>
