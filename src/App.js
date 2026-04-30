@@ -2506,6 +2506,23 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
             if (state.services.includes("paint")) { state.paint.walls.filter(a=>a.paintProduct||a.colorName).forEach((a,i) => { matsRows += "<tr style='background:"+(i%2===0?"white":"#f8fafc")+"'><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>Wall Paint</td><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>"+(a.sqft||0)+" sq ft</td><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9;color:#64748b'>"+(a.paintProduct||"")+" "+(a.colorName||"")+"</td></tr>"; }); }
             if (state.services.includes("windows")) state.windows.forEach((w,i) => { matsRows += "<tr style='background:"+(i%2===0?"white":"#f8fafc")+"'><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>"+(w.label||"Window "+(i+1))+"</td><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>qty "+(w.qty||1)+"</td><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9;color:#64748b'>"+(w.manufacturer||"")+" "+(w.style||"")+" "+(w.width&&w.height?w.width+"x"+w.height:"")+"</td></tr>"; });
 
+            // Build photos section
+            let photoRows = "";
+            const addPhoto = (label, src) => {
+              if (src) photoRows += "<div style='display:inline-block;margin:6px;vertical-align:top;width:calc(33% - 12px)'><img src='" + src + "' style='width:100%;height:140px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0'/><div style='font-size:9px;color:#64748b;margin-top:3px;text-align:center'>" + label + "</div></div>";
+            };
+            if (state.customer.photo) addPhoto("Property Street View", state.customer.photo);
+            if (state.services.includes("siding")) state.siding.walls.forEach(w => { if (w.photo) addPhoto((w.location||"Wall") + " - Siding", w.photo); });
+            if (state.services.includes("soffit")) state.soffit.items.forEach((item,i) => { if (item.photo) addPhoto("Soffit Area " + (i+1), item.photo); });
+            if (state.services.includes("fascia")) state.fascia.items.forEach((item,i) => { if (item.photo) addPhoto("Fascia Area " + (i+1), item.photo); });
+            if (state.services.includes("paint")) {
+              state.paint.walls.forEach((a,i) => { if (a.photo) addPhoto("Wall Paint " + (i+1), a.photo); });
+              state.paint.trim.forEach((a,i) => { if (a.photo) addPhoto("Trim Paint " + (i+1), a.photo); });
+              (state.paint.other||[]).forEach((a,i) => { if (a.photo) addPhoto("Other Paint " + (i+1), a.photo); });
+            }
+            if (state.services.includes("windows")) state.windows.forEach((w,i) => { if (w.photo) addPhoto((w.label||"Window "+(i+1)), w.photo); });
+            if (state.services.includes("misc")) state.misc.items.forEach((item,i) => { if (item.photo) addPhoto((item.description||"Misc "+(i+1)), item.photo); });
+
             const html = `<!DOCTYPE html><html><head><title>NDC_Contract_${clientName}_${dateStr}</title>
 <style>
   body{font-family:Georgia,serif;padding:32px;max-width:800px;margin:0 auto;color:#0f172a;font-size:11px}
@@ -2526,7 +2543,7 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
 <div class="section"><div class="label">Scope of Work</div>${scopeRows}</div>
 <div class="section"><div class="label">Price Breakdown</div>${priceRows}</div>
 <div class="section"><div class="label">Materials List</div><table><thead><tr><th>Item</th><th>Quantity</th><th>Details</th></tr></thead><tbody>${matsRows}</tbody></table></div>
-<div class="section"><div class="label">Agreed Investment</div><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">${pricingLabel}</span><span style="font-size:22px;font-weight:800">${fmt(chosenTotal)}</span></div></div>
+${photoRows ? `<div class="section"><div class="label">Project Photos</div><div style="margin:-6px">${photoRows}</div></div>` : ""}<div class="section"><div class="label">Agreed Investment</div><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">${pricingLabel}</span><span style="font-size:22px;font-weight:800">${fmt(chosenTotal)}</span></div></div>
 <div class="section"><div class="label">Agreed Payment Schedule</div><table><thead><tr><th>Milestone</th><th>Note</th><th style="text-align:right">Amount</th></tr></thead><tbody>${schedRows}</tbody></table></div>
 <div class="section"><div class="label">Payment Terms & Agreement</div>
 <p style="line-height:1.8">Client agrees to remit payment per the schedule outlined above. All payments are due on the date specified. Failure to remit payment on the date due shall constitute a material breach of this agreement, and New Direction Construction reserves the right to suspend all work until payment is received in full.</p>
@@ -2608,11 +2625,26 @@ function buildSteps(services) {
 }
 
 function App() {
-  const [step, setStep] = useState(0);
-  const [state, setState] = useState(makeInitialState());
+  const [step, setStep] = useState(() => {
+    try { return parseInt(localStorage.getItem("ndc_step")||"0"); } catch { return 0; }
+  });
+  const [state, setState] = useState(() => {
+    try {
+      const saved = localStorage.getItem("ndc_state");
+      return saved ? JSON.parse(saved) : makeInitialState();
+    } catch { return makeInitialState(); }
+  });
   const [selectedOption, setSelectedOption] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const steps = buildSteps(state.services);
+
+  // Auto-save to localStorage whenever state or step changes
+  useEffect(() => {
+    try {
+      localStorage.setItem("ndc_state", JSON.stringify(state));
+      localStorage.setItem("ndc_step", String(step));
+    } catch(e) { console.warn("Save failed:", e); }
+  }, [state, step]);
   const currentKey = steps[step] && steps[step].key;
   const lastStep = steps.length - 1;
 
@@ -2667,7 +2699,16 @@ function App() {
       {step === lastStep && (
         <div style={S.nav}>
           <button style={S.secondaryBtn} onClick={() => setStep(lastStep - 1)}>- Back</button>
-          <button style={{ ...S.secondaryBtn, marginLeft: "auto" }} onClick={() => { setState(makeInitialState()); setStep(0); }}>- New Proposal</button>
+          <button style={{ ...S.secondaryBtn, marginLeft: "auto" }} onClick={() => { 
+  if (window.confirm("Clear all proposal data and start a new proposal?")) {
+    localStorage.removeItem("ndc_state");
+    localStorage.removeItem("ndc_step");
+    setState(makeInitialState()); 
+    setStep(0);
+    setSelectedOption(null);
+    setSelectedPayment(null);
+  }
+}}>- New Proposal</button>
         </div>
       )}
     </div>
