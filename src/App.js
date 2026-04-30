@@ -2409,6 +2409,10 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
         <button
           style={{ background: "white", color: "#0f172a", border: "1.5px solid #0f172a", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 14, cursor: "pointer", width: "100%", marginBottom: 10 }}
           onClick={() => {
+            // Get fresh signature from canvas
+            const canvas = canvasRef.current;
+            const sigData = canvas ? canvas.toDataURL('image/png') : signatureData;
+            
             const clientName = state.customer.name || "Client";
             const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
             const schedRows = schedule.map(row => `<tr><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:700">${row.label}</td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#64748b;font-size:12px">${row.note}</td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:800;color:#0ea5e9;text-align:right">${row.amount}</td></tr>`).join("");
@@ -2498,7 +2502,7 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
 <p style="line-height:1.8">You may cancel this transaction without any penalty or obligation, within three business days from the above date. If you cancel, any property traded in, any payments made by you under the contract or sale, and any negotiable instrument executed by you will be returned to you within 10 business days following receipt by the seller of your cancellation notice. To cancel this transaction, mail or deliver a signed and dated copy of this cancellation notice to: New Direction Construction, 820 Worth Rd., Jacksonville FL 32259.</p>
 </div>
 <div class="section"><div class="label">Client Signature</div>
-<div class="sig-box"><img src="${signatureData}" alt="Client Signature"/></div>
+<div class="sig-box"><img src="${sigData}" alt="Client Signature"/></div>
 <div style="color:#64748b;margin-top:6px">${clientName} &nbsp;|&nbsp; ${today}</div>
 </div>
 <div style="display:flex;gap:24px;margin-top:16px">
