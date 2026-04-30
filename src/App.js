@@ -2582,6 +2582,7 @@ function App() {
       <div style={S.body}>
         {currentKey === "services" && <ServiceSelectStep selected={state.services} onChange={(v) => setState((s) => ({ ...s, services: v }))} />}
 
+        {currentKey === "pricing"  && <PricingStep state={state} onChange={(v) => setState(s => ({...s, pricing: v, financing: {...s.financing, monthlyPayment: v.monthlyPayment||""}}))} />}
         {currentKey === "customer" && <CustomerStep data={state.customer} onChange={(k, v) => update("customer", k, v)} />}
         {currentKey === "siding"   && <SidingStep data={state.siding} onChange={(k, v) => setState((s) => ({ ...s, siding: { ...s.siding, [k]: v } }))} onSidingTypeChange={(type) => setState((s) => ({ ...s, siding: { ...s.siding, sidingType: type }, sidingMaterials: defaultSidingMaterials(type) }))} />}
 
