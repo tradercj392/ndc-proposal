@@ -199,99 +199,105 @@ function calcGrandTotal(state) {
 }
 
 function PricingStep({ state, onChange }) {
-  const p = state.pricing || {};
-  const set = (k,v) => onChange({ ...p, [k]: v });
-  const services = state.services;
-  const sidingArea = state.siding.walls.reduce((a,w)=>a+parseFloat(w.sqft||0),0);
-  const soffitLinFt = state.soffit.items.reduce((a,i)=>a+parseFloat(i.linearFt||0),0);
-  const fasciaLinFt = state.fascia.items.reduce((a,i)=>a+parseFloat(i.linearFt||0),0);
-  const paintSqFt = parseFloat(state.paint.combinedSqft||0);
-  const totalWindows = state.windows.reduce((a,w)=>a+parseFloat(w.qty||1),0);
-  const miscTotal = state.misc.items.reduce((a,i)=>a+parseFloat(i.qty||0)*parseFloat(i.unitPrice||0),0);
-  const sidTotal = services.includes("siding") ? sidingArea * parseFloat(p.sidingPerSqFt||0) : 0;
-  const sofTotal = services.includes("soffit") ? soffitLinFt * parseFloat(p.soffitPerLinFt||0) : 0;
-  const fasTotal = services.includes("fascia") ? fasciaLinFt * parseFloat(p.fasciaPerLinFt||0) : 0;
-  const pntTotal = services.includes("paint") ? paintSqFt * parseFloat(p.paintPerSqFt||0) : 0;
-  const winTotal = services.includes("windows") ? totalWindows * parseFloat(p.windowPerUnit||0) : 0;
-  const grandTotal = sidTotal + sofTotal + fasTotal + pntTotal + winTotal + miscTotal;
-  const discount = parseFloat(p.adminSavingsDiscount||8.35) / 100;
-  const adminTotal = grandTotal * (1 - discount);
-  const PriceCard = ({label, total}) => (
-    <div style={{flex:1, background:"#f0f9ff", border:"1px solid #bae6fd", borderRadius:8, padding:"8px 12px"}}>
-      <div style={{fontSize:10, color:"#64748b", fontWeight:700}}>{label}</div>
-      <div style={{fontSize:16, fontWeight:800, color:"#0ea5e9"}}>{fmt(total)}</div>
-    </div>
-  );
-  const Row = ({label, qty, qtyLabel, rateKey, ratePlaceholder, total, label2}) => (
-    <div style={{ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: 12, padding: 16, marginBottom: 12 }}>>
-      <div style={{fontSize:12, fontWeight:800, color:"#0f172a", marginBottom:6}}>{label}</div>
-      <div style={{fontSize:11, color:"#64748b", marginBottom:10}}>Total: <strong>{qty} {qtyLabel}</strong></div>
-      <div style={{display:"flex", gap:10, alignItems:"flex-end"}}>
-        <div style={{flex:1}}>
-          <label style={{ fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 4 }}>{label2}</label>
-          <input style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid #e2e8f0', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: '#0f172a', outline: 'none', background: 'white' }} type="number" value={p[rateKey]||""} onChange={e=>set(rateKey,e.target.value)} placeholder={ratePlaceholder}/>
-        </div>
-        <PriceCard label="TOTAL" total={total}/>
-      </div>
-    </div>
-  );
-  return (
-    <div style={{ padding: '0 0 24px' }}>
-      <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', margin: '0 0 4px' }}>Job Pricing</h2>
-      <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 20px', lineHeight: 1.5 }}>Private — client does not see this step</p>
-      <div style={{background:"#fef9c3", border:"1.5px solid #fde68a", borderRadius:10, padding:"10px 14px", marginBottom:16, fontSize:12, color:"#92400e", fontWeight:600}}>
-        This step is for your eyes only. Enter your pricing rates below.
-      </div>
-      {services.includes("siding") && <Row label="James Hardie Siding" qty={sidingArea.toFixed(0)} qtyLabel="sq ft" rateKey="sidingPerSqFt" ratePlaceholder="e.g. 15.00" total={sidTotal} label2="Price per sq ft ($)"/>}
-      {services.includes("soffit") && <Row label="Soffit Installation" qty={soffitLinFt.toFixed(0)} qtyLabel="linear ft" rateKey="soffitPerLinFt" ratePlaceholder="e.g. 8.00" total={sofTotal} label2="Price per linear ft ($)"/>}
-      {services.includes("fascia") && <Row label="Fascia Installation" qty={fasciaLinFt.toFixed(0)} qtyLabel="linear ft" rateKey="fasciaPerLinFt" ratePlaceholder="e.g. 8.00" total={fasTotal} label2="Price per linear ft ($)"/>}
-      {services.includes("paint") && <Row label="Exterior Paint" qty={paintSqFt.toFixed(0)} qtyLabel="sq ft" rateKey="paintPerSqFt" ratePlaceholder="e.g. 2.50" total={pntTotal} label2="Price per sq ft ($)"/>}
-      {services.includes("windows") && <Row label="Window Installation" qty={totalWindows} qtyLabel="units" rateKey="windowPerUnit" ratePlaceholder="e.g. 450.00" total={winTotal} label2="Price per window ($)"/>}
-      {services.includes("misc") && miscTotal > 0 && (
-        <div style={{ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: 12, padding: 16, marginBottom: 12 }}>
-          <div style={{display:"flex", justifyContent:"space-between"}}>
-            <div style={{fontSize:12, fontWeight:800, color:"#0f172a"}}>Miscellaneous</div>
-            <div style={{fontSize:14, fontWeight:800, color:"#0ea5e9"}}>{fmt(miscTotal)}</div>
-          </div>
-        </div>
-      )}
-      <div style={{ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: 12, padding: 16, marginBottom: 12 }}>
-        <div style={{fontSize:12, fontWeight:800, color:"#0f172a", marginBottom:6}}>Administrative Savings Incentive Discount</div>
-        <div style={{display:"flex", gap:10, alignItems:"flex-end"}}>
-          <div style={{flex:1}}>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 4 }}>Discount % (default 8.35%)</label>
-            <input style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid #e2e8f0', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: '#0f172a', outline: 'none', background: 'white' }} type="number" value={p.adminSavingsDiscount||"8.35"} onChange={e=>set("adminSavingsDiscount",e.target.value)} placeholder="8.35"/>
-          </div>
-          <PriceCard label="ADMIN PRICE" total={adminTotal}/>
-        </div>
-      </div>
-      <div style={{ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: 12, padding: 16, marginBottom: 12 }}>
-        <div style={{fontSize:12, fontWeight:800, color:"#0f172a", marginBottom:6}}>Financing (Optional)</div>
-        <label style={{ fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 4 }}>Monthly payment for Admin Savings price ($/mo)</label>
-        <input style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid #e2e8f0', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: '#0f172a', outline: 'none', background: 'white' }} type="number" value={p.monthlyPayment||""} onChange={e=>set("monthlyPayment",e.target.value)} placeholder="e.g. 285.00"/>
-        {p.monthlyPayment && <div style={{fontSize:11, color:"#64748b", marginTop:6}}>Standard financing: <strong>{fmt(parseFloat(p.monthlyPayment)+47)}/mo</strong></div>}
-      </div>
-      <div style={{background:"linear-gradient(135deg,#0f172a,#1e293b)", borderRadius:12, padding:16, marginTop:4}}>
-        <div style={{fontSize:11, color:"rgba(255,255,255,0.6)", fontWeight:700, textTransform:"uppercase", marginBottom:8}}>Job Summary</div>
-        <div style={{display:"flex", justifyContent:"space-between", marginBottom:6}}>
-          <span style={{fontSize:13, color:"rgba(255,255,255,0.8)"}}>Standard Pricing</span>
-          <span style={{fontSize:16, fontWeight:800, color:"white"}}>{fmt(grandTotal)}</span>
-        </div>
-        <div style={{display:"flex", justifyContent:"space-between"}}>
-          <span style={{fontSize:13, color:"#7dd3fc"}}>Admin Savings Incentive</span>
-          <span style={{fontSize:16, fontWeight:800, color:"#7dd3fc"}}>{fmt(adminTotal)}</span>
-        </div>
-        {p.monthlyPayment && (
-          <div style={{display:"flex", justifyContent:"space-between", marginTop:6}}>
-            <span style={{fontSize:12, color:"rgba(255,255,255,0.5)"}}>Financing (Admin price)</span>
-            <span style={{fontSize:13, color:"rgba(255,255,255,0.7)"}}>{fmt(parseFloat(p.monthlyPayment))}/mo</span>
-          </div>
-        )}
-      </div>
-    </div>
+  var p = state.pricing || {};
+  var services = state.services;
+  function set(k, v) { onChange(Object.assign({}, p, { [k]: v })); }
+
+  var sidingArea = state.siding.walls.reduce(function(a,w){ return a + parseFloat(w.sqft||0); }, 0);
+  var soffitLinFt = state.soffit.items.reduce(function(a,i){ return a + parseFloat(i.linearFt||0); }, 0);
+  var fasciaLinFt = state.fascia.items.reduce(function(a,i){ return a + parseFloat(i.linearFt||0); }, 0);
+  var paintSqFt = parseFloat(state.paint.combinedSqft||0);
+  var totalWindows = state.windows.reduce(function(a,w){ return a + parseFloat(w.qty||1); }, 0);
+  var miscTotal = state.misc.items.reduce(function(a,i){ return a + parseFloat(i.qty||0)*parseFloat(i.unitPrice||0); }, 0);
+
+  var sidTotal = services.includes("siding") ? sidingArea * parseFloat(p.sidingPerSqFt||0) : 0;
+  var sofTotal = services.includes("soffit") ? soffitLinFt * parseFloat(p.soffitPerLinFt||0) : 0;
+  var fasTotal = services.includes("fascia") ? fasciaLinFt * parseFloat(p.fasciaPerLinFt||0) : 0;
+  var pntTotal = services.includes("paint") ? paintSqFt * parseFloat(p.paintPerSqFt||0) : 0;
+  var winTotal = services.includes("windows") ? totalWindows * parseFloat(p.windowPerUnit||0) : 0;
+  var grandTotal = sidTotal + sofTotal + fasTotal + pntTotal + winTotal + miscTotal;
+  var discount = parseFloat(p.adminSavingsDiscount||8.35) / 100;
+  var adminTotal = grandTotal * (1 - discount);
+
+  var cardStyle = { background: "white", border: "1.5px solid #e2e8f0", borderRadius: 12, padding: 16, marginBottom: 12 };
+  var labelStyle = { fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: 4 };
+  var inputStyle = { width: "100%", boxSizing: "border-box", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#0f172a", outline: "none", background: "white" };
+
+  function PriceBox(label, total) {
+    return React.createElement("div", { style: { flex: 1, background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 8, padding: "8px 12px" } },
+      React.createElement("div", { style: { fontSize: 10, color: "#64748b", fontWeight: 700 } }, label),
+      React.createElement("div", { style: { fontSize: 16, fontWeight: 800, color: "#0ea5e9" } }, fmt(total))
+    );
+  }
+
+  function ServiceRow(label, qty, qtyLabel, rateKey, placeholder, total) {
+    return React.createElement("div", { style: cardStyle, key: rateKey },
+      React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 6 } }, label),
+      React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginBottom: 10 } },
+        "Total: ", React.createElement("strong", null, qty + " " + qtyLabel)
+      ),
+      React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "flex-end" } },
+        React.createElement("div", { style: { flex: 1 } },
+          React.createElement("label", { style: labelStyle }, "Price per " + qtyLabel + " ($)"),
+          React.createElement("input", { style: inputStyle, type: "number", value: p[rateKey]||"", onChange: function(e){ set(rateKey, e.target.value); }, placeholder: placeholder })
+        ),
+        PriceBox("TOTAL", total)
+      )
+    );
+  }
+
+  return React.createElement("div", { style: { padding: "0 0 24px" } },
+    React.createElement("h2", { style: { fontSize: 18, fontWeight: 800, color: "#0f172a", margin: "0 0 4px" } }, "Job Pricing"),
+    React.createElement("p", { style: { color: "#64748b", fontSize: 13, margin: "0 0 20px", lineHeight: 1.5 } }, "Private — client does not see this step"),
+    React.createElement("div", { style: { background: "#fef9c3", border: "1.5px solid #fde68a", borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#92400e", fontWeight: 600 } },
+      "This step is for your eyes only. Enter your pricing rates below."
+    ),
+    services.includes("siding") ? ServiceRow("James Hardie Siding", sidingArea.toFixed(0), "sq ft", "sidingPerSqFt", "e.g. 15.00", sidTotal) : null,
+    services.includes("soffit") ? ServiceRow("Soffit Installation", soffitLinFt.toFixed(0), "linear ft", "soffitPerLinFt", "e.g. 8.00", sofTotal) : null,
+    services.includes("fascia") ? ServiceRow("Fascia Installation", fasciaLinFt.toFixed(0), "linear ft", "fasciaPerLinFt", "e.g. 8.00", fasTotal) : null,
+    services.includes("paint") ? ServiceRow("Exterior Paint", paintSqFt.toFixed(0), "sq ft", "paintPerSqFt", "e.g. 2.50", pntTotal) : null,
+    services.includes("windows") ? ServiceRow("Window Installation", totalWindows, "units", "windowPerUnit", "e.g. 450.00", winTotal) : null,
+    services.includes("misc") && miscTotal > 0 ? React.createElement("div", { style: cardStyle },
+      React.createElement("div", { style: { display: "flex", justifyContent: "space-between" } },
+        React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#0f172a" } }, "Miscellaneous"),
+        React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: "#0ea5e9" } }, fmt(miscTotal))
+      )
+    ) : null,
+    React.createElement("div", { style: cardStyle },
+      React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 6 } }, "Admin Savings Incentive Discount"),
+      React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "flex-end" } },
+        React.createElement("div", { style: { flex: 1 } },
+          React.createElement("label", { style: labelStyle }, "Discount % (default 8.35%)"),
+          React.createElement("input", { style: inputStyle, type: "number", value: p.adminSavingsDiscount||"8.35", onChange: function(e){ set("adminSavingsDiscount", e.target.value); }, placeholder: "8.35" })
+        ),
+        PriceBox("ADMIN PRICE", adminTotal)
+      )
+    ),
+    React.createElement("div", { style: cardStyle },
+      React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 6 } }, "Financing (Optional)"),
+      React.createElement("label", { style: labelStyle }, "Monthly payment for Admin Savings price ($/mo)"),
+      React.createElement("input", { style: inputStyle, type: "number", value: p.monthlyPayment||"", onChange: function(e){ set("monthlyPayment", e.target.value); }, placeholder: "e.g. 285.00" }),
+      p.monthlyPayment ? React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginTop: 6 } },
+        "Standard financing: ", React.createElement("strong", null, fmt(parseFloat(p.monthlyPayment)+47) + "/mo")
+      ) : null
+    ),
+    React.createElement("div", { style: { background: "linear-gradient(135deg,#0f172a,#1e293b)", borderRadius: 12, padding: 16, marginTop: 4 } },
+      React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 700, textTransform: "uppercase", marginBottom: 8 } }, "Job Summary"),
+      React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 6 } },
+        React.createElement("span", { style: { fontSize: 13, color: "rgba(255,255,255,0.8)" } }, "Standard Pricing"),
+        React.createElement("span", { style: { fontSize: 16, fontWeight: 800, color: "white" } }, fmt(grandTotal))
+      ),
+      React.createElement("div", { style: { display: "flex", justifyContent: "space-between" } },
+        React.createElement("span", { style: { fontSize: 13, color: "#7dd3fc" } }, "Admin Savings Incentive"),
+        React.createElement("span", { style: { fontSize: 16, fontWeight: 800, color: "#7dd3fc" } }, fmt(adminTotal))
+      ),
+      p.monthlyPayment ? React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginTop: 6 } },
+        React.createElement("span", { style: { fontSize: 12, color: "rgba(255,255,255,0.5)" } }, "Financing (Admin price)"),
+        React.createElement("span", { style: { fontSize: 13, color: "rgba(255,255,255,0.7)" } }, fmt(parseFloat(p.monthlyPayment)) + "/mo")
+      ) : null
+    )
   );
 }
-
 
 function ServiceSelectStep({ selected, onChange }) {
   const toggle = (id) => {
