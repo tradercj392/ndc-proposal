@@ -32,6 +32,13 @@ function compressImage(file, callback) {
   reader.readAsDataURL(file);
 }
 
+// Paste your Google Apps Script URL here to enable CRM tracking
+const CRM_URL = "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+async function logToCRM(action, data) {
+  if (!CRM_URL || CRM_URL.includes("YOUR_GOOGLE")) return;
+  try { await fetch(CRM_URL, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({action, ...data}) }); } catch(e) { console.warn("CRM log failed:", e); }
+}
+
 const ALL_SERVICES = [
   { id: "siding",   emoji: "🏠", label: "Siding",             sub: "HardiePlank, Board & Batten, Shingle" },
   { id: "soffit",   emoji: "🪵", label: "Soffits",             sub: "Vented soffit panels & installation" },
@@ -1170,7 +1177,7 @@ function calcSidingTotal(state) {
   return state.siding.walls.reduce(function(a, w) { return a + parseFloat(w.sqft || 0) * parseFloat(w.pricePerSqFt || 0); }, 0);
 }
 
-function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
+function buildProposalHTML(state, selectedOption, signature, selectedPayment, showPrices) {
   var t = calcGrandTotal(state);
   var today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   var priority = t.total;
@@ -1415,7 +1422,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
     html += "<div class='page'>";
     html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
     html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>James Hardie " + (state.siding.sidingType||"Siding") + "</div>";
-    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(s_sid) + "</div></div>";
+    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + (showPrices ? fmt(s_sid) : '') + "</div></div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:16px'>Per James Hardie Installation Manual - All work performed to manufacturer specifications</div>";
 
     // Scope of Work
@@ -1453,7 +1460,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
       html += "<tr><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + w.label + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.location||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.currentSiding||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.removalRequired||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.osbSheathing||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + prod + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.hardieSize||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px'>" + (w.hardieTexture||"-") + "</td><td style='padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px;font-weight:700'>" + (w.sqft||"-") + " sq ft</td></tr>";
       if (w.notes) html += "<tr><td colspan='9' style='padding:4px 8px 8px;font-size:10px;color:#78350f;background:#fffbeb'>Note: " + w.notes + "</td></tr>";
     });
-    html += "</tbody><tfoot><tr><td colspan='8' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL SIDING</td><td style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + fmt(s_sid) + "</td></tr></tfoot></table>";
+    html += "</tbody><tfoot><tr><td colspan='8' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL SIDING</td><td style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + (showPrices ? fmt(s_sid) : '—') + "</td></tr></tfoot></table>";
 
     // Wall Photos
     var photoWalls = state.siding.walls.filter(function(w){return w.photo;});
@@ -1500,7 +1507,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
     html += "<div class='page'>";
     html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
     html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>Soffit Installation</div>";
-    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(s_sof) + "</div></div>";
+    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + (showPrices ? fmt(s_sof) : '') + "</div></div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:16px'>Vented soffit panels and accessories - " + totalSoffitLnFt2.toFixed(0) + " linear feet</div>";
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Scope of Work</div>";
@@ -1517,7 +1524,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
     state.soffit.items.forEach(function(item,i){
       html += "<tr style='background:" + (i%2===0?"white":"#f8fafc") + "'><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + item.label + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (item.currentMaterial||"-") + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (item.newMaterial||"-") + "</td><td style='padding:6px 8px;font-size:10px;font-weight:700;border-bottom:1px solid #f1f5f9'>" + (item.linearFt||"-") + " lf</td><td style='padding:6px 8px;font-size:10px;color:#78350f;border-bottom:1px solid #f1f5f9'>" + (item.notes||"-") + "</td></tr>";
     });
-    html += "</tbody><tfoot><tr><td colspan='3' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL SOFFITS</td><td colspan='2' style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + fmt(s_sof) + "</td></tr></tfoot></table>";
+    html += "</tbody><tfoot><tr><td colspan='3' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL SOFFITS</td><td colspan='2' style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + (showPrices ? fmt(s_sof) : '—') + "</td></tr></tfoot></table>";
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 8px'>Materials List</div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:8px'>Based on " + totalSoffitLnFt2.toFixed(0) + " total linear feet. Quantities include waste factors.</div>";
@@ -1547,7 +1554,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
     html += "<div class='page'>";
     html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
     html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>Fascia Installation</div>";
-    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(s_fas) + "</div></div>";
+    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + (showPrices ? fmt(s_fas) : '') + "</div></div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:16px'>Fascia boards and trim - " + totalFasciaLnFt2.toFixed(0) + " linear feet</div>";
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Scope of Work</div>";
@@ -1564,7 +1571,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
     state.fascia.items.forEach(function(item,i){
       html += "<tr style='background:" + (i%2===0?"white":"#f8fafc") + "'><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + item.label + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (item.currentMaterial||"-") + "</td><td style='padding:6px 8px;font-size:10px;border-bottom:1px solid #f1f5f9'>" + (item.newMaterial||"-") + "</td><td style='padding:6px 8px;font-size:10px;font-weight:700;border-bottom:1px solid #f1f5f9'>" + (item.linearFt||"-") + " lf</td><td style='padding:6px 8px;font-size:10px;color:#78350f;border-bottom:1px solid #f1f5f9'>" + (item.notes||"-") + "</td></tr>";
     });
-    html += "</tbody><tfoot><tr><td colspan='3' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL FASCIA</td><td colspan='2' style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + fmt(s_fas) + "</td></tr></tfoot></table>";
+    html += "</tbody><tfoot><tr><td colspan='3' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL FASCIA</td><td colspan='2' style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + (showPrices ? fmt(s_fas) : '—') + "</td></tr></tfoot></table>";
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 8px'>Materials List</div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:8px'>Based on " + totalFasciaLnFt2.toFixed(0) + " total linear feet.</div>";
@@ -1607,7 +1614,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
     html += "<div class='page'>";
     html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
     html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>Exterior Paint</div>";
-    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(s_pnt) + "</div></div>";
+    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + (showPrices ? fmt(s_pnt) : '') + "</div></div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:16px'>Full exterior paint application using directional spray technique</div>";
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Scope of Work</div>";
@@ -1678,7 +1685,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
     html += "<div class='page'>";
     html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
     html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>Window Installation</div>";
-    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + fmt(s_win) + "</div></div>";
+    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + (showPrices ? fmt(s_win) : '') + "</div></div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:16px'>" + totalWinQty + " unit(s) - per manufacturer installation specifications</div>";
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Scope of Work</div>";
@@ -1699,7 +1706,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
       var sz = w.width&&w.height?w.width+"x"+w.height+"in":"-";
       html += "<tr style='background:" + (i%2===0?"white":"#f8fafc") + "'><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9;font-weight:600'>" + w.label + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.location||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + mfr + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.style||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.frameType||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.frameColor||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.glassType||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.glassPack||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9'>" + (w.grids||"-") + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9;font-weight:700'>" + sz + "</td><td style='padding:5px 6px;font-size:9px;border-bottom:1px solid #f1f5f9;font-weight:700;color:#0369a1'>" + (w.qty||"-") + "</td></tr>";
     });
-    html += "</tbody><tfoot><tr><td colspan='10' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL WINDOWS</td><td style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + fmt(s_win) + "</td></tr></tfoot></table>";
+    html += "</tbody><tfoot><tr><td colspan='10' style='padding:8px;background:#0f172a;color:white;font-weight:800;font-size:11px'>TOTAL WINDOWS</td><td style='padding:8px;background:#0f172a;color:#0ea5e9;font-weight:800;font-size:13px'>" + (showPrices ? fmt(s_win) : '—') + "</td></tr></tfoot></table>";
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 8px'>Materials List</div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:8px'>Based on " + totalWinQty + " total window units.</div>";
@@ -1730,6 +1737,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
   var opt33_2 = priority * 0.33;
   var opt33_3 = priority - (opt33_1 + opt33_2);
 
+  if (showPrices) {
   // ADMIN SAVINGS CREDIT PAGE - after all service pages
   html += "<div class='page admin-only'>";
 
@@ -1785,8 +1793,33 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
   }
   html += "</div>";
 
+  // Administrative Clearance option (always visible, third option)
+  var oc_clr = "onclick='selectOption(\"clearance\")'";
+  var clrSelected = selectedOption === 'clearance';
+  html += "<div " + oc_clr + " style='background:" + (clrSelected ? '#fefce8' : 'white') + ";border:2px solid " + (clrSelected ? '#f59e0b' : '#e2e8f0') + ";border-radius:10px;padding:18px;cursor:pointer;margin-top:16px'>";
+  html += "<div style='display:flex;align-items:center;gap:10px;margin-bottom:12px'>";
+  html += "<div style='width:22px;height:22px;border-radius:50%;border:2px solid " + (clrSelected ? '#f59e0b' : '#cbd5e1') + ";background:" + (clrSelected ? '#f59e0b' : 'white') + ";display:flex;align-items:center;justify-content:center;flex-shrink:0'>";
+  html += clrSelected ? "<div style='width:8px;height:8px;border-radius:50%;background:white'></div>" : "";
+  html += "</div>";
+  html += "<div style='font-size:10px;font-weight:800;color:" + (clrSelected ? '#92400e' : '#64748b') + ";text-transform:uppercase;letter-spacing:1px'>Administrative Clearance</div></div>";
+  html += "<div style='font-size:11px;color:#475569;line-height:1.8;background:" + (clrSelected ? '#fef3c7' : '#f8fafc') + ";border-radius:8px;padding:14px;border:1px solid " + (clrSelected ? '#fde68a' : '#f1f5f9') + "'>";
+  html += "<strong>Administrative permission has been granted</strong> to allow the client to shop and obtain additional quotes for a period of <strong>14 days</strong> from the date of this proposal.<br><br>";
+  html += "All competing quotes must be:<br>";
+  html += "&bull; Submitted in writing on the competing company&apos;s official letterhead<br>";
+  html += "&bull; A complete scope match — covering exactly the same materials, specifications, and scope of work as outlined in this New Direction Construction proposal<br>";
+  html += "&bull; Presented to your New Direction Construction representative within the 14-day window<br><br>";
+  html += "If a qualifying quote is presented that is lower in price and matches the scope completely, <strong>New Direction Construction will not only match that price — the final signed contract price will be set at 10% below the presented quote.</strong><br><br>";
+  html += "<em>This clearance is a reflection of our confidence in our pricing, quality, and commitment to earning your business.</em>";
+  html += "</div>";
+  if (clrSelected) {
+    html += "<div style='margin-top:12px;font-size:10px;color:#92400e;font-weight:700;text-align:center'>Administrative Clearance Selected — No Contract Required Today</div>";
+  }
+  html += "</div>";
+
   // Payment options appear only when admin is selected
-  if (selectedOption === 'priority') {
+  if (selectedOption === 'priority' || selectedOption === 'standard') {
+    // no payment options for non-admin
+  } else if (selectedOption === 'priority') {
     html += "<div style='margin-top:20px'>";
     html += "<div style='font-size:11px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px'>Select Your Payment Schedule</div>";
     html += "<div style='display:flex;flex-direction:column;gap:10px'>";
@@ -1906,6 +1939,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
 
   html += "<p style='font-size:9px;color:#94a3b8;text-align:center;margin-top:32px'>New Direction Construction - 820 Worth Rd, Jacksonville, FL 32259 - (904) 891-9980 - Lic# CBC059304</p>";
   html += "</div>";
+  } // end admin savings page (showPrices)
   } // end terms+cancellation
 
 
@@ -1920,6 +1954,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment) {
 
 function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption, selectedPayment, setSelectedPayment }) {
   const [signature, setSignature] = useState("");
+  const [showPrices, setShowPrices] = useState(false);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [emailOverride, setEmailOverride] = useState(state.customer.email);
@@ -1928,6 +1963,22 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
   const handleSend = async () => {
     if (!emailOverride) { alert("Please enter a customer email address."); return; }
     setSending(true);
+    // Log to CRM
+    const t2 = calcGrandTotal(state);
+    const standard2 = t2.total * 1.0835;
+    const priority2 = t2.total;
+    logToCRM("logProposal", {
+      proposal: {
+        clientName: state.customer.name,
+        address: state.customer.address,
+        email: emailOverride,
+        phone: state.customer.phone,
+        services: state.services,
+        standardPrice: "$" + standard2.toFixed(2),
+        adminPrice: "$" + priority2.toFixed(2),
+        financing: state.financing.monthlyPayment ? "$" + state.financing.monthlyPayment + "/mo" : "",
+      }
+    });
     try {
       const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
         method: "POST",
@@ -1972,7 +2023,7 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
   let html = "<html><body style='font-family:sans-serif;padding:20px'><h2>Building preview...</h2></body></html>";
   try {
     const stateWithPayment = { ...state, financing: { ...(state.financing||{}), selectedPayment: selectedPayment } };
-    const built = buildProposalHTML(stateWithPayment, selectedOption, signature, selectedPayment);
+    const built = buildProposalHTML(stateWithPayment, selectedOption, signature, selectedPayment, showPrices);
     if (built && built.length > 100) {
       html = built;
     } else {
@@ -2017,7 +2068,13 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
           </div>
         )}
         {/* Proceed to Contract button - only when admin selected */}
-        {selectedOption === "priority" && (
+        {selectedOption === "clearance" && (
+          <div style={{ background: "#fefce8", border: "1.5px solid #fde68a", borderRadius: 10, padding: "14px 16px", marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#92400e", marginBottom: 4 }}>Administrative Clearance Granted</div>
+            <div style={{ fontSize: 12, color: "#78350f", lineHeight: 1.7 }}>Client has 14 days to obtain written competing quotes. If a qualifying lower quote is presented, NDC will beat it by 10%. No contract is required today — send the proposal by email below.</div>
+          </div>
+        )}
+        {(selectedOption === "priority" || selectedOption === "clearance") && (
           <button
             style={{ background: "linear-gradient(135deg,#0ea5e9,#0369a1)", color: "white", border: "none", borderRadius: 10, padding: "14px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%", marginBottom: 12 }}
             onClick={() => setStep(steps.findIndex(s => s.key === "contract"))}
@@ -2025,6 +2082,27 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
             Proceed to Contract & Sign
           </button>
         )}
+        {/* View Final Proposal with Pricing button */}
+        {!showPrices ? (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 10, padding: "14px 16px", marginBottom: 12, textAlign: "center" }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#0f172a", marginBottom: 4 }}>Ready to discuss investment?</div>
+              <div style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>Confirm the scope is exactly right before revealing pricing.</div>
+              <button
+                style={{ background: "linear-gradient(135deg,#0ea5e9,#0369a1)", color: "white", border: "none", borderRadius: 10, padding: "12px 28px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%" }}
+                onClick={() => setShowPrices(true)}
+              >
+                View Final Proposal with Pricing
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 8, padding: "10px 14px", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#166534" }}>Pricing is now visible in the proposal</div>
+            <button onClick={() => setShowPrices(false)} style={{ background: "none", border: "1px solid #86efac", borderRadius: 6, padding: "4px 10px", fontSize: 11, color: "#166534", cursor: "pointer" }}>Hide Prices</button>
+          </div>
+        )}
+
         {/* Email fields */}
         <div style={{ marginBottom: 10 }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>To — Customer Email</label>
@@ -2052,6 +2130,20 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
               const clientName = state.customer.name ? state.customer.name.replace(/[^a-zA-Z0-9 ]/g, "").trim().replace(/ /g, "_") : "Client";
               const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
               const filename = "NDC_Proposal_" + clientName + "_" + dateStr;
+              // Log to CRM
+              const t3 = calcGrandTotal(state);
+              logToCRM("logProposal", {
+                proposal: {
+                  clientName: state.customer.name,
+                  address: state.customer.address,
+                  email: state.customer.email,
+                  phone: state.customer.phone,
+                  services: state.services,
+                  standardPrice: "$" + (t3.total * 1.0835).toFixed(2),
+                  adminPrice: "$" + t3.total.toFixed(2),
+                  financing: state.financing.monthlyPayment ? "$" + state.financing.monthlyPayment + "/mo" : "",
+                }
+              });
               const newWin = window.open("", "_blank");
               if (newWin) {
                 newWin.document.write(html);
@@ -2201,7 +2293,8 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
   };
 
   const schedule = getPaymentSchedule();
-  const pricingLabel = selectedOption === "standard" ? "Standard Pricing" : "Administrative Savings Incentive";
+  const pricingLabel = selectedOption === "standard" ? "Standard Pricing" : selectedOption === "clearance" ? "Administrative Clearance" : "Administrative Savings Incentive";
+  const chosenTotal = selectedOption === "standard" ? standard : priority;
 
   return (
     <div style={S.stepWrap}>
@@ -2356,6 +2449,17 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
           <div style={{ fontSize: 10, color: "#475569", lineHeight: 1.8, marginTop: 8 }}>
             A late fee of 1.5% per month may be assessed on any balance outstanding beyond 10 days of the due date. In the event of non-payment, Client shall be responsible for all costs of collection including reasonable attorney fees. New Direction Construction shall have the right to file a construction lien on the property per Florida Statute 713.
           </div>
+          {selectedOption === "clearance" && (
+            <div style={{ background: "#fefce8", border: "1.5px solid #fde68a", borderRadius: 8, padding: "12px 14px", marginTop: 12, marginBottom: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: "#92400e", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 6 }}>Administrative Clearance Terms</div>
+              <div style={{ fontSize: 10, color: "#78350f", lineHeight: 1.8 }}>
+                Administrative permission has been granted to allow the client to shop and obtain additional quotes for a period of <strong>14 days</strong> from the date of this signed agreement. All competing quotes must be submitted in writing on the competing company's official letterhead, must cover exactly the same materials, specifications, and scope of work as outlined in this proposal, and must be presented to a New Direction Construction representative within the 14-day window.
+              </div>
+              <div style={{ fontSize: 10, color: "#78350f", lineHeight: 1.8, marginTop: 8 }}>
+                If a qualifying written quote is presented that is lower in price and matches the scope completely, <strong>New Direction Construction will not only match that price — the final signed contract price will be set at 10% below the presented quote.</strong>
+              </div>
+            </div>
+          )}
           <div style={{ fontSize: 10, color: "#475569", lineHeight: 1.8, marginTop: 8 }}>
             By signing below, Client acknowledges receipt of this contract, agrees to all payment terms, scope of work, and the Terms & Conditions included in this proposal. This agreement is binding upon signature by both parties.
           </div>
@@ -2379,372 +2483,4 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
             <p><strong>12. Compliance with Law</strong> If any provision is invalid, the remaining provisions shall not be affected.</p>
             <p><strong>13. Florida Homeowner's Construction Recovery Fund (F.S.489)</strong> Payment may be available for the Homeowner's Construction Recovery Fund if you lose money on a project performed under contract.</p>
             <p><strong>14. Binding Arbitration Agreement</strong> Any disputes arising in any manner relating to this agreement shall be subject to mandatory exclusive and binding arbitration.</p>
-            <p><strong>15. Transfer</strong> You may not transfer your duties under this contract to any person without written consent by the Company.</p>
-            <p><strong>16. Successors</strong> This contract binds your heirs, executors and administrators.</p>
-            <p><strong>17. Verification</strong> Our construction specialists check the measurements and specifications of the work to be done.</p>
-            <p><strong>18. Notice to all Florida Residents</strong> Florida law contains important requirements you must follow before you may file a lawsuit for defective construction.</p>
-            <p><strong>19. Direct Contract Mandatory Provisions (F.S. 713)</strong> According to Florida's Construction Lien Law, those who work on your property and have not been paid in full have a right to enforce their claim for payment against your property.</p>
-          </div>
-        </div>
-
-        {/* Notice of Cancellation */}
-        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Notice of Cancellation</div>
-          <div style={{ fontSize: 9, color: "#334155", lineHeight: 1.7 }}>
-            You may cancel this transaction without any penalty or obligation, within three business days from the above date. If you cancel, any property traded in, any payments made by you under the contract or sale, and any negotiable instrument executed by you will be returned to you within 10 business days following receipt by the seller of your cancellation notice and any security interest arising out of the transaction will be cancelled. If you cancel, you must make available to the seller of your cancellation notice at your residence, in substantially as good condition as when received, any good delivered to you under the contract or sale, or if you wish, comply with the instructions of the seller regarding the return shipment of the goods at the sellers expense and risk. To cancel this transaction, mail or deliver a signed and dated copy of this cancellation notice to: New Direction Construction, 820 Worth Rd., Jacksonville FL 32259.
-          </div>
-        </div>
-
-        {/* Draw to Sign */}
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Client Signature</div>
-          <div style={{ fontSize: 10, color: "#64748b", marginBottom: 8 }}>Sign with your finger in the box below</div>
-          <div style={{ position: "relative", border: "1.5px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", overflow: "hidden", height: 120 }}>
-            <canvas
-              ref={canvasRef}
-              width={600}
-              height={120}
-              style={{ display: "block", width: "100%", height: 120, touchAction: "none", cursor: "crosshair", position: "relative", zIndex: 1 }}
-              onMouseDown={startDraw}
-              onMouseMove={draw}
-              onMouseUp={endDraw}
-              onTouchStart={startDraw}
-              onTouchMove={draw}
-              onTouchEnd={endDraw}
-            />
-            {!hasSigned && (
-              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 12, color: "#cbd5e1", pointerEvents: "none", fontStyle: "italic", zIndex: 0 }}>
-                Sign here
-              </div>
-            )}
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-            <div style={{ fontSize: 10, color: "#64748b" }}>{state.customer.name} &nbsp;|&nbsp; {today}</div>
-            <button onClick={clearSignature} style={{ fontSize: 10, color: "#94a3b8", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Clear</button>
-          </div>
-        </div>
-
-        {/* NDC Signature line */}
-        <div style={{ display: "flex", gap: 16, marginTop: 8 }}>
-          <div style={{ flex: 2 }}>
-            <input
-              value={repName}
-              onChange={e => setRepName(e.target.value)}
-              style={{ width: "100%", borderBottom: "1.5px solid #0f172a", borderTop: "none", borderLeft: "none", borderRight: "none", outline: "none", fontSize: 14, fontFamily: "Georgia, serif", color: "#0f172a", marginBottom: 4, background: "transparent", boxSizing: "border-box" }}
-              placeholder="Representative name"
-            />
-            <div style={{ fontSize: 10, color: "#64748b" }}>New Direction Construction Representative</div>
-          </div>
-          <div style={{ flex: 1 }}>
-            <input
-              value={repDate}
-              onChange={e => setRepDate(e.target.value)}
-              style={{ width: "100%", borderBottom: "1.5px solid #0f172a", borderTop: "none", borderLeft: "none", borderRight: "none", outline: "none", fontSize: 13, color: "#0f172a", marginBottom: 4, background: "transparent", boxSizing: "border-box" }}
-            />
-            <div style={{ fontSize: 10, color: "#64748b" }}>Date</div>
-          </div>
-        </div>
-        {/* Hidden signature image for PDF printing */}
-        {signatureData && (
-          <img
-            src={signatureData}
-            alt="Client Signature"
-            className="print-sig"
-            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}
-          />
-        )}
-      </div>
-
-      {hasSigned && (
-        <div style={{ background: "#dcfce7", border: "1.5px solid #86efac", borderRadius: 8, padding: "12px 16px", marginBottom: 12, fontSize: 12, fontWeight: 700, color: "#166534", textAlign: "center" }}>
-          Contract Signed — Ready to Send!
-        </div>
-      )}
-
-      {hasSigned && (
-        <button
-          style={{ background: "white", color: "#0f172a", border: "1.5px solid #0f172a", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 14, cursor: "pointer", width: "100%", marginBottom: 10 }}
-          onClick={() => {
-            // Get fresh signature from canvas
-            const canvas = canvasRef.current;
-            const sigData = canvas ? canvas.toDataURL('image/png') : signatureData;
-            
-            const clientName = state.customer.name || "Client";
-            const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
-            const schedRows = schedule.map(row => `<tr><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:700">${row.label}</td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#64748b;font-size:12px">${row.note}</td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:800;color:#0ea5e9;text-align:right">${row.amount}</td></tr>`).join("");
-
-            // Build scope of work
-            let scopeRows = "";
-            if (state.services.includes("siding")) state.siding.walls.forEach(w => { scopeRows += "<div style='font-size:11px;color:#334155;line-height:1.8'>- " + (w.location||"") + " - " + (state.siding.sidingType||"Siding") + ", " + (w.sqft||0) + " sq ft" + (w.notes?" - "+w.notes:"") + "</div>"; });
-            if (state.services.includes("soffit")) state.soffit.items.forEach(item => { scopeRows += "<div style='font-size:11px;color:#334155;line-height:1.8'>- Soffit - " + (item.material||"TBD") + ", " + (item.linearFt||0) + " linear ft" + (item.notes?" - "+item.notes:"") + "</div>"; });
-            if (state.services.includes("fascia")) state.fascia.items.forEach(item => { scopeRows += "<div style='font-size:11px;color:#334155;line-height:1.8'>- Fascia - " + (item.material||"TBD") + ", " + (item.linearFt||0) + " linear ft" + (item.notes?" - "+item.notes:"") + "</div>"; });
-            if (state.services.includes("paint")) { 
-              const paintTotal = state.paint.combinedSqft ? `— ${state.paint.combinedSqft} sq ft total` : "";
-              scopeRows += `<div style="font-size:11px;font-weight:700;color:#0f172a;margin-bottom:2px">Exterior Paint ${paintTotal}</div>`;
-              state.paint.walls.filter(a=>a.paintProduct||a.colorName).forEach(a => { scopeRows += "<div style='font-size:11px;color:#334155;line-height:1.8'>- Wall Paint: " + (a.paintProduct||"") + " " + (a.colorName||"") + (a.sqft?", "+a.sqft+" sq ft":"") + (a.notes?" - "+a.notes:"") + "</div>"; }); 
-              state.paint.trim.filter(a=>a.paintProduct||a.colorName).forEach(a => { scopeRows += "<div style='font-size:11px;color:#334155;line-height:1.8'>- Trim Paint: " + (a.paintProduct||"") + " " + (a.colorName||"") + (a.notes?" - "+a.notes:"") + "</div>"; }); 
-              (state.paint.other||[]).filter(a=>a.paintProduct||a.colorName||a.notes).forEach(a => { scopeRows += "<div style='font-size:11px;color:#334155;line-height:1.8'>- Other Paint: " + (a.paintProduct||"") + " " + (a.colorName||"") + (a.notes?" - "+a.notes:"") + "</div>"; }); 
-            }
-            if (state.services.includes("windows")) state.windows.forEach((w,i) => { scopeRows += "<div style='font-size:11px;color:#334155;line-height:1.8'>- " + (w.label||"Window "+(i+1)) + " - " + (w.manufacturer||"") + " " + (w.style||"") + " " + (w.width&&w.height?w.width+"x"+w.height:"") + " qty:" + (w.qty||1) + (w.notes?" - "+w.notes:"") + "</div>"; });
-            if (state.services.includes("misc")) state.misc.items.forEach((item,i) => { scopeRows += "<div style='font-size:11px;color:#334155;line-height:1.8'>- " + (item.description||"Misc "+(i+1)) + (item.notes?" - "+item.notes:"") + "</div>"; });
-
-            // Build price breakdown
-            let priceRows = "";
-            if (state.services.includes("siding"))  priceRows += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px"><span>James Hardie Siding</span><span style="font-weight:800">${fmt(t.sid)}</span></div>`;
-            if (state.services.includes("soffit"))  priceRows += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px"><span>Soffit Installation</span><span style="font-weight:800">${fmt(t.sof)}</span></div>`;
-            if (state.services.includes("fascia"))  priceRows += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px"><span>Fascia Installation</span><span style="font-weight:800">${fmt(t.fas)}</span></div>`;
-            if (state.services.includes("paint"))   priceRows += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px"><span>Exterior Paint</span><span style="font-weight:800">${fmt(t.pnt)}</span></div>`;
-            if (state.services.includes("windows")) priceRows += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px"><span>Window Installation</span><span style="font-weight:800">${fmt(t.win)}</span></div>`;
-            if (state.services.includes("misc"))    priceRows += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px"><span>Miscellaneous</span><span style="font-weight:800">${fmt(t.msc)}</span></div>`;
-            priceRows += `<div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px"><span style="font-weight:800">Total (${pricingLabel})</span><span style="font-weight:800;color:#0ea5e9">${fmt(chosenTotal)}</span></div>`;
-
-            // Build materials
-            let matsRows = "";
-            if (state.services.includes("siding")) state.siding.walls.forEach((w,i) => { matsRows += "<tr style='background:"+(i%2===0?"white":"#f8fafc")+"'><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>Siding - "+(w.location||"")+"</td><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>"+(w.sqft||0)+" sq ft</td><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9;color:#64748b'>"+(state.siding.sidingType||"")+"</td></tr>"; });
-            if (state.services.includes("soffit")) state.soffit.items.forEach((item,i) => { matsRows += "<tr style='background:"+(i%2===0?"white":"#f8fafc")+"'><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>Soffit</td><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>"+(item.linearFt||0)+" linear ft</td><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9;color:#64748b'>"+(item.material||"")+"</td></tr>"; });
-            if (state.services.includes("fascia")) state.fascia.items.forEach((item,i) => { matsRows += "<tr style='background:"+(i%2===0?"white":"#f8fafc")+"'><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>Fascia</td><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>"+(item.linearFt||0)+" linear ft</td><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9;color:#64748b'>"+(item.material||"")+"</td></tr>"; });
-            if (state.services.includes("paint")) { state.paint.walls.filter(a=>a.paintProduct||a.colorName).forEach((a,i) => { matsRows += "<tr style='background:"+(i%2===0?"white":"#f8fafc")+"'><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>Wall Paint</td><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>"+(a.sqft||0)+" sq ft</td><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9;color:#64748b'>"+(a.paintProduct||"")+" "+(a.colorName||"")+"</td></tr>"; }); }
-            if (state.services.includes("windows")) state.windows.forEach((w,i) => { matsRows += "<tr style='background:"+(i%2===0?"white":"#f8fafc")+"'><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>"+(w.label||"Window "+(i+1))+"</td><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>qty "+(w.qty||1)+"</td><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9;color:#64748b'>"+(w.manufacturer||"")+" "+(w.style||"")+" "+(w.width&&w.height?w.width+"x"+w.height:"")+"</td></tr>"; });
-
-            // Build photos section
-            let photoRows = "";
-            const addPhoto = (label, src) => {
-              if (src) photoRows += "<div style='display:inline-block;margin:6px;vertical-align:top;width:calc(33% - 12px)'><img src='" + src + "' style='width:100%;height:140px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0'/><div style='font-size:9px;color:#64748b;margin-top:3px;text-align:center'>" + label + "</div></div>";
-            };
-            if (state.customer.photo) addPhoto("Property Street View", state.customer.photo);
-            if (state.services.includes("siding")) state.siding.walls.forEach(w => { if (w.photo) addPhoto((w.location||"Wall") + " - Siding", w.photo); });
-            if (state.services.includes("soffit")) state.soffit.items.forEach((item,i) => { if (item.photo) addPhoto("Soffit Area " + (i+1), item.photo); });
-            if (state.services.includes("fascia")) state.fascia.items.forEach((item,i) => { if (item.photo) addPhoto("Fascia Area " + (i+1), item.photo); });
-            if (state.services.includes("paint")) {
-              state.paint.walls.forEach((a,i) => { if (a.photo) addPhoto("Wall Paint " + (i+1), a.photo); });
-              state.paint.trim.forEach((a,i) => { if (a.photo) addPhoto("Trim Paint " + (i+1), a.photo); });
-              (state.paint.other||[]).forEach((a,i) => { if (a.photo) addPhoto("Other Paint " + (i+1), a.photo); });
-            }
-            if (state.services.includes("windows")) state.windows.forEach((w,i) => { if (w.photo) addPhoto((w.label||"Window "+(i+1)), w.photo); });
-            if (state.services.includes("misc")) state.misc.items.forEach((item,i) => { if (item.photo) addPhoto((item.description||"Misc "+(i+1)), item.photo); });
-
-            const html = `<!DOCTYPE html><html><head><title>NDC_Contract_${clientName}_${dateStr}</title>
-<style>
-  body{font-family:Georgia,serif;padding:32px;max-width:800px;margin:0 auto;color:#0f172a;font-size:11px}
-  h2{font-size:18px;margin:0 0 4px}
-  .section{margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #e2e8f0}
-  .label{font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
-  table{width:100%;border-collapse:collapse;font-size:11px}
-  th{background:#0f172a;color:white;padding:8px 12px;text-align:left;font-size:10px}
-  .sig-box{border:1.5px solid #e2e8f0;border-radius:8px;background:#f8fafc;height:120px;overflow:hidden}
-  .sig-box img{width:100%;height:120px;object-fit:contain;display:block}
-  .rep-line{border-bottom:1.5px solid #0f172a;padding-bottom:2px;font-size:14px;font-family:Georgia,serif;margin-bottom:4px}
-  @media print{body{padding:16px}}
-</style></head><body>
-<div class="section" style="display:flex;justify-content:space-between;align-items:flex-start">
-  <div><h2>New Direction Construction</h2><div style="color:#64748b;line-height:1.8">820 Worth Rd, Jacksonville, FL 32259<br>(904) 891-9980 | Lic# CBC059304</div></div>
-  <div style="text-align:right"><div style="font-size:10px;font-weight:800;color:#0ea5e9">PREPARED FOR</div><div style="font-size:16px;font-weight:800">${clientName}</div><div style="color:#64748b;line-height:1.8">${state.customer.address||""}<br>${state.customer.phone||""}</div><div style="color:#64748b">Date: ${today}</div></div>
-</div>
-<div class="section"><div class="label">Scope of Work</div>${scopeRows}</div>
-<div class="section"><div class="label">Price Breakdown</div>${priceRows}</div>
-<div class="section"><div class="label">Materials List</div><table><thead><tr><th>Item</th><th>Quantity</th><th>Details</th></tr></thead><tbody>${matsRows}</tbody></table></div>
-${photoRows ? `<div class="section"><div class="label">Project Photos</div><div style="margin:-6px">${photoRows}</div></div>` : ""}<div class="section"><div class="label">Agreed Investment</div><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">${pricingLabel}</span><span style="font-size:22px;font-weight:800">${fmt(chosenTotal)}</span></div></div>
-<div class="section"><div class="label">Agreed Payment Schedule</div><table><thead><tr><th>Milestone</th><th>Note</th><th style="text-align:right">Amount</th></tr></thead><tbody>${schedRows}</tbody></table></div>
-<div class="section"><div class="label">Payment Terms & Agreement</div>
-<p style="line-height:1.8">Client agrees to remit payment per the schedule outlined above. All payments are due on the date specified. Failure to remit payment on the date due shall constitute a material breach of this agreement, and New Direction Construction reserves the right to suspend all work until payment is received in full.</p>
-<p style="line-height:1.8">A late fee of 1.5% per month may be assessed on any balance outstanding beyond 10 days of the due date. In the event of non-payment, Client shall be responsible for all costs of collection including reasonable attorney fees. New Direction Construction shall have the right to file a construction lien on the property per Florida Statute 713.</p>
-<p style="line-height:1.8">By signing below, Client acknowledges receipt of this contract, agrees to all payment terms, scope of work, and the Terms & Conditions included in this proposal. This agreement is binding upon signature by both parties.</p>
-</div>
-<div class="section" style="columns:2;column-gap:20px;font-size:9.5px;line-height:1.7"><div class="label" style="-webkit-column-span:all;column-span:all">Terms & Conditions</div>
-<p><strong>1. Office Approval</strong> All contracts are subject to approval by Company manager and/or officer of the Company.</p>
-<p><strong>2. Damages for Cancelation</strong> You have a limited right to cancel this contract. You may do so only in the time stated in the contract or allowed by law.</p>
-<p><strong>3. Amount of Cancelation Damages</strong> The agreed damages are 25% of the contract price.</p>
-<p><strong>4. Access</strong> You will permit us to go onto the premises including land and buildings.</p>
-<p><strong>5. Insurance</strong> We have Public Liability Insurance, Property Damage Insurance and Workers Compensation Insurance.</p>
-<p><strong>6. Debris</strong> We will remove the job related debris.</p>
-<p><strong>7. Interference and Performance</strong> We are not responsible for any interference with our performance caused by you or others not under our control.</p>
-<p><strong>8. Warranties</strong> The only express warranties which apply are those stated in this contract. All implied warranties are excluded to the extent permitted by law.</p>
-<p><strong>9. Option to Declare Balance Due</strong> We may declare the contract cancelled by you and collect both for work completed and agreed damages if you sell, mortgage, or transfer any interest in the premises before full payment.</p>
-<p><strong>10. Consumer Credit Contract Notice</strong> If this document applies to a consumer credit contract, this notice applies.</p>
-<p><strong>11. Entire Agreement</strong> This contract sets forth the entire agreement between the parties and supersedes all prior understandings.</p>
-<p><strong>12. Compliance with Law</strong> If any provision is invalid, the remaining provisions shall not be affected.</p>
-<p><strong>13. Florida Homeowners Construction Recovery Fund (F.S.489)</strong> Payment may be available for the Homeowners Construction Recovery Fund if you lose money on a project performed under contract.</p>
-<p><strong>14. Binding Arbitration Agreement</strong> Any disputes arising in any manner relating to this agreement shall be subject to mandatory exclusive and binding arbitration.</p>
-<p><strong>15. Transfer</strong> You may not transfer your duties under this contract without written consent by the Company.</p>
-<p><strong>16. Successors</strong> This contract binds your heirs, executors and administrators.</p>
-<p><strong>17. Verification</strong> Our construction specialists check the measurements and specifications of the work to be done.</p>
-<p><strong>18. Notice to all Florida Residents</strong> Florida law contains important requirements you must follow before you may file a lawsuit for defective construction.</p>
-<p><strong>19. Direct Contract Mandatory Provisions (F.S. 713)</strong> According to Floridas Construction Lien Law, those who work on your property and have not been paid in full have a right to enforce their claim for payment against your property.</p>
-</div>
-<div class="section"><div class="label">Notice of Cancellation</div>
-<p style="line-height:1.8">You may cancel this transaction without any penalty or obligation, within three business days from the above date. If you cancel, any property traded in, any payments made by you under the contract or sale, and any negotiable instrument executed by you will be returned to you within 10 business days following receipt by the seller of your cancellation notice. To cancel this transaction, mail or deliver a signed and dated copy of this cancellation notice to: New Direction Construction, 820 Worth Rd., Jacksonville FL 32259.</p>
-</div>
-<div class="section"><div class="label">Client Signature</div>
-<div class="sig-box"><img src="${sigData}" alt="Client Signature"/></div>
-<div style="color:#64748b;margin-top:6px">${clientName} &nbsp;|&nbsp; ${today}</div>
-</div>
-<div style="display:flex;gap:24px;margin-top:16px">
-  <div style="flex:2"><div class="rep-line">${repName}</div><div style="font-size:10px;color:#64748b">New Direction Construction Representative</div></div>
-  <div style="flex:1"><div class="rep-line">${repDate}</div><div style="font-size:10px;color:#64748b">Date</div></div>
-</div>
-</body></html>`;
-            const newWin = window.open("", "_blank");
-            newWin.document.write(html);
-            newWin.document.close();
-            newWin.document.title = "NDC_Contract_" + clientName + "_" + dateStr;
-            setTimeout(() => { newWin.focus(); newWin.print(); }, 800);
-          }}
-        >
-          Save Contract as PDF
-        </button>
-      )}
-
-      <button
-        style={{ background: hasSigned ? "linear-gradient(135deg,#0ea5e9,#0369a1)" : "#e2e8f0", color: hasSigned ? "white" : "#94a3b8", border: "none", borderRadius: 10, padding: "14px 24px", fontWeight: 700, fontSize: 15, cursor: hasSigned ? "pointer" : "default", width: "100%" }}
-        onClick={() => hasSigned && setStep(steps.findIndex(s => s.key === "preview"))}
-      >
-        {hasSigned ? "Back to Preview & Send" : "Sign Contract to Continue"}
-      </button>
-    </div>
-  );
-}
-
-function buildSteps(services) {
-  const steps = [
-    { key: "services", label: "Services" },
-
-    { key: "customer", label: "Customer" },
-    { key: "pricing",  label: "Pricing"  },
-  ];
-  if (services.includes("siding"))  steps.push({ key: "siding", label: "Siding" });
-  if (services.includes("soffit"))  steps.push({ key: "soffit", label: "Soffits" });
-  if (services.includes("fascia"))  steps.push({ key: "fascia", label: "Fascia" });
-  if (services.includes("paint"))   steps.push({ key: "paint",  label: "Paint"  });
-  if (services.includes("windows")) steps.push({ key: "windows", label: "Windows" });
-  if (services.includes("misc"))    steps.push({ key: "misc",    label: "Misc" });
-  steps.push({ key: "financing", label: "Financing" });
-  steps.push({ key: "notes",   label: "Notes"   });
-  steps.push({ key: "preview",  label: "Preview"  });
-  steps.push({ key: "contract", label: "Contract" });
-  return steps;
-}
-
-function App() {
-  const [step, setStep] = useState(() => {
-    try { return parseInt(localStorage.getItem("ndc_step")||"0"); } catch { return 0; }
-  });
-  const [state, setState] = useState(() => {
-    try {
-      const saved = localStorage.getItem("ndc_state");
-      return saved ? JSON.parse(saved) : makeInitialState();
-    } catch { return makeInitialState(); }
-  });
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [selectedPayment, setSelectedPayment] = useState(null);
-  const steps = buildSteps(state.services);
-
-  // Auto-save to localStorage whenever state or step changes
-  useEffect(() => {
-    try {
-      localStorage.setItem("ndc_state", JSON.stringify(state));
-      localStorage.setItem("ndc_step", String(step));
-    } catch(e) { console.warn("Save failed:", e); }
-  }, [state, step]);
-  const currentKey = steps[step] && steps[step].key;
-  const lastStep = steps.length - 1;
-
-  const update = (section, key, val) => setState((s) => ({ ...s, [section]: { ...s[section], [key]: val } }));
-
-  const canNext = () => {
-    if (currentKey === "services") return state.services.length > 0;
-
-    if (currentKey === "customer") return state.customer.name.trim().length > 0;
-    return true;
-  };
-
-  return (
-    <div style={S.app}>
-      <div style={S.header}>
-        <div style={S.headerTitle}>ProposalBuilder</div>
-        <div style={S.headerSub}>New Direction Construction - On-Site Estimator</div>
-      </div>
-      <div style={{ ...S.progress, overflowX: "auto" }}>
-        {steps.map((s, i) => (
-          <div key={s.key} style={{ ...S.progressStep, cursor: i < step ? "pointer" : "default", minWidth: 44 }} onClick={() => i < step && setStep(i)}>
-            <div style={{ ...S.progressDot, background: i <= step ? "#0ea5e9" : "#e2e8f0" }}>{i < step ? "-" : i + 1}</div>
-            <span style={{ fontSize: 8, marginTop: 3, color: i <= step ? "#0ea5e9" : "#94a3b8", fontWeight: i === step ? 700 : 400, whiteSpace: "nowrap" }}>{s.label}</span>
-          </div>
-        ))}
-      </div>
-      <div style={S.body}>
-        {currentKey === "services" && <ServiceSelectStep selected={state.services} onChange={(v) => setState((s) => ({ ...s, services: v }))} />}
-
-        {currentKey === "pricing"  && <PricingStep state={state} onChange={(v) => setState(s => ({...s, pricing: v, financing: {...s.financing, monthlyPayment: v.monthlyPayment||""}}))} />}
-        {currentKey === "customer" && <CustomerStep data={state.customer} onChange={(k, v) => update("customer", k, v)} />}
-        {currentKey === "siding"   && <SidingStep data={state.siding} onChange={(k, v) => setState((s) => ({ ...s, siding: { ...s.siding, [k]: v } }))} onSidingTypeChange={(type) => setState((s) => ({ ...s, siding: { ...s.siding, sidingType: type }, sidingMaterials: defaultSidingMaterials(type) }))} />}
-
-        {currentKey === "soffit"   && <SoffitStep title="Soffits" data={state.soffit} onChange={(v) => setState((s) => ({ ...s, soffit: v }))} />}
-        {currentKey === "fascia"   && <SoffitStep title="Fascia" data={state.fascia} onChange={(v) => setState((s) => ({ ...s, fascia: v }))} />}
-        {currentKey === "paint"    && <PaintStep data={state.paint} onChange={(v) => setState((s) => ({ ...s, paint: v }))} />}
-        {currentKey === "windows"  && <WindowsStep windows={state.windows} onChange={(v) => setState((s) => ({ ...s, windows: v }))} />}
-        {currentKey === "misc"     && <MiscStep data={state.misc} onChange={(v) => setState((s) => ({ ...s, misc: v }))} />}
-        {currentKey === "financing" && <FinancingStep data={state.financing} onChange={(v) => setState((s) => ({ ...s, financing: v }))} state={state} />}
-        {currentKey === "notes"    && <NotesStep notes={state.notes} onChange={(v) => setState((s) => ({ ...s, notes: v }))} />}
-        {currentKey === "preview"   && <PreviewStep state={state} setStep={setStep} steps={steps} selectedOption={selectedOption} setSelectedOption={setSelectedOption} selectedPayment={selectedPayment} setSelectedPayment={setSelectedPayment} />}
-        {currentKey === "contract"  && <ContractStep state={state} selectedOption={selectedOption} selectedPayment={selectedPayment} setStep={setStep} steps={steps} />}
-      </div>
-      {step < lastStep && (
-        <div style={S.nav}>
-          {step > 0 && <button style={S.secondaryBtn} onClick={() => setStep(step - 1)}>- Back</button>}
-          <button style={{ ...S.primaryBtn, marginLeft: "auto", opacity: canNext() ? 1 : 0.5 }} disabled={!canNext()} onClick={() => setStep(step + 1)}>
-            {step === lastStep - 1 ? "Preview Proposal" : "Next"}
-          </button>
-        </div>
-      )}
-      {step === lastStep && (
-        <div style={S.nav}>
-          <button style={S.secondaryBtn} onClick={() => setStep(lastStep - 1)}>- Back</button>
-          <button style={{ ...S.secondaryBtn, marginLeft: "auto" }} onClick={() => { 
-  if (window.confirm("Clear all proposal data and start a new proposal?")) {
-    localStorage.removeItem("ndc_state");
-    localStorage.removeItem("ndc_step");
-    setState(makeInitialState()); 
-    setStep(0);
-    setSelectedOption(null);
-    setSelectedPayment(null);
-  }
-}}>- New Proposal</button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-const S = {
-  app: { fontFamily: "'Georgia', serif", background: "#f8fafc", minHeight: "100vh", display: "flex", flexDirection: "column", maxWidth: 700, margin: "0 auto" },
-  header: { background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)", color: "white", padding: "20px 24px 16px", textAlign: "center" },
-  headerTitle: { fontSize: 24, fontWeight: 800, letterSpacing: "-0.5px" },
-  headerSub: { fontSize: 13, color: "#7dd3fc", marginTop: 2 },
-  progress: { display: "flex", justifyContent: "space-between", padding: "14px 16px 0", background: "white", borderBottom: "1px solid #e2e8f0" },
-  progressStep: { display: "flex", flexDirection: "column", alignItems: "center", flex: 1 },
-  progressDot: { width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "white" },
-  body: { flex: 1, padding: "0 0 24px" },
-  nav: { display: "flex", padding: "12px 24px", borderTop: "1px solid #e2e8f0", background: "white", gap: 10 },
-  stepWrap: { padding: "20px 24px" },
-  stepTitle: { fontSize: 18, fontWeight: 800, color: "#0f172a", margin: "0 0 4px" },
-  stepSub: { color: "#64748b", fontSize: 13, margin: "0 0 20px", lineHeight: 1.5 },
-  field: { marginBottom: 14 },
-  label: { display: "block", fontSize: 12, fontWeight: 700, color: "#475569", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" },
-  input: { width: "100%", boxSizing: "border-box", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 15, color: "#1e293b", outline: "none", background: "white" },
-  card: { background: "white", border: "1.5px solid #e2e8f0", borderRadius: 12, padding: 14, marginBottom: 12 },
-  addBtn: { background: "none", border: "1.5px dashed #0ea5e9", borderRadius: 8, padding: "8px 16px", color: "#0ea5e9", fontWeight: 700, fontSize: 13, cursor: "pointer", width: "100%", marginBottom: 12 },
-  removeBtn: { background: "#fef2f2", border: "none", borderRadius: 6, color: "#ef4444", fontWeight: 700, cursor: "pointer", padding: "2px 8px", fontSize: 13 },
-  summaryBox: { background: "#f0f9ff", border: "1.5px solid #7dd3fc", borderRadius: 10, padding: "12px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 8 },
-  primaryBtn: { background: "linear-gradient(135deg, #0ea5e9, #0369a1)", color: "white", border: "none", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer" },
-  secondaryBtn: { background: "white", color: "#475569", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "12px 20px", fontWeight: 600, fontSize: 14, cursor: "pointer" },
-  proposal: { background: "white", border: "1.5px solid #e2e8f0", borderRadius: 14, padding: 24, marginBottom: 16 },
-  propSection: { marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" },
-  propLabel: { fontSize: 11, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 },
-  lineItem: { display: "flex", justifyContent: "space-between", fontSize: 13, color: "#1e293b", padding: "3px 0" },
-  totalBox: { background: "linear-gradient(135deg, #0f172a, #1e3a5f)", color: "white", borderRadius: 10, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 },
-  table: { width: "100%", borderCollapse: "collapse", fontSize: 12, marginBottom: 8 },
-  th: { textAlign: "left", padding: "6px 8px", background: "#f8fafc", color: "#64748b", fontWeight: 700, borderBottom: "1px solid #e2e8f0" },
-  td: { padding: "6px 8px", borderBottom: "1px solid #f1f5f9", color: "#334155" },
-};
-
-export default App;
+            <p><strong>15. Transfer</strong> You may not transfer your duties under this contract to any person without written consent by the Company.<
