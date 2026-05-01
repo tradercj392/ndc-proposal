@@ -990,8 +990,9 @@ function NotesStep({ notes, onChange }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared proposal HTML builder
-// mode: "preview" = overview + scope only, no materials
-// mode: "pdf"     = overview + scope + full materials list
+// mode: "scope"   = overview + scope only, NO pricing, ends with reveal button
+// mode: "preview" = overview + scope + interactive pricing options
+// mode: "pdf"     = overview + scope + pricing (static) + full materials list
 // ─────────────────────────────────────────────────────────────────────────────
 function buildProposalHTML(state, selectedOption, mode) {
   const t = calcGrandTotal(state);
@@ -1254,52 +1255,74 @@ function buildProposalHTML(state, selectedOption, mode) {
     body += `</div>`;
   });
 
-  // Investment options (interactive in preview, static in pdf)
-  body += `<div class='sec'><div class='lbl'>Investment Options</div>`;
-  if (mode === "preview") {
-    // Clickable options
+  // ── Investment options — depends on mode ───────────────────────────────────
+  if (mode === "scope") {
+    // No pricing shown — end with a reveal button
     body += `
-    <div class='opt ${selectedOption === "standard" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'standard'},'*')">
-      <div style='display:flex;justify-content:space-between;align-items:center'>
-        <div style='display:flex;align-items:center'>
-          <div class='radio ${selectedOption === "standard" ? "on" : ""}'>${selectedOption === "standard" ? "<div class='dot'></div>" : ""}</div>
-          <div>
-            <div style='font-weight:800;font-size:13px'>Standard Pricing</div>
-            <div style='font-size:10px;color:#64748b;margin-top:2px'>Email proposal — no contract today</div>
-          </div>
-        </div>
-        <div style='font-size:24px;font-weight:800;color:#334155'>${fmt(standard)}</div>
+    <div style='text-align:center;padding:32px 24px 40px'>
+      <div style='font-size:13px;color:#64748b;margin-bottom:20px;line-height:1.6'>
+        We've reviewed everything that goes into this project together.<br>
+        Ready to go over the investment?
       </div>
-    </div>
-    <div class='opt ${selectedOption === "priority" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'priority'},'*')">
-      <div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px'>
-        <div style='display:flex;align-items:center'>
-          <div class='radio ${selectedOption === "priority" ? "on" : ""}'>${selectedOption === "priority" ? "<div class='dot'></div>" : ""}</div>
-          <div style='font-size:9.5px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px'>Administrative Savings Incentive — Sign Today</div>
-        </div>
-        <div style='font-size:24px;font-weight:800;color:#0ea5e9'>${fmt(priority)}</div>
+      <button
+        onclick="window.parent.postMessage({type:'revealPricing'},'*')"
+        style='background:linear-gradient(135deg,#0ea5e9,#0369a1);color:white;border:none;border-radius:14px;padding:18px 48px;font-size:17px;font-weight:800;cursor:pointer;box-shadow:0 8px 28px rgba(14,165,233,0.35);letter-spacing:-0.3px;width:100%;max-width:400px'
+      >
+        Yes, Let's Review the Pricing
+      </button>
+      <div style='font-size:11px;color:#94a3b8;margin-top:14px'>
+        Pricing is based on the full scope of work we just reviewed
       </div>
-      <div class='badge'>You save ${fmt(standard - priority)}</div>
-      ${monthlyPayment ? `<div style='font-size:11px;color:#475569;margin-top:8px'>Financing available: <strong>$${monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</strong> — subject to credit approval</div>` : ""}
     </div>`;
   } else {
-    // PDF — static pricing table
-    body += `<div class='row' style='font-size:12px'><span>Standard Pricing</span><span style='font-weight:800'>${fmt(standard)}</span></div>`;
-    body += `<div class='row' style='font-size:13px;border-bottom:none'><span style='font-weight:700;color:#0369a1'>Administrative Savings Incentive</span><span style='font-weight:800;color:#0ea5e9'>${fmt(priority)}</span></div>`;
-    body += `<div style='background:#dcfce7;color:#166534;border-radius:8px;padding:8px 14px;margin-top:10px;font-size:11px;font-weight:700'>You save ${fmt(standard - priority)} by signing today</div>`;
-    if (monthlyPayment) {
-      body += `<div style='margin-top:10px;font-size:11px;color:#475569'>Financing available: <strong>$${monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</strong> — subject to credit approval</div>`;
+    // preview or pdf — show investment options
+    body += `<div class='sec'><div class='lbl'>Investment Options</div>`;
+    if (mode === "preview") {
+      body += `
+      <div class='opt ${selectedOption === "standard" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'standard'},'*')">
+        <div style='display:flex;justify-content:space-between;align-items:center'>
+          <div style='display:flex;align-items:center'>
+            <div class='radio ${selectedOption === "standard" ? "on" : ""}'>${selectedOption === "standard" ? "<div class='dot'></div>" : ""}</div>
+            <div>
+              <div style='font-weight:800;font-size:13px'>Standard Pricing</div>
+              <div style='font-size:10px;color:#64748b;margin-top:2px'>Email proposal — no contract today</div>
+            </div>
+          </div>
+          <div style='font-size:24px;font-weight:800;color:#334155'>${fmt(standard)}</div>
+        </div>
+      </div>
+      <div class='opt ${selectedOption === "priority" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'priority'},'*')">
+        <div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px'>
+          <div style='display:flex;align-items:center'>
+            <div class='radio ${selectedOption === "priority" ? "on" : ""}'>${selectedOption === "priority" ? "<div class='dot'></div>" : ""}</div>
+            <div style='font-size:9.5px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px'>Administrative Savings Incentive — Sign Today</div>
+          </div>
+          <div style='font-size:24px;font-weight:800;color:#0ea5e9'>${fmt(priority)}</div>
+        </div>
+        <div class='badge'>You save ${fmt(standard - priority)}</div>
+        ${monthlyPayment ? `<div style='font-size:11px;color:#475569;margin-top:8px'>Financing available: <strong>$${monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</strong> — subject to credit approval</div>` : ""}
+      </div>`;
+    } else {
+      // pdf — static
+      body += `<div class='row' style='font-size:12px'><span>Standard Pricing</span><span style='font-weight:800'>${fmt(standard)}</span></div>`;
+      body += `<div class='row' style='font-size:13px;border-bottom:none'><span style='font-weight:700;color:#0369a1'>Administrative Savings Incentive</span><span style='font-weight:800;color:#0ea5e9'>${fmt(priority)}</span></div>`;
+      body += `<div style='background:#dcfce7;color:#166534;border-radius:8px;padding:8px 14px;margin-top:10px;font-size:11px;font-weight:700'>You save ${fmt(standard - priority)} by signing today</div>`;
+      if (monthlyPayment) {
+        body += `<div style='margin-top:10px;font-size:11px;color:#475569'>Financing available: <strong>$${monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</strong> — subject to credit approval</div>`;
+      }
     }
+    body += `</div>`;
   }
-  body += `</div>`;
 
   // Notes section if any
   if (state.notes) {
     body += `<div class='sec'><div class='lbl'>Notes</div><div style='font-size:11px;color:#334155;line-height:1.8;white-space:pre-wrap'>${state.notes}</div></div>`;
   }
 
-  const script = mode === "preview"
-    ? `<script>function selectOption(o){window.parent.postMessage({type:'selectOption',option:o},'*');}</script>`
+  const script = mode !== "pdf"
+    ? `<script>
+        function selectOption(o){window.parent.postMessage({type:'selectOption',option:o},'*');}
+      </script>`
     : "";
 
   return `<!DOCTYPE html><html><head><meta charset='utf-8'><style>${css}</style></head><body>${body}${script}</body></html>`;
@@ -1309,6 +1332,8 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
   const [sending, setSending] = useState(false);
   const [emailOverride, setEmailOverride] = useState(state.customer.email);
   const [bccEmail, setBccEmail] = useState("");
+  // Two-phase: scope-only first, then pricing revealed
+  const [pricingRevealed, setPricingRevealed] = useState(false);
 
   const handleSend = async () => {
     if (!emailOverride) { alert("Please enter a customer email address."); return; }
@@ -1320,7 +1345,8 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
   useEffect(() => {
     function handler(e) {
       if (!e.data) return;
-      if (e.data.type === "selectOption") setSelectedOption(e.data.option);
+      if (e.data.type === "revealPricing") setPricingRevealed(true);
+      if (e.data.type === "selectOption")  setSelectedOption(e.data.option);
       if (e.data.type === "selectPayment") setSelectedPayment(e.data.payment);
     }
     window.addEventListener("message", handler);
@@ -1331,11 +1357,15 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
   const priority = t.total;
   const standard = t.total * 1.0835;
 
-  // Preview HTML — overview + scope of work, NO materials
-  const previewHtml = buildProposalHTML(state, selectedOption, "preview");
+  // Scope-only HTML — overview + scope, ends with "Ready to review pricing?" button
+  const scopeHtml    = buildProposalHTML(state, selectedOption, "scope");
+  // Full preview HTML — scope + interactive pricing options
+  const previewHtml  = buildProposalHTML(state, selectedOption, "preview");
+  // PDF HTML — scope + static pricing + full materials list
+  const pdfHtml      = buildProposalHTML(state, selectedOption, "pdf");
 
-  // PDF HTML — same + materials list appended
-  const pdfHtml = buildProposalHTML(state, selectedOption, "pdf");
+  // What the iframe shows depends on whether pricing has been revealed
+  const iframeHtml = pricingRevealed ? previewHtml : scopeHtml;
 
   return (
     <div style={{ padding: "0 0 24px" }}>
@@ -1354,28 +1384,37 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
           <span style={{ fontSize: 10, color: "#94a3b8", alignSelf: "center", whiteSpace: "nowrap" }}>Pricing &amp; financing → 🔧 Rep Pricing</span>
         </div>
       </div>
-      {/* PREVIEW IFRAME — overview + scope, no materials */}
+      {/* IFRAME — scope-only until pricing revealed, then full pricing view */}
       <iframe
-        srcDoc={previewHtml}
-        style={{ width: "100%", height: 580, border: "none", display: "block" }}
+        srcDoc={iframeHtml}
+        style={{ width: "100%", height: pricingRevealed ? 680 : 600, border: "none", display: "block" }}
         title="Proposal"
       />
 
       <div style={{ padding: "16px 24px 0" }}>
-        {/* Note about materials */}
-        <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 8, padding: "10px 14px", marginBottom: 14, fontSize: 11, color: "#0369a1", display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 16 }}>📋</span>
-          <span>The <strong>full materials list</strong> is included when you save or email the PDF — it's not shown in the on-screen preview above.</span>
-        </div>
+        {/* Pricing revealed status */}
+        {pricingRevealed ? (
+          <div style={{ background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 8, padding: "10px 14px", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#166534" }}>✓ Pricing revealed to client</span>
+            <button onClick={() => { setPricingRevealed(false); setSelectedOption(null); }} style={{ fontSize: 11, color: "#64748b", background: "none", border: "1px solid #d1fae5", borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>Hide Pricing</button>
+          </div>
+        ) : (
+          <div style={{ background: "#fef9c3", border: "1px solid #fde68a", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 11, color: "#92400e", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 15 }}>👆</span>
+            <span>Scroll to the bottom of the proposal and tap <strong>"Yes, Let's Review the Pricing"</strong> when ready.</span>
+          </div>
+        )}
 
-        {selectedOption && (
+        {/* Selected option badge */}
+        {pricingRevealed && selectedOption && (
           <div style={{ background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 8, padding: "10px 14px", marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: "#0369a1" }}>{selectedOption === "priority" ? "Administrative Savings Incentive" : "Standard Pricing"}</span>
             <span style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{selectedOption === "priority" ? fmt(priority) : fmt(standard)}</span>
           </div>
         )}
 
-        {selectedOption === "priority" && (
+        {/* Proceed to contract — only after pricing revealed and option selected */}
+        {pricingRevealed && selectedOption === "priority" && (
           <button
             style={{ background: "linear-gradient(135deg,#0ea5e9,#0369a1)", color: "white", border: "none", borderRadius: 10, padding: "14px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%", marginBottom: 12 }}
             onClick={() => setStep(steps.findIndex(s => s.key === "contract"))}
@@ -1384,47 +1423,47 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
           </button>
         )}
 
-        <div style={{ marginBottom: 10 }}>
-          <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>Customer Email</label>
-          <input style={{ width: "100%", boxSizing: "border-box", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 15, color: "#1e293b", outline: "none" }} type="email" value={emailOverride} onChange={e => setEmailOverride(e.target.value)} placeholder="customer@email.com" />
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>BCC — Your Email</label>
-          <input style={{ width: "100%", boxSizing: "border-box", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 15, color: "#1e293b", outline: "none" }} type="email" value={bccEmail} onChange={e => setBccEmail(e.target.value)} placeholder="yourname@email.com" />
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {/* Email button */}
-          <button
-            style={{ background: "linear-gradient(135deg,#0ea5e9,#0369a1)", color: "white", border: "none", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%", opacity: sending ? 0.7 : 1 }}
-            onClick={handleSend} disabled={sending}
-          >
-            {sending ? "Sending..." : "Send Proposal by Email (with Materials List)"}
-          </button>
-
-          {/* Download PDF — opens pdfHtml (with materials) in new window for printing */}
-          <button
-            style={{ background: "white", color: "#0f172a", border: "1.5px solid #0f172a", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%" }}
-            onClick={() => {
-              const clientName = state.customer.name ? state.customer.name.replace(/[^a-zA-Z0-9 ]/g, "").trim().replace(/ /g, "_") : "Client";
-              const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
-              const filename = "NDC_Proposal_" + clientName + "_" + dateStr;
-              const newWin = window.open("", "_blank");
-              if (newWin) {
-                newWin.document.write(pdfHtml);
-                newWin.document.close();
-                newWin.document.title = filename;
-                setTimeout(() => { newWin.focus(); newWin.print(); }, 800);
-              }
-            }}
-          >
-            Save / Print PDF (includes Materials List)
-          </button>
-        </div>
-
-        <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 10, textAlign: "center", lineHeight: 1.5 }}>
-          Preview shows overview & scope only. PDF includes full materials list.
-        </p>
+        {/* Email / PDF — only shown after pricing revealed */}
+        {pricingRevealed && (
+          <>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>Customer Email</label>
+              <input style={{ width: "100%", boxSizing: "border-box", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 15, color: "#1e293b", outline: "none" }} type="email" value={emailOverride} onChange={e => setEmailOverride(e.target.value)} placeholder="customer@email.com" />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>BCC — Your Email</label>
+              <input style={{ width: "100%", boxSizing: "border-box", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 15, color: "#1e293b", outline: "none" }} type="email" value={bccEmail} onChange={e => setBccEmail(e.target.value)} placeholder="yourname@email.com" />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <button
+                style={{ background: "linear-gradient(135deg,#0ea5e9,#0369a1)", color: "white", border: "none", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%", opacity: sending ? 0.7 : 1 }}
+                onClick={handleSend} disabled={sending}
+              >
+                {sending ? "Sending..." : "Send Proposal by Email (with Materials List)"}
+              </button>
+              <button
+                style={{ background: "white", color: "#0f172a", border: "1.5px solid #0f172a", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%" }}
+                onClick={() => {
+                  const clientName = state.customer.name ? state.customer.name.replace(/[^a-zA-Z0-9 ]/g, "").trim().replace(/ /g, "_") : "Client";
+                  const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
+                  const filename = "NDC_Proposal_" + clientName + "_" + dateStr;
+                  const newWin = window.open("", "_blank");
+                  if (newWin) {
+                    newWin.document.write(pdfHtml);
+                    newWin.document.close();
+                    newWin.document.title = filename;
+                    setTimeout(() => { newWin.focus(); newWin.print(); }, 800);
+                  }
+                }}
+              >
+                Save / Print PDF (includes Materials List)
+              </button>
+            </div>
+            <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 10, textAlign: "center", lineHeight: 1.5 }}>
+              Preview shows overview & scope only. PDF includes full materials list.
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
@@ -1551,8 +1590,7 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// buildSteps — price_gate inserted after last service, pricing removed from flow
-// ─────────────────────────────────────────────────────────────────────────────
+// buildSteps — preview handles the pricing gate internally
 function buildSteps(services) {
   const steps = [
     { key: "services", label: "Services" },
@@ -1564,9 +1602,6 @@ function buildSteps(services) {
   if (services.includes("paint"))   steps.push({ key: "paint",    label: "Paint"    });
   if (services.includes("windows")) steps.push({ key: "windows",  label: "Windows"  });
   if (services.includes("misc"))    steps.push({ key: "misc",     label: "Misc"     });
-  // Price gate — shown after all services, before pricing is revealed
-  // After confirming, jumps straight to preview (no financing/notes steps in client flow)
-  steps.push({ key: "price_gate", label: "Pricing" });
   steps.push({ key: "preview",   label: "Preview"  });
   steps.push({ key: "contract",  label: "Contract" });
   return steps;
@@ -1618,14 +1653,7 @@ function App() {
   const canNext = () => {
     if (currentKey === "services") return state.services.length > 0;
     if (currentKey === "customer") return state.customer.name.trim().length > 0;
-    if (currentKey === "price_gate") return false; // Can't click Next on price gate — must tap the button
     return true;
-  };
-
-  // Handle price gate confirmation — jumps past price_gate to next step
-  const handlePriceGateConfirm = () => {
-    setState(s => ({ ...s, priceRevealed: true }));
-    setStep(s => s + 1);
   };
 
   return (
@@ -1721,25 +1749,17 @@ function App() {
         {currentKey === "paint"      && <PaintStep data={state.paint} onChange={(v) => setState((s) => ({ ...s, paint: v }))} />}
         {currentKey === "windows"    && <WindowsStep windows={state.windows} onChange={(v) => setState((s) => ({ ...s, windows: v }))} />}
         {currentKey === "misc"       && <MiscStep data={state.misc} onChange={(v) => setState((s) => ({ ...s, misc: v }))} />}
-        {currentKey === "price_gate" && <PriceGateStep onConfirm={handlePriceGateConfirm} services={state.services} />}
         {currentKey === "preview"    && <PreviewStep state={state} setStep={setStep} steps={steps} selectedOption={selectedOption} setSelectedOption={setSelectedOption} selectedPayment={selectedPayment} setSelectedPayment={setSelectedPayment} />}
         {currentKey === "contract"   && <ContractStep state={state} selectedOption={selectedOption} selectedPayment={selectedPayment} setStep={setStep} steps={steps} />}
       </div>
 
-      {/* Nav buttons — hidden on price_gate (gate has its own CTA) */}
-      {step < lastStep && currentKey !== "price_gate" && currentKey !== "preview" && currentKey !== "contract" && (
+      {/* Nav buttons */}
+      {step < lastStep && currentKey !== "preview" && currentKey !== "contract" && (
         <div style={S.nav}>
           {step > 0 && <button style={S.secondaryBtn} onClick={() => setStep(step - 1)}>← Back</button>}
           <button style={{ ...S.primaryBtn, marginLeft: "auto", opacity: canNext() ? 1 : 0.5 }} disabled={!canNext()} onClick={() => setStep(step + 1)}>
             Next →
           </button>
-        </div>
-      )}
-
-      {/* Back only on price_gate */}
-      {currentKey === "price_gate" && (
-        <div style={S.nav}>
-          <button style={S.secondaryBtn} onClick={() => setStep(step - 1)}>← Back</button>
         </div>
       )}
 
