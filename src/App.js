@@ -1350,9 +1350,8 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
           {state.services.includes("paint") && <button onClick={() => setStep(steps.findIndex(s => s.key === "paint"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Paint</button>}
           {state.services.includes("windows") && <button onClick={() => setStep(steps.findIndex(s => s.key === "windows"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Windows</button>}
           {state.services.includes("misc") && <button onClick={() => setStep(steps.findIndex(s => s.key === "misc"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Misc</button>}
-          <button onClick={() => setStep(steps.findIndex(s => s.key === "financing"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Financing</button>
-          <button onClick={() => setStep(steps.findIndex(s => s.key === "notes"))} style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Notes</button>
           <button onClick={() => setStep(0)} style={{ background: "#fef2f2", border: "1.5px solid #fecaca", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#dc2626", cursor: "pointer" }}>Edit Services</button>
+          <span style={{ fontSize: 10, color: "#94a3b8", alignSelf: "center", whiteSpace: "nowrap" }}>Pricing &amp; financing → 🔧 Rep Pricing</span>
         </div>
       </div>
       {/* PREVIEW IFRAME — overview + scope, no materials */}
@@ -1566,9 +1565,8 @@ function buildSteps(services) {
   if (services.includes("windows")) steps.push({ key: "windows",  label: "Windows"  });
   if (services.includes("misc"))    steps.push({ key: "misc",     label: "Misc"     });
   // Price gate — shown after all services, before pricing is revealed
+  // After confirming, jumps straight to preview (no financing/notes steps in client flow)
   steps.push({ key: "price_gate", label: "Pricing" });
-  steps.push({ key: "financing", label: "Financing" });
-  steps.push({ key: "notes",     label: "Notes"    });
   steps.push({ key: "preview",   label: "Preview"  });
   steps.push({ key: "contract",  label: "Contract" });
   return steps;
@@ -1682,6 +1680,17 @@ function App() {
                 state={state}
                 onChange={(v) => setState(s => ({ ...s, pricing: v, financing: { ...s.financing, monthlyPayment: v.monthlyPayment || "" } }))}
               />
+              {/* Notes — also rep-only, edited here */}
+              <div style={{ padding: "0 20px 8px" }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 6 }}>Proposal Notes</div>
+                <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>Add warranty, timeline, payment terms, or any other details to include on the proposal.</div>
+                <textarea
+                  style={{ width: "100%", boxSizing: "border-box", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "#1e293b", outline: "none", background: "white", height: 100, resize: "vertical" }}
+                  value={state.notes || ""}
+                  onChange={(e) => setState(s => ({ ...s, notes: e.target.value }))}
+                  placeholder="e.g. 1-year labor warranty, work begins within 3 weeks of signing, 50% due at signing..."
+                />
+              </div>
             </div>
             <div style={{ padding: "0 20px 20px" }}>
               <button onClick={() => setShowPricingModal(false)} style={{ background: "linear-gradient(135deg,#0ea5e9,#0369a1)", color: "white", border: "none", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 14, cursor: "pointer", width: "100%" }}>
@@ -1713,8 +1722,6 @@ function App() {
         {currentKey === "windows"    && <WindowsStep windows={state.windows} onChange={(v) => setState((s) => ({ ...s, windows: v }))} />}
         {currentKey === "misc"       && <MiscStep data={state.misc} onChange={(v) => setState((s) => ({ ...s, misc: v }))} />}
         {currentKey === "price_gate" && <PriceGateStep onConfirm={handlePriceGateConfirm} services={state.services} />}
-        {currentKey === "financing"  && <FinancingStep data={state.financing} onChange={(v) => setState((s) => ({ ...s, financing: v }))} state={state} />}
-        {currentKey === "notes"      && <NotesStep notes={state.notes} onChange={(v) => setState((s) => ({ ...s, notes: v }))} />}
         {currentKey === "preview"    && <PreviewStep state={state} setStep={setStep} steps={steps} selectedOption={selectedOption} setSelectedOption={setSelectedOption} selectedPayment={selectedPayment} setSelectedPayment={setSelectedPayment} />}
         {currentKey === "contract"   && <ContractStep state={state} selectedOption={selectedOption} selectedPayment={selectedPayment} setStep={setStep} steps={steps} />}
       </div>
