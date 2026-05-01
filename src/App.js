@@ -90,7 +90,7 @@ const makeInitialState = () => ({
   misc: { items: [{ id: uid(), description: "", qty: "", unitPrice: "", notes: "" }] },
   notes: "",
   financing: { monthlyPayment: "", customPayment: "" },
-  pricing: { sidingPerSqFt: "", soffitPerLinFt: "", fasciaPerLinFt: "", paintPerSqFt: "", windowPerUnit: "", miscMarkup: "", adminSavingsDiscount: "8.35", monthlyPayment: "" },
+  pricing: { sidingPerSqFt: "", soffitPerLinFt: "", fasciaPerLinFt: "", paintPerSqFt: "", windowPerUnit: "", miscMarkup: "", adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14" },
   priceRevealed: false,
 });
 
@@ -294,6 +294,14 @@ function PricingStep({ state, onChange }) {
       p.monthlyPayment ? React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginTop: 6 } },
         "Standard financing: ", React.createElement("strong", null, fmt(parseFloat(p.monthlyPayment)+47) + "/mo")
       ) : null
+    ),
+    React.createElement("div", { style: { ...cardStyle, borderColor: "#fde68a", background: "#fffbeb" } },
+      React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#92400e", marginBottom: 4 } }, "Administrative Clearance Option"),
+      React.createElement("div", { style: { fontSize: 11, color: "#a16207", marginBottom: 10, lineHeight: 1.5 } },
+        "Client gets this many days to shop & find a lower price. If they do, provide a written estimate — we will review and beat it by 10%."
+      ),
+      React.createElement("label", { style: labelStyle }, "Shopping Period (days)"),
+      React.createElement("input", { style: inputStyle, type: "number", value: p.clearanceDays||"14", onChange: function(e){ set("clearanceDays", e.target.value); }, placeholder: "e.g. 14" })
     ),
     React.createElement("div", { style: { background: "linear-gradient(135deg,#0f172a,#1e293b)", borderRadius: 12, padding: 16, marginTop: 4 } },
       React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 700, textTransform: "uppercase", marginBottom: 8 } }, "Job Summary"),
@@ -1000,6 +1008,7 @@ function buildProposalHTML(state, selectedOption, mode) {
   const standard = t.total * 1.0835;
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
+  const clearanceDays = (state.pricing && state.pricing.clearanceDays) ? state.pricing.clearanceDays : "14";
 
   const css = `
     body{font-family:Georgia,serif;padding:28px;max-width:820px;margin:0 auto;color:#0f172a;font-size:12px}
@@ -1300,16 +1309,34 @@ function buildProposalHTML(state, selectedOption, mode) {
           <div style='font-size:24px;font-weight:800;color:#0ea5e9'>${fmt(priority)}</div>
         </div>
         <div class='badge'>You save ${fmt(standard - priority)}</div>
-        ${monthlyPayment ? `<div style='font-size:11px;color:#475569;margin-top:8px'>Financing available: <strong>$${monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</strong> — subject to credit approval</div>` : ""}
+        ${monthlyPayment ? `<div style='margin-top:12px;padding-top:12px;border-top:1px solid #bae6fd'><div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px'>Or Finance For</div><div style='font-size:24px;font-weight:800;color:#0f172a'>$${monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<span style='font-size:14px;color:#64748b;font-weight:600'>/mo</span></div><div style='font-size:10px;color:#94a3b8;margin-top:3px'>Subject to credit approval</div></div>` : ""}
+      </div>
+      <div class='opt ${selectedOption === "clearance" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'clearance'},'*')" style='border-color:${selectedOption === "clearance" ? "#f59e0b" : "#e2e8f0"};background:${selectedOption === "clearance" ? "#fffbeb" : "white"}'>
+        <div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px'>
+          <div style='display:flex;align-items:center'>
+            <div class='radio' style='border-color:${selectedOption === "clearance" ? "#f59e0b" : "#cbd5e1"};background:${selectedOption === "clearance" ? "#f59e0b" : "white"}'>${selectedOption === "clearance" ? "<div class='dot'></div>" : ""}</div>
+            <div style='font-size:9.5px;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:1px'>Administrative Clearance</div>
+          </div>
+          <div style='font-size:24px;font-weight:800;color:#f59e0b'>${fmt(priority)}</div>
+        </div>
+        <div style='background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;font-size:11px;color:#92400e;line-height:1.7'>
+          You have <strong>${clearanceDays} days</strong> to shop and find a lower price for the exact same scope of work.<br><br>
+          If you find a lower price, provide us with a <strong>written estimate on the competing company's official letterhead</strong> covering the exact same materials, specifications, and scope. We will review it to confirm it matches our proposal exactly.<br><br>
+          <strong>If it matches — we won't just meet their price, we will beat it by 10%.</strong>
+        </div>
       </div>`;
     } else {
       // pdf — static
       body += `<div class='row' style='font-size:12px'><span>Standard Pricing</span><span style='font-weight:800'>${fmt(standard)}</span></div>`;
-      body += `<div class='row' style='font-size:13px;border-bottom:none'><span style='font-weight:700;color:#0369a1'>Administrative Savings Incentive</span><span style='font-weight:800;color:#0ea5e9'>${fmt(priority)}</span></div>`;
-      body += `<div style='background:#dcfce7;color:#166534;border-radius:8px;padding:8px 14px;margin-top:10px;font-size:11px;font-weight:700'>You save ${fmt(standard - priority)} by signing today</div>`;
+      body += `<div class='row' style='font-size:13px'><span style='font-weight:700;color:#0369a1'>Administrative Savings Incentive</span><span style='font-weight:800;color:#0ea5e9'>${fmt(priority)}</span></div>`;
+      body += `<div style='background:#dcfce7;color:#166534;border-radius:8px;padding:8px 14px;margin-top:6px;font-size:11px;font-weight:700'>You save ${fmt(standard - priority)} by signing today</div>`;
       if (monthlyPayment) {
-        body += `<div style='margin-top:10px;font-size:11px;color:#475569'>Financing available: <strong>$${monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</strong> — subject to credit approval</div>`;
+        body += `<div style='margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0'><div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px'>Or Finance For</div><div style='font-size:22px;font-weight:800;color:#0f172a'>$${monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<span style='font-size:13px;color:#64748b;font-weight:600'>/mo</span></div><div style='font-size:10px;color:#94a3b8;margin-top:3px'>Subject to credit approval</div></div>`;
       }
+      body += `<div style='margin-top:14px;border:2px solid #fde68a;border-radius:8px;padding:12px 14px;background:#fffbeb'>`;
+      body += `<div style='font-size:10px;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Administrative Clearance Option</div>`;
+      body += `<div style='font-size:11px;color:#78350f;line-height:1.7'>You have <strong>${clearanceDays} days</strong> to shop and find a lower price for the exact same scope of work. If you find a lower price, provide a <strong>written estimate on the competing company's official letterhead</strong> covering the exact same materials, specifications, and scope. We will review it carefully to confirm it matches our proposal exactly. <strong>If it matches — we will not only meet their price, we will beat it by 10%.</strong></div>`;
+      body += `</div>`;
     }
     body += `</div>`;
   }
@@ -1407,16 +1434,24 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
 
         {/* Selected option badge */}
         {pricingRevealed && selectedOption && (
-          <div style={{ background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 8, padding: "10px 14px", marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#0369a1" }}>{selectedOption === "priority" ? "Administrative Savings Incentive" : "Standard Pricing"}</span>
-            <span style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{selectedOption === "priority" ? fmt(priority) : fmt(standard)}</span>
+          <div style={{
+            background: selectedOption === "clearance" ? "#fffbeb" : "#f0f9ff",
+            border: "1.5px solid " + (selectedOption === "clearance" ? "#fde68a" : "#bae6fd"),
+            borderRadius: 8, padding: "10px 14px", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center"
+          }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: selectedOption === "clearance" ? "#92400e" : "#0369a1" }}>
+              {selectedOption === "priority" ? "Administrative Savings Incentive" : selectedOption === "clearance" ? "Administrative Clearance" : "Standard Pricing"}
+            </span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>
+              {selectedOption === "standard" ? fmt(standard) : fmt(priority)}
+            </span>
           </div>
         )}
 
-        {/* Proceed to contract — only after pricing revealed and option selected */}
-        {pricingRevealed && selectedOption === "priority" && (
+        {/* Proceed to contract — for priority or clearance */}
+        {pricingRevealed && (selectedOption === "priority" || selectedOption === "clearance") && (
           <button
-            style={{ background: "linear-gradient(135deg,#0ea5e9,#0369a1)", color: "white", border: "none", borderRadius: 10, padding: "14px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%", marginBottom: 12 }}
+            style={{ background: selectedOption === "clearance" ? "linear-gradient(135deg,#f59e0b,#d97706)" : "linear-gradient(135deg,#0ea5e9,#0369a1)", color: "white", border: "none", borderRadius: 10, padding: "14px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%", marginBottom: 12 }}
             onClick={() => setStep(steps.findIndex(s => s.key === "contract"))}
           >
             Proceed to Contract & Sign
@@ -1538,10 +1573,19 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
 
         <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Agreed Investment</div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ fontSize: 12, color: "#334155", fontWeight: 600 }}>{selectedOption === "priority" ? "Administrative Savings Incentive" : "Standard Pricing"}</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: selectedOption === "clearance" ? 12 : 0 }}>
+            <div style={{ fontSize: 12, color: "#334155", fontWeight: 600 }}>
+              {selectedOption === "priority" ? "Administrative Savings Incentive" : selectedOption === "clearance" ? "Administrative Clearance" : "Standard Pricing"}
+            </div>
             <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a" }}>{fmt(chosenTotal)}</div>
           </div>
+          {selectedOption === "clearance" && (
+            <div style={{ background: "#fffbeb", border: "1.5px solid #fde68a", borderRadius: 8, padding: "12px 14px", fontSize: 11, color: "#78350f", lineHeight: 1.7 }}>
+              <div style={{ fontWeight: 800, color: "#92400e", marginBottom: 6, textTransform: "uppercase", fontSize: 10, letterSpacing: "0.5px" }}>Administrative Clearance Terms</div>
+              Client has <strong>{(state.pricing && state.pricing.clearanceDays) || "14"} days</strong> from the date of this signed agreement to shop and find a lower price for the exact same scope of work. Any competing quote must be submitted in writing on the competing company's official letterhead, must cover the exact same materials, specifications, and scope, and must be presented to a New Direction Construction representative within the shopping period.<br /><br />
+              If a qualifying written quote is presented that is lower in price and matches the scope exactly, <strong>New Direction Construction will not only meet that price — we will beat it by 10%.</strong>
+            </div>
+          )}
         </div>
 
         <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
