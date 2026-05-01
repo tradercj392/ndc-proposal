@@ -1309,7 +1309,7 @@ function buildProposalHTML(state, selectedOption, mode) {
           <div style='font-size:24px;font-weight:800;color:#0ea5e9'>${fmt(priority)}</div>
         </div>
         <div class='badge'>You save ${fmt(standard - priority)}</div>
-        ${monthlyPayment ? `<div style='margin-top:12px;padding-top:12px;border-top:1px solid #bae6fd'><div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px'>Or Finance For</div><div style='font-size:24px;font-weight:800;color:#0f172a'>$${monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<span style='font-size:14px;color:#64748b;font-weight:600'>/mo</span></div><div style='font-size:10px;color:#94a3b8;margin-top:3px'>Subject to credit approval</div></div>` : ""}
+        ${monthlyPayment ? "<div style='margin-top:12px;padding-top:12px;border-top:1px solid #bae6fd'><div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px'>Or Finance For</div><div style='font-size:24px;font-weight:800;color:#0f172a'>$" + monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "<span style='font-size:14px;color:#64748b;font-weight:600'>/mo</span></div><div style='font-size:10px;color:#94a3b8;margin-top:3px'>Subject to credit approval</div></div>" : ""}
       </div>
       <div class='opt ${selectedOption === "clearance" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'clearance'},'*')" style='border-color:${selectedOption === "clearance" ? "#f59e0b" : "#e2e8f0"};background:${selectedOption === "clearance" ? "#fffbeb" : "white"}'>
         <div style='display:flex;justify-content:space-between;align-items:center'>
@@ -1322,11 +1322,7 @@ function buildProposalHTML(state, selectedOption, mode) {
           </div>
           <div style='font-size:24px;font-weight:800;color:#f59e0b'>${fmt(priority)}</div>
         </div>
-        ${selectedOption === "clearance" ? `<div style='margin-top:12px;padding-top:12px;border-top:1px solid #fde68a;background:#fef3c7;border-radius:8px;padding:12px 14px;font-size:11px;color:#92400e;line-height:1.7'>
-          You have <strong>${clearanceDays} days</strong> to shop and find a lower price for the exact same scope of work.<br><br>
-          If you find a lower price, provide us with a <strong>written estimate on the competing company's official letterhead</strong> covering the exact same materials, specifications, and scope. We will review it to confirm it matches our proposal exactly.<br><br>
-          <strong>If it matches — we will not only meet their price, we will beat it by 10%.</strong>
-        </div>` : ""}
+        ${selectedOption === "clearance" ? "<div style='margin-top:12px;padding-top:12px;border-top:1px solid #fde68a;background:#fef3c7;border-radius:8px;padding:12px 14px;font-size:11px;color:#92400e;line-height:1.7'>You have <strong>" + clearanceDays + " days</strong> to shop and find a lower price for the exact same scope of work.<br><br>If you find a lower price, provide us with a <strong>written estimate on the competing company's official letterhead</strong> covering the exact same materials, specifications, and scope. We will review it to confirm it matches our proposal exactly.<br><br><strong>If it matches — we will not only meet their price, we will beat it by 10%.</strong></div>" : ""}
       </div>`;
     } else {
       // pdf — static
@@ -1676,7 +1672,23 @@ function App() {
   const [state, setState] = useState(() => {
     try {
       const saved = localStorage.getItem("ndc_state");
-      return saved ? JSON.parse(saved) : makeInitialState();
+      if (!saved) return makeInitialState();
+      const parsed = JSON.parse(saved);
+      const defaults = makeInitialState();
+      // Merge top-level keys so new fields (like clearanceDays) always exist
+      return {
+        ...defaults,
+        ...parsed,
+        pricing: { ...defaults.pricing, ...(parsed.pricing || {}) },
+        financing: { ...defaults.financing, ...(parsed.financing || {}) },
+        company: { ...defaults.company, ...(parsed.company || {}) },
+        customer: { ...defaults.customer, ...(parsed.customer || {}) },
+        siding: { ...defaults.siding, ...(parsed.siding || {}) },
+        soffit: { ...defaults.soffit, ...(parsed.soffit || {}) },
+        fascia: { ...defaults.fascia, ...(parsed.fascia || {}) },
+        paint: { ...defaults.paint, ...(parsed.paint || {}) },
+        misc: { ...defaults.misc, ...(parsed.misc || {}) },
+      };
     } catch { return makeInitialState(); }
   });
   const [selectedOption, setSelectedOption] = useState(null);
