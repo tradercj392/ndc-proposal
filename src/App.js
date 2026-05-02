@@ -1297,19 +1297,18 @@ function buildProposalHTML(state, selectedOption, mode) {
               <div style='font-size:10px;color:#64748b;margin-top:2px'>Email proposal — no contract today</div>
             </div>
           </div>
-          <div style='font-size:24px;font-weight:800;color:#334155'>${fmt(standard)}</div>
+          ${selectedOption === "standard" ? "<div style='font-size:24px;font-weight:800;color:#334155'>" + fmt(standard) + "</div>" : "<div style='font-size:11px;color:#94a3b8;font-style:italic'>Tap to reveal</div>"}
         </div>
       </div>
       <div class='opt ${selectedOption === "priority" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'priority'},'*')">
-        <div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px'>
+        <div style='display:flex;justify-content:space-between;align-items:flex-start${selectedOption === "priority" ? ";margin-bottom:6px" : ""}'>
           <div style='display:flex;align-items:center'>
             <div class='radio ${selectedOption === "priority" ? "on" : ""}'>${selectedOption === "priority" ? "<div class='dot'></div>" : ""}</div>
             <div style='font-size:9.5px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px'>Administrative Savings Incentive — Sign Today</div>
           </div>
-          <div style='font-size:24px;font-weight:800;color:#0ea5e9'>${fmt(priority)}</div>
+          ${selectedOption === "priority" ? "<div style='font-size:24px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div>" : "<div style='font-size:11px;color:#94a3b8;font-style:italic'>Tap to reveal</div>"}
         </div>
-        <div class='badge'>You save ${fmt(standard - priority)}</div>
-        ${monthlyPayment ? "<div style='margin-top:12px;padding-top:12px;border-top:1px solid #bae6fd'><div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px'>Or Finance For</div><div style='font-size:24px;font-weight:800;color:#0f172a'>$" + monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "<span style='font-size:14px;color:#64748b;font-weight:600'>/mo</span></div><div style='font-size:10px;color:#94a3b8;margin-top:3px'>Subject to credit approval</div></div>" : ""}
+        ${selectedOption === "priority" ? "<div class='badge'>You save " + fmt(standard - priority) + "</div>" + (monthlyPayment ? "<div style='margin-top:12px;padding-top:12px;border-top:1px solid #bae6fd'><div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px'>Or Finance For</div><div style='font-size:24px;font-weight:800;color:#0f172a'>$" + monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "<span style='font-size:14px;color:#64748b;font-weight:600'>/mo</span></div><div style='font-size:10px;color:#94a3b8;margin-top:3px'>Subject to credit approval</div></div>" : "") : ""}
       </div>
       <div class='opt ${selectedOption === "clearance" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'clearance'},'*')" style='border-color:${selectedOption === "clearance" ? "#f59e0b" : "#e2e8f0"};background:${selectedOption === "clearance" ? "#fffbeb" : "white"}'>
         <div style='display:flex;justify-content:space-between;align-items:center'>
@@ -1320,7 +1319,7 @@ function buildProposalHTML(state, selectedOption, mode) {
               <div style='font-size:10px;color:#a16207;margin-top:2px'>Shop &amp; compare — we'll beat any matching quote by 10%</div>
             </div>
           </div>
-          <div style='font-size:24px;font-weight:800;color:#f59e0b'>${fmt(standard)}</div>
+          ${selectedOption === "clearance" ? "<div style='font-size:24px;font-weight:800;color:#f59e0b'>" + fmt(priority) + "</div>" : "<div style='font-size:11px;color:#94a3b8;font-style:italic'>Tap to reveal</div>"}
         </div>
         ${selectedOption === "clearance" ? "<div style='margin-top:12px;padding-top:12px;border-top:1px solid #fde68a;background:#fef3c7;border-radius:8px;padding:12px 14px;font-size:11px;color:#92400e;line-height:1.7'>You have <strong>" + clearanceDays + " days</strong> to shop and find a lower price for the exact same scope of work.<br><br>If you find a lower price, provide us with a <strong>written estimate on the competing company's official letterhead</strong> covering the exact same materials, specifications, and scope. We will review it to confirm it matches our proposal exactly.<br><br><strong>If it matches — we will not only meet their price, we will beat it by 10%.</strong></div>" : ""}
       </div>`;
@@ -1442,7 +1441,7 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
               {selectedOption === "priority" ? "Administrative Savings Incentive" : selectedOption === "clearance" ? "Administrative Clearance" : "Standard Pricing"}
             </span>
             <span style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>
-              {selectedOption === "priority" ? fmt(priority) : fmt(standard)}
+              {selectedOption === "standard" ? fmt(standard) : fmt(priority)}
             </span>
           </div>
         )}
@@ -1514,7 +1513,7 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
   const t = calcGrandTotal(state);
   const priority = t.total;
   const standard = t.total * 1.0835;
-  const chosenTotal = selectedOption === "priority" ? priority : standard;
+  const chosenTotal = selectedOption === "standard" ? standard : priority;
 
   const startDraw = (e) => {
     setIsSigning(true);
