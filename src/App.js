@@ -1523,11 +1523,18 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
   const [hasSigned, setHasSigned] = useState(false);
   const [signatureData, setSignatureData] = useState(null);
   const [repName, setRepName] = useState("CJ Shires");
+  const [usingFinancing, setUsingFinancing] = useState(false);
+  const [financingPct, setFinancingPct] = useState(100);
 
   const t = calcGrandTotal(state);
   const priority = t.total;
   const standard = t.total * 1.0835;
   const chosenTotal = selectedOption === "standard" ? standard : priority;
+
+  const monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
+  const standardFinancingAdd = state.pricing && state.pricing.standardFinancingAdd ? parseFloat(state.pricing.standardFinancingAdd) : null;
+  const standardMonthly = (monthlyPayment && standardFinancingAdd) ? monthlyPayment + standardFinancingAdd : null;
+  const applicableMonthly = selectedOption === "standard" ? standardMonthly : monthlyPayment;
 
   const startDraw = (e) => {
     setIsSigning(true);
@@ -1553,7 +1560,7 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
   const endDraw = () => {
     setIsSigning(false);
     const canvas = canvasRef.current;
-    setSignatureData(canvas.toDataURL('image/png'));
+    setSignatureData(canvas.toDataURL("image/png"));
     setHasSigned(true);
   };
 
@@ -1563,6 +1570,30 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
     setHasSigned(false); setSignatureData(null);
   };
 
+  const svcLabels = { siding: "James Hardie Siding Installation", soffit: "Soffit Installation", fascia: "Fascia Installation", paint: "Exterior Paint — Four-Directional Spray Method", windows: "Window Installation", misc: "Additional Items" };
+
+  const terms = [
+    { n: 1,  title: "Office Approval", body: "All contracts are subject to approval by Company manager and/or officer of the Company." },
+    { n: 2,  title: "Damages for Cancellation", body: "You have a limited right to cancel this contract. You may do so only in the time stated in the contract or allowed by law." },
+    { n: 3,  title: "Amount of Cancellation Damages", body: "The agreed damages are 25% of the contracted price. If any part of the work has been completed, the agreed damages are the proportionate price of the work completed plus 24% of the balance of the cash contracted price. You will also be liable for court costs, interest and our attorney fees. The buyer is liable for all costs incurred for special ordered material and/or products if cancelled after the cancellation time frame allowed by law." },
+    { n: 4,  title: "Access", body: "You will permit us to go onto the premises. The premises include the land and the buildings. You will obtain any consent needed for us to go onto the premises to complete work. If we are prevented from completing the work, because of denial of access, then we have no further duty to perform the contract. You will then immediately pay us agreed damages. The amount will be as stated in Paragraph 3." },
+    { n: 5,  title: "Insurance", body: "We have Public Liability Insurance, Property Damage Insurance and Installer/Applicators have Workers Compensation Insurance." },
+    { n: 6,  title: "Debris", body: "We will remove the job related debris." },
+    { n: 7,  title: "Interference and Performance", body: "We are not responsible for any interference with performance for reason beyond our reasonable control. This includes strikes, fires, weather, inability to obtain materials, etc." },
+    { n: 8,  title: "Warranties", body: "The only express warranties which apply to labor or materials furnished under this contract are those in our warranty certificates. The only remedies for breach of warranty are those stated in our warranty certificates. We have no liability for incidental or consequential damages." },
+    { n: 9,  title: "Option to Declare Balance Due", body: "We may declare the contract cancelled by you and collect both for work completed and agreed damages if: (a) You sell, mortgage or transfer any interest of the premises before full payment to us; (b) Anyone places an attachment, writ, lien or any other process against the premises; (c) There is a default in payment of taxes on the premises." },
+    { n: 10, title: "Consumer Credit Contract Notice", body: "If this document applies to a consumer credit contract, this notice applies. NOTICE: Any holder of this consumer credit contract is subject to all claims and defenses which the debtor could assert against the seller of goods or services obtained herewith. Recovery hereunder by the debtor shall not exceed amounts paid by the debtor hereunder." },
+    { n: 11, title: "Entire Agreement", body: "This contract sets forth the entire agreement between the parties and supersedes any and all prior understandings, agreements or representations made by Company, its agents or representatives. This contract can only be changed in writing by an amendment signed by both Company and you. Anything not specifically stated or agreed to by Company is waived to the extent permitted by law." },
+    { n: 12, title: "Compliance with Law", body: "If any provision or term contained herein shall be construed to be invalid, unenforceable or in violation of any law, rule or regulation by any court having jurisdiction thereof, then this contract shall be interpreted as if said provision or term has been omitted or alternatively construed in a manner that such provision or term would be valid, enforceable or in compliance with any law, rule or regulation and the validity of the remaining provisions and terms of this contract shall not be affected thereby." },
+    { n: 13, title: "Florida Homeowner's Construction Recovery Fund (F.S.489)", body: "Payment may be made available for the Homeowner's Construction Recovery Fund if you lose money on a project performed under contract, where the loss results from specified violations of Florida Law by a licensed contractor. For information about the recovery fund and filing a claim, contact the Florida Construction Industry License Board: Florida Homeowner's Construction Recovery Fund, 1940 N. Monroe Street, Suite 60, Tallahassee, FL 32339." },
+    { n: 14, title: "Binding Arbitration Agreement", body: "Any disputes arising in any manner relating to this agreement that cannot be resolved by negotiation between the parties shall be subject to mandatory exclusive and binding arbitration under the Arbitration Association in existence at the time the dispute arises. Neither party may take any other action by way of request for injunctive relief or otherwise. The order of the arbitrator(s) may be entered into any court of competent jurisdiction. The purchaser and dealer agree to abide by the ruling of the Arbitration Association in lieu of filing a lawsuit." },
+    { n: 15, title: "Transfer", body: "You may not transfer your duties under this contract to any person without written consent by us." },
+    { n: 16, title: "Successors", body: "This contract binds your heirs, executors and administrators." },
+    { n: 17, title: "Verification", body: "Our construction specialists check the measurements and calculations made by the sales representative in determining the work involved. If a significant mistake or special construction problems occur, we reserve the right to cancel the contract without liability. We will refund any down payment made by you." },
+    { n: 18, title: "Notice to all Florida Residents", body: "Florida law contains important requirements you must follow before you may file a lawsuit for defective construction against a contractor, subcontractor, supplier or design professional for an alleged construction defect in your home. Sixty days before you file your lawsuit, you must deliver to the contractor, subcontractor, supplier or design professional a written notice of any construction conditions you allege are defective and provide your contractor the opportunity to inspect the alleged construction defects. You are not obligated to accept any offer made by the contractor. There are strict deadlines and procedures under Florida Law." },
+    { n: 19, title: "Direct Contract Mandatory Provisions (F.S. 713)", body: "According to Florida's Construction Lien Law (Florida Statutes 713.001–713.37), those who work on your property or provide materials and have not been paid in full have a right to enforce their claim for payment against your property. This claim is known as a construction lien. If your contractor or subcontractor neglects to make legally required payments, the people who are owed money may look to your property for payment, even if you have paid the contractor in full. Florida's Construction Lien Law is complex and it is recommended that whenever a specific problem arises, you consult an attorney." },
+  ];
+
   return (
     <div style={S.stepWrap}>
       <h2 style={S.stepTitle}>Contract & Signature</h2>
@@ -1570,95 +1601,194 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
 
       <div style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 20, marginBottom: 16 }}>
 
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, paddingBottom: 16, borderBottom: "2px solid #0f172a" }}>
+        {/* ── Header ── */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, paddingBottom: 16, borderBottom: "2.5px solid #0f172a" }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800 }}>New Direction Construction</div>
-            <div style={{ fontSize: 11, color: "#64748b" }}>820 Worth Rd, Jacksonville, FL 32259</div>
-            <div style={{ fontSize: 11, color: "#64748b" }}>(904) 891-9980 | Lic# CBC059304</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: "#0f172a" }}>{state.company.name || "New Direction Construction"}</div>
+            <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{state.company.address}</div>
+            <div style={{ fontSize: 11, color: "#64748b" }}>{state.company.phone} · Lic# {state.company.license}</div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#0ea5e9" }}>PREPARED FOR</div>
-            <div style={{ fontSize: 14, fontWeight: 800 }}>{state.customer.name}</div>
-            <div style={{ fontSize: 11, color: "#64748b" }}>{state.customer.address}</div>
-            <div style={{ fontSize: 11, color: "#64748b" }}>{today}</div>
+            <div style={{ fontSize: 9.5, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 4 }}>Prepared For</div>
+            <div style={{ fontSize: 16, fontWeight: 800 }}>{state.customer.name}</div>
+            <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{state.customer.address}</div>
+            <div style={{ fontSize: 11, color: "#64748b" }}>{state.customer.phone}</div>
+            <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4 }}>{today}</div>
           </div>
         </div>
 
-        {/* Scope of Work Summary */}
+        {/* ── Property photo ── */}
+        {state.customer.photo && (
+          <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
+            <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Property</div>
+            <img src={state.customer.photo} alt="Property" style={{ maxWidth: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 8, border: "1px solid #e2e8f0" }} />
+          </div>
+        )}
+
+        {/* ── Scope of Work ── */}
         <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Scope of Work</div>
-          <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.8 }}>
-            New Direction Construction agrees to furnish all labor, materials, equipment, and supervision necessary to complete the following work at the property located at <strong>{state.customer.address || "the address on file"}</strong>:
+          <div style={{ fontSize: 11, color: "#475569", lineHeight: 1.7, marginBottom: 10 }}>
+            New Direction Construction agrees to furnish all labor, materials, equipment, and supervision necessary to complete the following work at <strong>{state.customer.address || "the address on file"}</strong>:
           </div>
-          <div style={{ marginTop: 10 }}>
-            {state.services.map(svc => {
-              const labels = { siding: "James Hardie Siding Installation", soffit: "Soffit Installation", fascia: "Fascia Installation", paint: "Exterior Paint — Four-Directional Spray Method", windows: "Window Installation", misc: "Additional Items" };
-              return (
-                <div key={svc} style={{ display: "flex", alignItems: "flex-start", padding: "5px 0", borderBottom: "1px solid #f8fafc", fontSize: 11, color: "#334155" }}>
-                  <span style={{ color: "#22c55e", fontWeight: 800, marginRight: 8, flexShrink: 0 }}>✓</span>
-                  <span style={{ fontWeight: 600 }}>{labels[svc] || svc}</span>
-                </div>
-              );
-            })}
-          </div>
+          {state.services.map(svc => (
+            <div key={svc} style={{ display: "flex", alignItems: "center", padding: "5px 0", borderBottom: "1px solid #f8fafc", fontSize: 11, color: "#334155" }}>
+              <span style={{ color: "#22c55e", fontWeight: 800, marginRight: 8 }}>✓</span>
+              <span style={{ fontWeight: 600 }}>{svcLabels[svc] || svc}</span>
+            </div>
+          ))}
           {state.notes ? (
             <div style={{ marginTop: 10, background: "#f8fafc", borderRadius: 6, padding: "8px 12px", fontSize: 11, color: "#475569", lineHeight: 1.7 }}>
-              <strong>Additional Notes:</strong> {state.notes}
+              <strong>Notes:</strong> {state.notes}
             </div>
           ) : null}
         </div>
 
-        {/* Agreed Investment */}
+        {/* ── Agreed Investment ── */}
         <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Agreed Investment</div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: selectedOption === "clearance" ? 12 : 0 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Agreed Investment</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <div style={{ fontSize: 12, color: "#334155", fontWeight: 600 }}>
               {selectedOption === "priority" ? "Administrative Savings Incentive" : selectedOption === "clearance" ? "Administrative Clearance" : "Standard Pricing"}
             </div>
             <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a" }}>{fmt(chosenTotal)}</div>
           </div>
+
+          {/* Financing selection */}
+          {applicableMonthly && (
+            <div style={{ marginTop: 8 }}>
+              <div
+                onClick={() => setUsingFinancing(f => !f)}
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", border: "1.5px solid " + (usingFinancing ? "#0ea5e9" : "#e2e8f0"), borderRadius: 8, background: usingFinancing ? "#f0f9ff" : "#f8fafc", cursor: "pointer", marginBottom: usingFinancing ? 12 : 0 }}
+              >
+                <div style={{ width: 20, height: 20, borderRadius: 4, border: "2px solid " + (usingFinancing ? "#0ea5e9" : "#cbd5e1"), background: usingFinancing ? "#0ea5e9" : "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {usingFinancing && <span style={{ color: "white", fontSize: 13, fontWeight: 800, lineHeight: 1 }}>✓</span>}
+                </div>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>Client is utilizing Aqua Financing</div>
+                  <div style={{ fontSize: 11, color: "#64748b" }}>Tap to select and configure financing amount</div>
+                </div>
+              </div>
+
+              {usingFinancing && (
+                <div style={{ background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 10, padding: 16 }}>
+                  {/* Percentage selector */}
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#0369a1", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6 }}>Amount Being Financed</div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                      {[25, 50, 75, 100].map(pct => (
+                        <button
+                          key={pct}
+                          onClick={() => setFinancingPct(pct)}
+                          style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid " + (financingPct === pct ? "#0ea5e9" : "#bae6fd"), background: financingPct === pct ? "#0ea5e9" : "white", color: financingPct === pct ? "white" : "#0369a1", fontWeight: 700, fontSize: 12, cursor: "pointer" }}
+                        >
+                          {pct}%
+                        </button>
+                      ))}
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <input
+                          type="number" min="1" max="100"
+                          value={financingPct}
+                          onChange={e => setFinancingPct(Math.min(100, Math.max(1, parseInt(e.target.value) || 0)))}
+                          style={{ width: 60, border: "1.5px solid #bae6fd", borderRadius: 8, padding: "6px 8px", fontSize: 13, fontWeight: 700, color: "#0f172a", outline: "none", textAlign: "center" }}
+                        />
+                        <span style={{ fontSize: 12, color: "#64748b" }}>% custom</span>
+                      </div>
+                    </div>
+
+                    {/* Breakdown */}
+                    <div style={{ background: "white", borderRadius: 8, border: "1px solid #bae6fd", overflow: "hidden" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", borderBottom: "1px solid #f0f9ff" }}>
+                        <span style={{ fontSize: 11, color: "#475569" }}>Total job cost</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>{fmt(chosenTotal)}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", borderBottom: "1px solid #f0f9ff", background: "#f0f9ff" }}>
+                        <span style={{ fontSize: 11, color: "#0369a1", fontWeight: 600 }}>Financed ({financingPct}%)</span>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: "#0369a1" }}>{fmt(chosenTotal * financingPct / 100)}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", borderBottom: "1px solid #f0f9ff" }}>
+                        <span style={{ fontSize: 11, color: "#475569" }}>Due out of pocket ({100 - financingPct}%)</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>{fmt(chosenTotal * (100 - financingPct) / 100)}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px" }}>
+                        <span style={{ fontSize: 11, color: "#475569" }}>Approx. monthly payment</span>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: "#0f172a" }}>${(applicableMonthly * financingPct / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Aqua Financing statement */}
+                  <div style={{ background: "white", border: "1px solid #bae6fd", borderRadius: 8, padding: "12px 14px", fontSize: 11, color: "#0f172a", lineHeight: 1.8 }}>
+                    <div style={{ fontWeight: 800, color: "#0369a1", marginBottom: 6, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.5px" }}>Aqua Financing Agreement</div>
+                    The client agrees to utilize <strong>Aqua Financing</strong> to cover <strong>{financingPct}%</strong> of the total project cost of <strong>{fmt(chosenTotal)}</strong>, amounting to <strong>{fmt(chosenTotal * financingPct / 100)}</strong>. The remaining balance of <strong>{fmt(chosenTotal * (100 - financingPct) / 100)}</strong> ({100 - financingPct}%) is due out of pocket at or before project commencement. The approximate monthly payment through Aqua Financing is <strong>${(applicableMonthly * financingPct / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</strong>. Financing is subject to credit approval and the terms of the Aqua Financing agreement, which will be provided separately.
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {selectedOption === "clearance" && (
-            <div style={{ background: "#fffbeb", border: "1.5px solid #fde68a", borderRadius: 8, padding: "12px 14px", fontSize: 11, color: "#78350f", lineHeight: 1.7 }}>
+            <div style={{ background: "#fffbeb", border: "1.5px solid #fde68a", borderRadius: 8, padding: "12px 14px", fontSize: 11, color: "#78350f", lineHeight: 1.7, marginTop: 8 }}>
               <div style={{ fontWeight: 800, color: "#92400e", marginBottom: 6, textTransform: "uppercase", fontSize: 10, letterSpacing: "0.5px" }}>Administrative Clearance Terms</div>
-              Client has <strong>{(state.pricing && state.pricing.clearanceDays) || "14"} days</strong> from the date of this signed agreement to shop and find a lower price for the exact same scope of work. Any competing quote must be submitted in writing on the competing company's official letterhead, must cover the exact same materials, specifications, and scope, and must be presented to a New Direction Construction representative within the shopping period.<br /><br />
-              If a qualifying written quote is presented that is lower in price and matches the scope exactly, <strong>New Direction Construction will not only meet that price — we will beat it by 10%.</strong>
+              Client has <strong>{(state.pricing && state.pricing.clearanceDays) || "14"} days</strong> from the date of this signed agreement to shop and find a lower price for the exact same scope of work. Any competing quote must be submitted in writing on the competing company's official letterhead, covering the exact same materials, specifications, and scope, and must be presented to a New Direction Construction representative within the shopping period.<br /><br />
+              If a qualifying written quote is presented that matches the scope exactly, <strong>New Direction Construction will not only meet that price — we will beat it by 10%.</strong>
             </div>
           )}
         </div>
 
-        {/* Terms & Conditions */}
+        {/* ── Terms & Conditions ── */}
         <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Terms & Conditions</div>
-          {[
-            { title: "Payment Terms", body: "A deposit of 50% of the total contract amount is due at signing. The remaining balance is due upon completion of work and final walkthrough. New Direction Construction accepts check, cash, or approved financing." },
-            { title: "Commencement & Completion", body: "Work is scheduled to begin within a reasonable time following contract execution and deposit receipt, subject to material availability and weather conditions. New Direction Construction will make every reasonable effort to complete the project in a timely manner." },
-            { title: "Change Orders", body: "Any changes to the scope of work requested by the client after contract execution must be submitted in writing and agreed upon by both parties prior to commencement of the changed work. Additional costs resulting from change orders will be invoiced separately." },
-            { title: "Materials & Workmanship", body: "All materials used will be of good quality and consistent with the specifications outlined in this agreement. New Direction Construction warrants all labor for a period of one (1) year from the date of completion. Manufacturer warranties apply to all installed products and are passed through to the client." },
-            { title: "Property Access", body: "Client agrees to provide New Direction Construction and its subcontractors reasonable access to the property during normal working hours for the duration of the project. Client is responsible for moving vehicles, outdoor furniture, and personal property away from the work area." },
-            { title: "Permits & Code Compliance", body: "New Direction Construction will obtain all required permits and ensure all work is completed in compliance with applicable local building codes and manufacturer installation requirements." },
-            { title: "Unforeseen Conditions", body: "In the event that unforeseen conditions are discovered during the course of work (including but not limited to rot, structural damage, mold, or pest infestation), New Direction Construction will notify the client immediately. Additional work required to address such conditions will be quoted separately and must be approved by the client in writing before proceeding." },
-            { title: "Cancellation", body: "Client may cancel this agreement within three (3) business days of signing without penalty. Cancellations after this period may be subject to a restocking fee for any materials ordered specifically for this project." },
-            { title: "Dispute Resolution", body: "Any disputes arising from this agreement shall first be addressed through good-faith negotiation between the parties. If unresolved, disputes shall be submitted to mediation prior to any legal action." },
-            { title: "Entire Agreement", body: "This contract, together with any attached schedules or change orders, constitutes the entire agreement between New Direction Construction and the client and supersedes all prior discussions, representations, or agreements." },
-          ].map((term, i) => (
-            <div key={i} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: i < 9 ? "1px solid #f8fafc" : "none" }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: "#334155", marginBottom: 3 }}>{i + 1}. {term.title}</div>
-              <div style={{ fontSize: 10.5, color: "#475569", lineHeight: 1.7 }}>{term.body}</div>
+          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 12 }}>Terms and Conditions</div>
+          {terms.map((term, i) => (
+            <div key={term.n} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: i < terms.length - 1 ? "1px solid #f8fafc" : "none" }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#0f172a", marginBottom: 3 }}>{term.n}. {term.title}</div>
+              <div style={{ fontSize: 10.5, color: "#475569", lineHeight: 1.75 }}>{term.body}</div>
             </div>
           ))}
         </div>
 
-        {/* Client Acknowledgment */}
-        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9", background: "#f8fafc", borderRadius: 8, padding: "14px 16px" }}>
-          <div style={{ fontSize: 10.5, color: "#334155", lineHeight: 1.8, fontStyle: "italic" }}>
-            By signing below, the client acknowledges that they have read, understood, and agree to all terms and conditions set forth in this contract. The client authorizes New Direction Construction to proceed with the scope of work described above at the agreed investment amount of <strong>{fmt(chosenTotal)}</strong>. The client confirms that the information provided is accurate and that they have the authority to authorize this work at the property listed above.
+        {/* ── Approval Block ── */}
+        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 16, marginBottom: 10 }}>
+            <div style={{ flex: 2 }}>
+              <div style={{ fontSize: 10, color: "#64748b", marginBottom: 4 }}>Approved by</div>
+              <div style={{ borderBottom: "1.5px solid #0f172a", height: 24 }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 10, color: "#64748b", marginBottom: 4 }}>On</div>
+              <div style={{ borderBottom: "1.5px solid #0f172a", height: 24 }} />
+            </div>
           </div>
+          <div style={{ display: "flex", gap: 24, fontSize: 10.5, color: "#475569", marginBottom: 6 }}>
+            <span>Home Owner Notified:</span>
+            <span style={{ display: "flex", gap: 16 }}>
+              <span>☐ Yes</span>
+              <span>☐ No</span>
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: 16, marginTop: 8 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 10, color: "#64748b", marginBottom: 4 }}>Date</div>
+              <div style={{ borderBottom: "1.5px solid #cbd5e1", height: 24 }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 10, color: "#64748b", marginBottom: 4 }}>Time</div>
+              <div style={{ borderBottom: "1.5px solid #cbd5e1", height: 24 }} />
+            </div>
+            <div style={{ flex: 2 }}>
+              <div style={{ fontSize: 10, color: "#64748b", marginBottom: 4 }}>By</div>
+              <div style={{ borderBottom: "1.5px solid #cbd5e1", height: 24 }} />
+            </div>
+          </div>
+          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 6, fontStyle: "italic" }}>Company Manager and/or Office · Telephone and/or Address</div>
         </div>
 
-        {/* Client Signature */}
+        {/* ── Client Signature ── */}
         <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Client Signature</div>
+          <div style={{ fontSize: 10.5, color: "#475569", lineHeight: 1.7, marginBottom: 10, fontStyle: "italic" }}>
+            By signing below, I acknowledge that I have read and agree to all terms and conditions of this contract, and authorize New Direction Construction to proceed with the scope of work described above for <strong>{fmt(chosenTotal)}</strong>{usingFinancing && applicableMonthly ? ". I am utilizing Aqua Financing for " + financingPct + "% of the total (" + fmt(chosenTotal * financingPct / 100) + ") at an approximate monthly payment of $" + (applicableMonthly * financingPct / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo, with " + fmt(chosenTotal * (100 - financingPct) / 100) + " due out of pocket" : ""}.
+          </div>
           <div style={{ position: "relative", border: "1.5px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", overflow: "hidden", height: 120 }}>
             <canvas
               ref={canvasRef} width={600} height={120}
@@ -1678,7 +1808,7 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
           </div>
         </div>
 
-        {/* Rep Signature */}
+        {/* ── Rep Signature ── */}
         <div style={{ display: "flex", gap: 16 }}>
           <div style={{ flex: 2 }}>
             <input value={repName} onChange={e => setRepName(e.target.value)} style={{ width: "100%", borderBottom: "1.5px solid #0f172a", borderTop: "none", borderLeft: "none", borderRight: "none", outline: "none", fontSize: 14, fontFamily: "Georgia, serif", color: "#0f172a", background: "transparent", boxSizing: "border-box", marginBottom: 4 }} />
@@ -1689,6 +1819,7 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
             <div style={{ fontSize: 10, color: "#64748b" }}>Date</div>
           </div>
         </div>
+
       </div>
 
       {hasSigned && <div style={{ background: "#dcfce7", border: "1.5px solid #86efac", borderRadius: 8, padding: "12px 16px", marginBottom: 12, fontSize: 12, fontWeight: 700, color: "#166534", textAlign: "center" }}>Contract Signed — Ready to Send!</div>}
