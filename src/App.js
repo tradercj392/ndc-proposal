@@ -90,7 +90,7 @@ const makeInitialState = () => ({
   misc: { items: [{ id: uid(), description: "", qty: "", unitPrice: "", notes: "" }] },
   notes: "",
   financing: { monthlyPayment: "", customPayment: "" },
-  pricing: { sidingPerSqFt: "", soffitPerLinFt: "", fasciaPerLinFt: "", paintPerSqFt: "", windowPerUnit: "", miscMarkup: "", adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14" },
+  pricing: { sidingPerSqFt: "", soffitPerLinFt: "", fasciaPerLinFt: "", paintPerSqFt: "", windowPerUnit: "", miscMarkup: "", adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", standardFinancingAdd: "" },
   priceRevealed: false,
 });
 
@@ -289,10 +289,14 @@ function PricingStep({ state, onChange }) {
     ),
     React.createElement("div", { style: cardStyle },
       React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 6 } }, "Financing (Optional)"),
-      React.createElement("label", { style: labelStyle }, "Monthly payment for Admin Savings price ($/mo)"),
+      React.createElement("label", { style: labelStyle }, "Admin Savings monthly payment ($/mo)"),
       React.createElement("input", { style: inputStyle, type: "number", value: p.monthlyPayment||"", onChange: function(e){ set("monthlyPayment", e.target.value); }, placeholder: "e.g. 285.00" }),
-      p.monthlyPayment ? React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginTop: 6 } },
-        "Standard financing: ", React.createElement("strong", null, fmt(parseFloat(p.monthlyPayment)+47) + "/mo")
+      React.createElement("div", { style: { height: 10 } }),
+      React.createElement("label", { style: labelStyle }, "Standard pricing — add-on amount ($/mo)"),
+      React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginBottom: 6 } }, "Standard financing shown = this amount + Admin Savings amount"),
+      React.createElement("input", { style: inputStyle, type: "number", value: p.standardFinancingAdd||"", onChange: function(e){ set("standardFinancingAdd", e.target.value); }, placeholder: "e.g. 47.00" }),
+      (p.monthlyPayment && p.standardFinancingAdd) ? React.createElement("div", { style: { fontSize: 11, color: "#0369a1", marginTop: 8, fontWeight: 700 } },
+        "Standard financing displays as: $" + (parseFloat(p.monthlyPayment) + parseFloat(p.standardFinancingAdd)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo"
       ) : null
     ),
     React.createElement("div", { style: { ...cardStyle, borderColor: "#fde68a", background: "#fffbeb" } },
@@ -1008,6 +1012,8 @@ function buildProposalHTML(state, selectedOption, mode) {
   const standard = t.total * 1.0835;
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
+  const standardFinancingAdd = (state.pricing && state.pricing.standardFinancingAdd) ? parseFloat(state.pricing.standardFinancingAdd) : null;
+  const standardMonthly = (monthlyPayment && standardFinancingAdd) ? monthlyPayment + standardFinancingAdd : null;
   const clearanceDays = (state.pricing && state.pricing.clearanceDays) ? state.pricing.clearanceDays : "14";
 
   const css = `
@@ -1295,6 +1301,7 @@ function buildProposalHTML(state, selectedOption, mode) {
           </div>
           ${selectedOption === "standard" ? "<div style='font-size:24px;font-weight:800;color:#334155'>" + fmt(standard) + "</div>" : "<div style='font-size:11px;color:#94a3b8;font-style:italic'>Tap to reveal</div>"}
         </div>
+        ${selectedOption === "standard" && standardMonthly ? "<div style='margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0'><div style='font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px'>Or Finance For</div><div style='font-size:24px;font-weight:800;color:#0f172a'>$" + standardMonthly.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "<span style='font-size:14px;color:#64748b;font-weight:600'>/mo</span></div><div style='font-size:10px;color:#94a3b8;margin-top:3px'>Subject to credit approval</div></div>" : ""}
       </div>
       <div class='opt ${selectedOption === "priority" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'priority'},'*')">
         <div style='display:flex;justify-content:space-between;align-items:flex-start${selectedOption === "priority" ? ";margin-bottom:6px" : ""}'>
@@ -1322,6 +1329,9 @@ function buildProposalHTML(state, selectedOption, mode) {
     } else {
       // pdf — static
       body += `<div class='row' style='font-size:12px'><span>Standard Pricing</span><span style='font-weight:800'>${fmt(standard)}</span></div>`;
+      if (standardMonthly) {
+        body += `<div style='font-size:11px;color:#475569;margin:4px 0 8px 0'>Financing: <strong>$${standardMonthly.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</strong> — subject to credit approval</div>`;
+      }
       body += `<div class='row' style='font-size:13px'><span style='font-weight:700;color:#0369a1'>Administrative Savings Incentive</span><span style='font-weight:800;color:#0ea5e9'>${fmt(priority)}</span></div>`;
       body += `<div style='background:#dcfce7;color:#166534;border-radius:8px;padding:8px 14px;margin-top:6px;font-size:11px;font-weight:700'>You save ${fmt(standard - priority)} by signing today</div>`;
       if (monthlyPayment) {
