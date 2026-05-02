@@ -1747,42 +1747,6 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
           ))}
         </div>
 
-        {/* ── Approval Block ── */}
-        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 16, marginBottom: 10 }}>
-            <div style={{ flex: 2 }}>
-              <div style={{ fontSize: 10, color: "#64748b", marginBottom: 4 }}>Approved by</div>
-              <div style={{ borderBottom: "1.5px solid #0f172a", height: 24 }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, color: "#64748b", marginBottom: 4 }}>On</div>
-              <div style={{ borderBottom: "1.5px solid #0f172a", height: 24 }} />
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 24, fontSize: 10.5, color: "#475569", marginBottom: 6 }}>
-            <span>Home Owner Notified:</span>
-            <span style={{ display: "flex", gap: 16 }}>
-              <span>☐ Yes</span>
-              <span>☐ No</span>
-            </span>
-          </div>
-          <div style={{ display: "flex", gap: 16, marginTop: 8 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, color: "#64748b", marginBottom: 4 }}>Date</div>
-              <div style={{ borderBottom: "1.5px solid #cbd5e1", height: 24 }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, color: "#64748b", marginBottom: 4 }}>Time</div>
-              <div style={{ borderBottom: "1.5px solid #cbd5e1", height: 24 }} />
-            </div>
-            <div style={{ flex: 2 }}>
-              <div style={{ fontSize: 10, color: "#64748b", marginBottom: 4 }}>By</div>
-              <div style={{ borderBottom: "1.5px solid #cbd5e1", height: 24 }} />
-            </div>
-          </div>
-          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 6, fontStyle: "italic" }}>Company Manager and/or Office · Telephone and/or Address</div>
-        </div>
-
         {/* ── Client Signature ── */}
         <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Client Signature</div>
