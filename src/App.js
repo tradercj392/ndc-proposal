@@ -1042,7 +1042,6 @@ function buildProposalHTML(state, selectedOption, mode) {
         "Install metal flashing at all windows, doors, roof lines, and penetrations",
         "Install " + (state.siding.sidingType || "James Hardie siding") + " per manufacturer specifications",
         "Install HardieTrim at all corners, windows, doors, and eaves",
-        "Caulk all joints and penetrations with paintable elastomeric sealant",
         "Final inspection per James Hardie installation requirements",
       ].filter(Boolean),
       detail: state.siding.walls.map(w => {
