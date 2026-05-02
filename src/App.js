@@ -1299,19 +1299,22 @@ function buildProposalHTML(state, selectedOption, mode) {
               <div style='font-size:10px;color:#64748b;margin-top:2px'>Email proposal — no contract today</div>
             </div>
           </div>
-          ${selectedOption === "standard" ? "<div style='font-size:24px;font-weight:800;color:#334155'>" + fmt(standard) + "</div>" : "<div style='font-size:11px;color:#94a3b8;font-style:italic'>Tap to reveal</div>"}
+          ${selectedOption === "standard"
+            ? "<div style='text-align:right'><div style='font-size:24px;font-weight:800;color:#334155'>" + fmt(standard) + "</div>" + (standardMonthly ? "<div style='font-size:12px;color:#64748b;margin-top:3px'>or <strong style=\"color:#0f172a\">$" + standardMonthly.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo</strong></div>" : "") + "</div>"
+            : "<div style='font-size:11px;color:#94a3b8;font-style:italic'>Tap to reveal</div>"}
         </div>
-        ${selectedOption === "standard" && standardMonthly ? "<div style='margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0'><div style='font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px'>Or Finance For</div><div style='font-size:24px;font-weight:800;color:#0f172a'>$" + standardMonthly.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "<span style='font-size:14px;color:#64748b;font-weight:600'>/mo</span></div><div style='font-size:10px;color:#94a3b8;margin-top:3px'>Subject to credit approval</div></div>" : ""}
       </div>
       <div class='opt ${selectedOption === "priority" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'priority'},'*')">
-        <div style='display:flex;justify-content:space-between;align-items:flex-start${selectedOption === "priority" ? ";margin-bottom:6px" : ""}'>
+        <div style='display:flex;justify-content:space-between;align-items:center'>
           <div style='display:flex;align-items:center'>
             <div class='radio ${selectedOption === "priority" ? "on" : ""}'>${selectedOption === "priority" ? "<div class='dot'></div>" : ""}</div>
             <div style='font-size:9.5px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px'>Administrative Savings Incentive — Sign Today</div>
           </div>
-          ${selectedOption === "priority" ? "<div style='font-size:24px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div>" : "<div style='font-size:11px;color:#94a3b8;font-style:italic'>Tap to reveal</div>"}
+          ${selectedOption === "priority"
+            ? "<div style='text-align:right'><div style='font-size:24px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div>" + (monthlyPayment ? "<div style='font-size:12px;color:#64748b;margin-top:3px'>or <strong style=\"color:#0f172a\">$" + monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo</strong></div>" : "") + "</div>"
+            : "<div style='font-size:11px;color:#94a3b8;font-style:italic'>Tap to reveal</div>"}
         </div>
-        ${selectedOption === "priority" ? "<div class='badge'>You save " + fmt(standard - priority) + "</div>" + (monthlyPayment ? "<div style='margin-top:12px;padding-top:12px;border-top:1px solid #bae6fd'><div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px'>Or Finance For</div><div style='font-size:24px;font-weight:800;color:#0f172a'>$" + monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "<span style='font-size:14px;color:#64748b;font-weight:600'>/mo</span></div><div style='font-size:10px;color:#94a3b8;margin-top:3px'>Subject to credit approval</div></div>" : "") : ""}
+        ${selectedOption === "priority" ? "<div class='badge' style='margin-top:8px'>You save " + fmt(standard - priority) + "</div>" : ""}
       </div>
       <div class='opt ${selectedOption === "clearance" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'clearance'},'*')" style='border-color:${selectedOption === "clearance" ? "#f59e0b" : "#e2e8f0"};background:${selectedOption === "clearance" ? "#fffbeb" : "white"}'>
         <div style='display:flex;justify-content:space-between;align-items:center'>
@@ -1322,7 +1325,9 @@ function buildProposalHTML(state, selectedOption, mode) {
               <div style='font-size:10px;color:#a16207;margin-top:2px'>Shop &amp; compare — we'll beat any matching quote by 10%</div>
             </div>
           </div>
-          ${selectedOption === "clearance" ? "<div style='font-size:24px;font-weight:800;color:#f59e0b'>" + fmt(priority) + "</div>" : "<div style='font-size:11px;color:#94a3b8;font-style:italic'>Tap to reveal</div>"}
+          ${selectedOption === "clearance"
+            ? "<div style='text-align:right'><div style='font-size:24px;font-weight:800;color:#f59e0b'>" + fmt(priority) + "</div>" + (monthlyPayment ? "<div style='font-size:12px;color:#64748b;margin-top:3px'>or <strong style=\"color:#0f172a\">$" + monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo</strong></div>" : "") + "</div>"
+            : "<div style='font-size:11px;color:#94a3b8;font-style:italic'>Tap to reveal</div>"}
         </div>
         ${selectedOption === "clearance" ? "<div style='margin-top:12px;padding-top:12px;border-top:1px solid #fde68a;background:#fef3c7;border-radius:8px;padding:12px 14px;font-size:11px;color:#92400e;line-height:1.7'>You have <strong>" + clearanceDays + " days</strong> to shop and find a lower price for the exact same scope of work.<br><br>If you find a lower price, provide us with a <strong>written estimate on the competing company's official letterhead</strong> covering the exact same materials, specifications, and scope. We will review it to confirm it matches our proposal exactly.<br><br><strong>If it matches — we will not only meet their price, we will beat it by 10%.</strong></div>" : ""}
       </div>`;
@@ -1452,17 +1457,20 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
           </div>
         )}
 
-        {/* Proceed to contract — for priority or clearance */}
-        {pricingRevealed && (selectedOption === "priority" || selectedOption === "clearance") && (
+        {/* Proceed to contract — shown for any selected option */}
+        {pricingRevealed && selectedOption && (
           <button
-            style={{ background: selectedOption === "clearance" ? "linear-gradient(135deg,#f59e0b,#d97706)" : "linear-gradient(135deg,#0ea5e9,#0369a1)", color: "white", border: "none", borderRadius: 10, padding: "14px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%", marginBottom: 12 }}
+            style={{
+              background: selectedOption === "clearance" ? "linear-gradient(135deg,#f59e0b,#d97706)" : selectedOption === "standard" ? "linear-gradient(135deg,#475569,#1e293b)" : "linear-gradient(135deg,#0ea5e9,#0369a1)",
+              color: "white", border: "none", borderRadius: 10, padding: "14px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%", marginBottom: 12
+            }}
             onClick={() => setStep(steps.findIndex(s => s.key === "contract"))}
           >
-            Proceed to Contract & Sign
+            {selectedOption === "standard" ? "Proceed to Contract & Sign" : "Proceed to Contract & Sign"}
           </button>
         )}
 
-        {/* Email / PDF — only shown after pricing revealed */}
+        {/* Email / PDF — shown after pricing revealed, with or without a selected option */}
         {pricingRevealed && (
           <>
             <div style={{ marginBottom: 10 }}>
