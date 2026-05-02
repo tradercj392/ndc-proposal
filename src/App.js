@@ -1566,9 +1566,11 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
   return (
     <div style={S.stepWrap}>
       <h2 style={S.stepTitle}>Contract & Signature</h2>
-      <p style={S.stepSub}>Review with your client and collect their signature below.</p>
+      <p style={S.stepSub}>Review the full contract with your client, then collect their signature below.</p>
 
       <div style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+
+        {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, paddingBottom: 16, borderBottom: "2px solid #0f172a" }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 800 }}>New Direction Construction</div>
@@ -1583,6 +1585,31 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
           </div>
         </div>
 
+        {/* Scope of Work Summary */}
+        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Scope of Work</div>
+          <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.8 }}>
+            New Direction Construction agrees to furnish all labor, materials, equipment, and supervision necessary to complete the following work at the property located at <strong>{state.customer.address || "the address on file"}</strong>:
+          </div>
+          <div style={{ marginTop: 10 }}>
+            {state.services.map(svc => {
+              const labels = { siding: "James Hardie Siding Installation", soffit: "Soffit Installation", fascia: "Fascia Installation", paint: "Exterior Paint — Four-Directional Spray Method", windows: "Window Installation", misc: "Additional Items" };
+              return (
+                <div key={svc} style={{ display: "flex", alignItems: "flex-start", padding: "5px 0", borderBottom: "1px solid #f8fafc", fontSize: 11, color: "#334155" }}>
+                  <span style={{ color: "#22c55e", fontWeight: 800, marginRight: 8, flexShrink: 0 }}>✓</span>
+                  <span style={{ fontWeight: 600 }}>{labels[svc] || svc}</span>
+                </div>
+              );
+            })}
+          </div>
+          {state.notes ? (
+            <div style={{ marginTop: 10, background: "#f8fafc", borderRadius: 6, padding: "8px 12px", fontSize: 11, color: "#475569", lineHeight: 1.7 }}>
+              <strong>Additional Notes:</strong> {state.notes}
+            </div>
+          ) : null}
+        </div>
+
+        {/* Agreed Investment */}
         <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Agreed Investment</div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: selectedOption === "clearance" ? 12 : 0 }}>
@@ -1600,6 +1627,36 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
           )}
         </div>
 
+        {/* Terms & Conditions */}
+        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Terms & Conditions</div>
+          {[
+            { title: "Payment Terms", body: "A deposit of 50% of the total contract amount is due at signing. The remaining balance is due upon completion of work and final walkthrough. New Direction Construction accepts check, cash, or approved financing." },
+            { title: "Commencement & Completion", body: "Work is scheduled to begin within a reasonable time following contract execution and deposit receipt, subject to material availability and weather conditions. New Direction Construction will make every reasonable effort to complete the project in a timely manner." },
+            { title: "Change Orders", body: "Any changes to the scope of work requested by the client after contract execution must be submitted in writing and agreed upon by both parties prior to commencement of the changed work. Additional costs resulting from change orders will be invoiced separately." },
+            { title: "Materials & Workmanship", body: "All materials used will be of good quality and consistent with the specifications outlined in this agreement. New Direction Construction warrants all labor for a period of one (1) year from the date of completion. Manufacturer warranties apply to all installed products and are passed through to the client." },
+            { title: "Property Access", body: "Client agrees to provide New Direction Construction and its subcontractors reasonable access to the property during normal working hours for the duration of the project. Client is responsible for moving vehicles, outdoor furniture, and personal property away from the work area." },
+            { title: "Permits & Code Compliance", body: "New Direction Construction will obtain all required permits and ensure all work is completed in compliance with applicable local building codes and manufacturer installation requirements." },
+            { title: "Unforeseen Conditions", body: "In the event that unforeseen conditions are discovered during the course of work (including but not limited to rot, structural damage, mold, or pest infestation), New Direction Construction will notify the client immediately. Additional work required to address such conditions will be quoted separately and must be approved by the client in writing before proceeding." },
+            { title: "Cancellation", body: "Client may cancel this agreement within three (3) business days of signing without penalty. Cancellations after this period may be subject to a restocking fee for any materials ordered specifically for this project." },
+            { title: "Dispute Resolution", body: "Any disputes arising from this agreement shall first be addressed through good-faith negotiation between the parties. If unresolved, disputes shall be submitted to mediation prior to any legal action." },
+            { title: "Entire Agreement", body: "This contract, together with any attached schedules or change orders, constitutes the entire agreement between New Direction Construction and the client and supersedes all prior discussions, representations, or agreements." },
+          ].map((term, i) => (
+            <div key={i} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: i < 9 ? "1px solid #f8fafc" : "none" }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#334155", marginBottom: 3 }}>{i + 1}. {term.title}</div>
+              <div style={{ fontSize: 10.5, color: "#475569", lineHeight: 1.7 }}>{term.body}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Client Acknowledgment */}
+        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9", background: "#f8fafc", borderRadius: 8, padding: "14px 16px" }}>
+          <div style={{ fontSize: 10.5, color: "#334155", lineHeight: 1.8, fontStyle: "italic" }}>
+            By signing below, the client acknowledges that they have read, understood, and agree to all terms and conditions set forth in this contract. The client authorizes New Direction Construction to proceed with the scope of work described above at the agreed investment amount of <strong>{fmt(chosenTotal)}</strong>. The client confirms that the information provided is accurate and that they have the authority to authorize this work at the property listed above.
+          </div>
+        </div>
+
+        {/* Client Signature */}
         <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Client Signature</div>
           <div style={{ position: "relative", border: "1.5px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", overflow: "hidden", height: 120 }}>
@@ -1621,6 +1678,7 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
           </div>
         </div>
 
+        {/* Rep Signature */}
         <div style={{ display: "flex", gap: 16 }}>
           <div style={{ flex: 2 }}>
             <input value={repName} onChange={e => setRepName(e.target.value)} style={{ width: "100%", borderBottom: "1.5px solid #0f172a", borderTop: "none", borderLeft: "none", borderRight: "none", outline: "none", fontSize: 14, fontFamily: "Georgia, serif", color: "#0f172a", background: "transparent", boxSizing: "border-box", marginBottom: 4 }} />
