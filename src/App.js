@@ -1525,6 +1525,9 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
   const [repName, setRepName] = useState("CJ Shires");
   const [usingFinancing, setUsingFinancing] = useState(false);
   const [financingPct, setFinancingPct] = useState(100);
+  const [showDeposit, setShowDeposit] = useState(false);
+  const [depositOption, setDepositOption] = useState(null);
+  const [customDepositText, setCustomDepositText] = useState("");
 
   const t = calcGrandTotal(state);
   const priority = t.total;
@@ -1672,31 +1675,17 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
 
               {usingFinancing && (
                 <div style={{ background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 10, padding: 16 }}>
-                  {/* Percentage selector */}
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "#0369a1", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6 }}>Amount Being Financed</div>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
                       {[25, 50, 75, 100].map(pct => (
-                        <button
-                          key={pct}
-                          onClick={() => setFinancingPct(pct)}
-                          style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid " + (financingPct === pct ? "#0ea5e9" : "#bae6fd"), background: financingPct === pct ? "#0ea5e9" : "white", color: financingPct === pct ? "white" : "#0369a1", fontWeight: 700, fontSize: 12, cursor: "pointer" }}
-                        >
-                          {pct}%
-                        </button>
+                        <button key={pct} onClick={() => setFinancingPct(pct)} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid " + (financingPct === pct ? "#0ea5e9" : "#bae6fd"), background: financingPct === pct ? "#0ea5e9" : "white", color: financingPct === pct ? "white" : "#0369a1", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{pct}%</button>
                       ))}
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <input
-                          type="number" min="1" max="100"
-                          value={financingPct}
-                          onChange={e => setFinancingPct(Math.min(100, Math.max(1, parseInt(e.target.value) || 0)))}
-                          style={{ width: 60, border: "1.5px solid #bae6fd", borderRadius: 8, padding: "6px 8px", fontSize: 13, fontWeight: 700, color: "#0f172a", outline: "none", textAlign: "center" }}
-                        />
+                        <input type="number" min="1" max="100" value={financingPct} onChange={e => setFinancingPct(Math.min(100, Math.max(1, parseInt(e.target.value) || 0)))} style={{ width: 60, border: "1.5px solid #bae6fd", borderRadius: 8, padding: "6px 8px", fontSize: 13, fontWeight: 700, color: "#0f172a", outline: "none", textAlign: "center" }} />
                         <span style={{ fontSize: 12, color: "#64748b" }}>% custom</span>
                       </div>
                     </div>
-
-                    {/* Breakdown */}
                     <div style={{ background: "white", borderRadius: 8, border: "1px solid #bae6fd", overflow: "hidden" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", borderBottom: "1px solid #f0f9ff" }}>
                         <span style={{ fontSize: 11, color: "#475569" }}>Total job cost</span>
@@ -1716,8 +1705,6 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
                       </div>
                     </div>
                   </div>
-
-                  {/* Aqua Financing statement */}
                   <div style={{ background: "white", border: "1px solid #bae6fd", borderRadius: 8, padding: "12px 14px", fontSize: 11, color: "#0f172a", lineHeight: 1.8 }}>
                     <div style={{ fontWeight: 800, color: "#0369a1", marginBottom: 6, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.5px" }}>Aqua Financing Agreement</div>
                     The client agrees to utilize <strong>Aqua Financing</strong> to cover <strong>{financingPct}%</strong> of the total project cost of <strong>{fmt(chosenTotal)}</strong>, amounting to <strong>{fmt(chosenTotal * financingPct / 100)}</strong>. The remaining balance of <strong>{fmt(chosenTotal * (100 - financingPct) / 100)}</strong> ({100 - financingPct}%) is due out of pocket at or before project commencement. The approximate monthly payment through Aqua Financing is <strong>${(applicableMonthly * financingPct / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</strong>. Financing is subject to credit approval and the terms of the Aqua Financing agreement, which will be provided separately.
@@ -1726,6 +1713,104 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
               )}
             </div>
           )}
+
+          {/* ── Deposit / Payment Schedule ── */}
+          <div style={{ marginTop: 12 }}>
+            <div
+              onClick={() => setShowDeposit(d => !d)}
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", border: "1.5px solid " + (showDeposit ? "#0ea5e9" : "#e2e8f0"), borderRadius: 8, background: showDeposit ? "#f0f9ff" : "#f8fafc", cursor: "pointer", marginBottom: showDeposit ? 12 : 0 }}
+            >
+              <div style={{ width: 20, height: 20, borderRadius: 4, border: "2px solid " + (showDeposit ? "#0ea5e9" : "#cbd5e1"), background: showDeposit ? "#0ea5e9" : "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                {showDeposit && <span style={{ color: "white", fontSize: 13, fontWeight: 800, lineHeight: 1 }}>✓</span>}
+              </div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>Deposit & Payment Schedule</div>
+                <div style={{ fontSize: 11, color: "#64748b" }}>Select or customize how payments will be collected</div>
+              </div>
+            </div>
+
+            {showDeposit && (
+              <div style={{ border: "1.5px solid #bae6fd", borderRadius: 10, overflow: "hidden" }}>
+
+                {/* Option 1 — 50% */}
+                <div
+                  onClick={() => setDepositOption("50")}
+                  style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 16px", borderBottom: "1px solid #e2e8f0", background: depositOption === "50" ? "#f0f9ff" : "white", cursor: "pointer" }}
+                >
+                  <div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid " + (depositOption === "50" ? "#0ea5e9" : "#cbd5e1"), background: depositOption === "50" ? "#0ea5e9" : "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+                    {depositOption === "50" && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "white" }} />}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>50% Deposit</div>
+                    <div style={{ fontSize: 11, color: "#475569", lineHeight: 1.7 }}>
+                      <div>• <strong>{fmt(chosenTotal * 0.5)}</strong> due at signing (50%)</div>
+                      <div>• <strong>{fmt(chosenTotal * 0.5)}</strong> due upon completion (50%)</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Option 2 — 33/33/33 */}
+                <div
+                  onClick={() => setDepositOption("33")}
+                  style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 16px", borderBottom: "1px solid #e2e8f0", background: depositOption === "33" ? "#f0f9ff" : "white", cursor: "pointer" }}
+                >
+                  <div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid " + (depositOption === "33" ? "#0ea5e9" : "#cbd5e1"), background: depositOption === "33" ? "#0ea5e9" : "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+                    {depositOption === "33" && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "white" }} />}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>33% / 33% / 33% — Three Payments</div>
+                    <div style={{ fontSize: 11, color: "#475569", lineHeight: 1.7 }}>
+                      <div>• <strong>{fmt(chosenTotal * 0.33)}</strong> due at signing (33%)</div>
+                      <div>• <strong>{fmt(chosenTotal * 0.33)}</strong> due when materials are delivered and crew starts (33%)</div>
+                      <div>• <strong>{fmt(chosenTotal - chosenTotal * 0.33 * 2)}</strong> due upon completion (remaining balance)</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Option 3 — Custom */}
+                <div
+                  onClick={() => setDepositOption("custom")}
+                  style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 16px", background: depositOption === "custom" ? "#f0f9ff" : "white", cursor: "pointer" }}
+                >
+                  <div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid " + (depositOption === "custom" ? "#0ea5e9" : "#cbd5e1"), background: depositOption === "custom" ? "#0ea5e9" : "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+                    {depositOption === "custom" && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "white" }} />}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>Custom Payment Terms</div>
+                    {depositOption === "custom" && (
+                      <textarea
+                        value={customDepositText}
+                        onChange={e => setCustomDepositText(e.target.value)}
+                        onClick={e => e.stopPropagation()}
+                        placeholder="e.g. $5,000 due at signing, remainder financed through Aqua..."
+                        style={{ width: "100%", boxSizing: "border-box", border: "1.5px solid #bae6fd", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "#0f172a", outline: "none", height: 80, resize: "vertical", lineHeight: 1.6 }}
+                      />
+                    )}
+                    {depositOption !== "custom" && (
+                      <div style={{ fontSize: 11, color: "#94a3b8", fontStyle: "italic" }}>Tap to enter custom payment terms</div>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* Payment schedule contract statement */}
+            {showDeposit && depositOption && (
+              <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 8, padding: "12px 14px", fontSize: 11, color: "#0f172a", lineHeight: 1.8, marginTop: 10 }}>
+                <div style={{ fontWeight: 800, color: "#0369a1", marginBottom: 6, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.5px" }}>Payment Schedule — Contract Terms</div>
+                {depositOption === "50" && (
+                  <span>The client agrees to the following payment schedule: A deposit of <strong>{fmt(chosenTotal * 0.5)}</strong> (50% of the total project cost) is due at the time of signing. The remaining balance of <strong>{fmt(chosenTotal * 0.5)}</strong> is due upon satisfactory completion of all work.</span>
+                )}
+                {depositOption === "33" && (
+                  <span>The client agrees to the following payment schedule: A deposit of <strong>{fmt(chosenTotal * 0.33)}</strong> (33%) is due at the time of signing. A second payment of <strong>{fmt(chosenTotal * 0.33)}</strong> (33%) is due upon delivery of materials and commencement of work by the crew. The final balance of <strong>{fmt(chosenTotal - chosenTotal * 0.33 * 2)}</strong> is due upon satisfactory completion of all work.</span>
+                )}
+                {depositOption === "custom" && customDepositText && (
+                  <span>{customDepositText}</span>
+                )}
+              </div>
+            )}
+          </div>
 
           {selectedOption === "clearance" && (
             <div style={{ background: "#fffbeb", border: "1.5px solid #fde68a", borderRadius: 8, padding: "12px 14px", fontSize: 11, color: "#78350f", lineHeight: 1.7, marginTop: 8 }}>
@@ -1751,7 +1836,11 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
         <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Client Signature</div>
           <div style={{ fontSize: 10.5, color: "#475569", lineHeight: 1.7, marginBottom: 10, fontStyle: "italic" }}>
-            By signing below, I acknowledge that I have read and agree to all terms and conditions of this contract, and authorize New Direction Construction to proceed with the scope of work described above for <strong>{fmt(chosenTotal)}</strong>{usingFinancing && applicableMonthly ? ". I am utilizing Aqua Financing for " + financingPct + "% of the total (" + fmt(chosenTotal * financingPct / 100) + ") at an approximate monthly payment of $" + (applicableMonthly * financingPct / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo, with " + fmt(chosenTotal * (100 - financingPct) / 100) + " due out of pocket" : ""}.
+            By signing below, I acknowledge that I have read and agree to all terms and conditions of this contract, and authorize New Direction Construction to proceed with the scope of work described above for <strong>{fmt(chosenTotal)}</strong>
+            {usingFinancing && applicableMonthly ? ". I am utilizing Aqua Financing for " + financingPct + "% of the total (" + fmt(chosenTotal * financingPct / 100) + ") at an approximate monthly payment of $" + (applicableMonthly * financingPct / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo, with " + fmt(chosenTotal * (100 - financingPct) / 100) + " due out of pocket" : ""}
+            {showDeposit && depositOption === "50" ? ". Payment schedule: " + fmt(chosenTotal * 0.5) + " due at signing, " + fmt(chosenTotal * 0.5) + " due upon completion" : ""}
+            {showDeposit && depositOption === "33" ? ". Payment schedule: " + fmt(chosenTotal * 0.33) + " due at signing, " + fmt(chosenTotal * 0.33) + " due when materials are delivered and crew starts, " + fmt(chosenTotal - chosenTotal * 0.33 * 2) + " due upon completion" : ""}
+            {showDeposit && depositOption === "custom" && customDepositText ? ". Payment terms: " + customDepositText : ""}.
           </div>
           <div style={{ position: "relative", border: "1.5px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", overflow: "hidden", height: 120 }}>
             <canvas
