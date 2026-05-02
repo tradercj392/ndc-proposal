@@ -46,7 +46,7 @@ const defaultSidingMaterials = (type) => [
   { id: uid(), name: "Galvanized Nails / Fasteners", unit: "box", sqft: "", pieces: "", cost: "" },
   { id: uid(), name: "Caulk & Paintable Sealant", unit: "tube", sqft: "", pieces: "", cost: "" },
   { id: uid(), name: "Exterior Primer", unit: "gallon", sqft: "", pieces: "", cost: "" },
-  { id: uid(), name: "Exterior Paint (2 coats)", unit: "gallon", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Exterior Paint — Four-Directional Spray", unit: "gallon", sqft: "", pieces: "", cost: "" },
   { id: uid(), name: "Metal Flashing", unit: "ln ft", sqft: "", pieces: "", cost: "" },
 ];
 
@@ -60,8 +60,8 @@ const defaultSoffitMaterials = () => [
 
 const defaultPaintMaterials = () => [
   { id: uid(), name: "Exterior Primer", unit: "gallon", sqft: "", pieces: "", cost: "" },
-  { id: uid(), name: "Exterior Paint (1st coat)", unit: "gallon", sqft: "", pieces: "", cost: "" },
-  { id: uid(), name: "Exterior Paint (2nd coat)", unit: "gallon", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Exterior Paint — Four-Directional Spray (Pass 1/2)", unit: "gallon", sqft: "", pieces: "", cost: "" },
+  { id: uid(), name: "Exterior Paint — Four-Directional Spray (Pass 3/4)", unit: "gallon", sqft: "", pieces: "", cost: "" },
   { id: uid(), name: "Caulk & Patching Compound", unit: "tube", sqft: "", pieces: "", cost: "" },
   { id: uid(), name: "Masking Tape & Plastic", unit: "roll", sqft: "", pieces: "", cost: "" },
 ];
@@ -744,7 +744,7 @@ function PaintSection({ title, items, onChange }) {
           </div>
           <div>
             <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>NOTES</label>
-            <textarea style={{ ...S.input, height: 60, resize: "vertical", fontSize: 13 }} value={item.notes || ""} onChange={(e) => update(item.id, "notes", e.target.value)} placeholder="e.g. two coats required, prep work needed..." />
+            <textarea style={{ ...S.input, height: 60, resize: "vertical", fontSize: 13 }} value={item.notes || ""} onChange={(e) => update(item.id, "notes", e.target.value)} placeholder="e.g. four-directional spray method required, additional prep work needed..." />
           </div>
           <div style={{ marginTop: 10 }}>
             <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>PHOTO</label>
@@ -1043,7 +1043,6 @@ function buildProposalHTML(state, selectedOption, mode) {
         "Install " + (state.siding.sidingType || "James Hardie siding") + " per manufacturer specifications",
         "Install HardieTrim at all corners, windows, doors, and eaves",
         "Caulk all joints and penetrations with paintable elastomeric sealant",
-        "Apply primer and two coats of exterior paint using directional spray",
         "Final inspection per James Hardie installation requirements",
       ].filter(Boolean),
       detail: state.siding.walls.map(w => {
@@ -1080,9 +1079,8 @@ function buildProposalHTML(state, selectedOption, mode) {
         "Fill all cracks, gaps, and holes with exterior-grade elastomeric caulk",
         "Mask all windows, doors, fixtures, and landscaping",
         "Seal all bare wood and repaired areas with surface sealer",
-        "Apply first coat using directional spray technique for full penetration",
-        "Apply second coat using directional spray for uniform coverage",
-        "Hand-paint all trim, corners, shutters, and detail areas",
+        "Apply paint using a four-directional spray method — north, south, east, and west passes — ensuring proper coverage on all surfaces, edges, and profiles",
+        "Hand-paint all trim, corners, shutters, and detail areas for complete coverage",
         "Remove masking, clean overspray, dispose of materials properly",
         "Final walk-through to confirm coverage and finish quality",
       ],
@@ -1142,7 +1140,7 @@ function buildProposalHTML(state, selectedOption, mode) {
       ["Hot-Dipped Galvanized Nails 6d/8d", nailLbs + " lb(s)", "Corrosion-resistant — per Hardie fastener spec"],
       ["Paintable Elastomeric Caulk", caulkTubes + " tube(s)", "All trim joints, penetrations, transitions"],
       ["Exterior Primer", Math.ceil(totalSqFt / 350) + " gal", "Applied to all cut ends and bare surfaces"],
-      ["Exterior Paint (2 coats)", Math.ceil(totalSqFt / 350) * 2 + " gal", "Two-coat directional spray application"],
+      ["Exterior Paint", Math.ceil(totalSqFt / 350) * 2 + " gal", "Four-directional spray method for proper coverage on all surfaces and profiles"],
     ];
     if (osbWalls.length > 0) {
       rows.push(["OSB Sheathing 7/16\"", osbSheets + " sheet(s)", osbSqft.toFixed(0) + " sq ft replacement area"]);
@@ -1171,9 +1169,8 @@ function buildProposalHTML(state, selectedOption, mode) {
       ["Exterior Patching Compound", "As needed", "Holes and surface repairs"],
       ["Masking Tape & Plastic Sheeting", "As needed", "Windows, doors, fixtures, landscaping"],
       ["Exterior Surface Sealer", "As needed", "Bare wood and repaired areas"],
-      ["Exterior Paint — 1st coat", gal + " gal", "~350 sq ft per gallon"],
-      ["Exterior Paint — 2nd coat", gal + " gal", "Full second coat for lasting adhesion"],
-      ["Trim Paint", "As needed", "Hand-applied to all trim and detail areas"],
+      ["Exterior Paint", gal * 2 + " gal", "Four-directional spray method — proper coverage on all surfaces, edges, and profiles"],
+      ["Trim Paint", "As needed", "Hand-applied to all trim and detail areas for complete coverage"],
     ];
   }
 
