@@ -1395,10 +1395,6 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
 
   // Contract state
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-  const canvasRef = useRef(null);
-  const [isSigning, setIsSigning] = useState(false);
-  const [hasSigned, setHasSigned] = useState(false);
-  const [repName, setRepName] = useState("CJ Shires");
   const [usingFinancing, setUsingFinancing] = useState(false);
   const [financingPct, setFinancingPct] = useState(100);
   const [showDeposit, setShowDeposit] = useState(false);
@@ -1414,35 +1410,6 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
   const standardFinancingAdd = state.pricing && state.pricing.standardFinancingAdd ? parseFloat(state.pricing.standardFinancingAdd) : null;
   const standardMonthly = (monthlyPayment && standardFinancingAdd) ? monthlyPayment + standardFinancingAdd : null;
   const applicableMonthly = selectedOption === "standard" ? standardMonthly : monthlyPayment;
-
-  const startDraw = (e) => {
-    setIsSigning(true);
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-    ctx.beginPath(); ctx.moveTo(x, y);
-  };
-  const draw = (e) => {
-    if (!isSigning) return; e.preventDefault();
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-    ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.strokeStyle = "#0f172a";
-    ctx.lineTo(x, y); ctx.stroke();
-  };
-  const endDraw = () => {
-    setIsSigning(false);
-    setHasSigned(true);
-  };
-  const clearSignature = () => {
-    const canvas = canvasRef.current;
-    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
-    setHasSigned(false);
-  };
 
   const handleSend = async () => {
     if (!emailOverride) { alert("Please enter a customer email address."); return; }
@@ -1651,53 +1618,67 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
                 )}
               </div>
             </div>
-
-            {/* Terms & Conditions */}
-            <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 12 }}>Terms and Conditions</div>
-              {terms.map((term, i) => (
-                <div key={term.n} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: i < terms.length - 1 ? "1px solid #f8fafc" : "none" }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: "#0f172a", marginBottom: 3 }}>{term.n}. {term.title}</div>
-                  <div style={{ fontSize: 10.5, color: "#475569", lineHeight: 1.75 }}>{term.body}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Client Signature */}
-            <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Client Signature</div>
-              <div style={{ fontSize: 10.5, color: "#475569", lineHeight: 1.7, marginBottom: 10, fontStyle: "italic" }}>
-                By signing below, I acknowledge that I have read and agree to all terms and conditions of this contract, and authorize New Direction Construction to proceed with the scope of work described above for <strong>{fmt(chosenTotal)}</strong>
-                {usingFinancing && applicableMonthly ? ". I am utilizing Aqua Financing for " + financingPct + "% of the total (" + fmt(chosenTotal * financingPct / 100) + ") at an approximate monthly payment of $" + (applicableMonthly * financingPct / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo, with " + fmt(chosenTotal * (100 - financingPct) / 100) + " due out of pocket" : ""}
-                {showDeposit && depositOption === "50" ? ". Payment schedule: " + fmt(chosenTotal * 0.5) + " due at signing, " + fmt(chosenTotal * 0.5) + " due upon completion" : ""}
-                {showDeposit && depositOption === "33" ? ". Payment schedule: " + fmt(chosenTotal * 0.33) + " due at signing, " + fmt(chosenTotal * 0.33) + " due when materials are delivered and crew starts, " + fmt(chosenTotal - chosenTotal * 0.33 * 2) + " due upon completion" : ""}
-                {showDeposit && depositOption === "custom" && customDepositText ? ". Payment terms: " + customDepositText : ""}.
-              </div>
-              <div style={{ position: "relative", border: "1.5px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", overflow: "hidden", height: 120 }}>
-                <canvas ref={canvasRef} width={600} height={120} style={{ display: "block", width: "100%", height: 120, touchAction: "none", cursor: "crosshair" }} onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw} />
-                {!hasSigned && <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 12, color: "#cbd5e1", pointerEvents: "none", fontStyle: "italic" }}>Sign here</div>}
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                <div style={{ fontSize: 10, color: "#64748b" }}>{state.customer.name} · {today}</div>
-                <button onClick={clearSignature} style={{ fontSize: 10, color: "#94a3b8", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Clear</button>
-              </div>
-            </div>
-
-            {/* Rep Signature */}
-            <div style={{ display: "flex", gap: 16 }}>
-              <div style={{ flex: 2 }}>
-                <input value={repName} onChange={e => setRepName(e.target.value)} style={{ width: "100%", borderBottom: "1.5px solid #0f172a", borderTop: "none", borderLeft: "none", borderRight: "none", outline: "none", fontSize: 14, fontFamily: "Georgia, serif", color: "#0f172a", background: "transparent", boxSizing: "border-box", marginBottom: 4 }} />
-                <div style={{ fontSize: 10, color: "#64748b" }}>NDC Representative</div>
-              </div>
-              <div style={{ flex: 1, textAlign: "right" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", borderBottom: "1.5px solid #0f172a", paddingBottom: 2, marginBottom: 4 }}>{today}</div>
-                <div style={{ fontSize: 10, color: "#64748b" }}>Date</div>
-              </div>
-            </div>
           </div>
         )}
 
-        {hasSigned && <div style={{ background: "#dcfce7", border: "1.5px solid #86efac", borderRadius: 8, padding: "12px 16px", marginBottom: 12, fontSize: 12, fontWeight: 700, color: "#166534", textAlign: "center" }}>✓ Contract Signed — Ready to Send!</div>}
+        {/* ── Investment Option Selector (between signature and go to contract) ── */}
+        {pricingRevealed && (
+          <div style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 16, marginBottom: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 12 }}>Select Investment Option</div>
+
+            {/* Standard Pricing */}
+            <div
+              onClick={() => setSelectedOption(prev => prev === "standard" ? null : "standard")}
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", border: "1.5px solid " + (selectedOption === "standard" ? "#0ea5e9" : "#e2e8f0"), borderRadius: 8, background: selectedOption === "standard" ? "#f0f9ff" : "white", cursor: "pointer", marginBottom: 8 }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid " + (selectedOption === "standard" ? "#0ea5e9" : "#cbd5e1"), background: selectedOption === "standard" ? "#0ea5e9" : "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {selectedOption === "standard" && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "white" }} />}
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0f172a" }}>Standard Pricing</div>
+                  {selectedOption === "standard" && standardMonthly && <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>or ${standardMonthly.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</div>}
+                </div>
+              </div>
+              {selectedOption === "standard" && <div style={{ fontSize: 20, fontWeight: 800, color: "#334155" }}>{fmt(standard)}</div>}
+            </div>
+
+            {/* Admin Savings */}
+            <div
+              onClick={() => setSelectedOption(prev => prev === "priority" ? null : "priority")}
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", border: "1.5px solid " + (selectedOption === "priority" ? "#0ea5e9" : "#e2e8f0"), borderRadius: 8, background: selectedOption === "priority" ? "#f0f9ff" : "white", cursor: "pointer", marginBottom: 8 }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid " + (selectedOption === "priority" ? "#0ea5e9" : "#cbd5e1"), background: selectedOption === "priority" ? "#0ea5e9" : "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {selectedOption === "priority" && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "white" }} />}
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0369a1" }}>Administrative Savings Incentive</div>
+                  {selectedOption === "priority" && <div style={{ fontSize: 11, color: "#22c55e", fontWeight: 700, marginTop: 2 }}>You save {fmt(standard - priority)}</div>}
+                  {selectedOption === "priority" && monthlyPayment && <div style={{ fontSize: 11, color: "#64748b", marginTop: 1 }}>or ${monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</div>}
+                </div>
+              </div>
+              {selectedOption === "priority" && <div style={{ fontSize: 20, fontWeight: 800, color: "#0ea5e9" }}>{fmt(priority)}</div>}
+            </div>
+
+            {/* Admin Clearance */}
+            <div
+              onClick={() => setSelectedOption(prev => prev === "clearance" ? null : "clearance")}
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", border: "1.5px solid " + (selectedOption === "clearance" ? "#f59e0b" : "#e2e8f0"), borderRadius: 8, background: selectedOption === "clearance" ? "#fffbeb" : "white", cursor: "pointer" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid " + (selectedOption === "clearance" ? "#f59e0b" : "#cbd5e1"), background: selectedOption === "clearance" ? "#f59e0b" : "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {selectedOption === "clearance" && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "white" }} />}
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#92400e" }}>Administrative Clearance</div>
+                  {selectedOption === "clearance" && monthlyPayment && <div style={{ fontSize: 11, color: "#64748b", marginTop: 1 }}>or ${monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</div>}
+                </div>
+              </div>
+              {selectedOption === "clearance" && <div style={{ fontSize: 20, fontWeight: 800, color: "#f59e0b" }}>{fmt(priority)}</div>}
+            </div>
+          </div>
+        )}
 
         {/* All action buttons at bottom */}
         {pricingRevealed && (
