@@ -90,7 +90,7 @@ const makeInitialState = () => ({
   misc: { items: [{ id: uid(), description: "", qty: "", unitPrice: "", notes: "" }] },
   notes: "",
   financing: { monthlyPayment: "", customPayment: "" },
-  pricing: { sidingPerSqFt: "", soffitPerLinFt: "", fasciaPerLinFt: "", paintPerSqFt: "", windowPerUnit: "", miscMarkup: "", adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", standardFinancingAdd: "" },
+  pricing: { sidingPerSqFt: "", soffitPerLinFt: "", fasciaPerLinFt: "", paintPerSqFt: "", windowPerUnit: "", miscMarkup: "", adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", clearanceBeatPct: "10", standardFinancingAdd: "" },
   priceRevealed: false,
 });
 
@@ -278,7 +278,51 @@ function PricingStep({ state, onChange }) {
     services.includes("soffit") ? ServiceRow("Soffit Installation", soffitLinFt.toFixed(0), "linear ft", "soffitPerLinFt", "e.g. 8.00", sofTotal) : null,
     services.includes("fascia") ? ServiceRow("Fascia Installation", fasciaLinFt.toFixed(0), "linear ft", "fasciaPerLinFt", "e.g. 8.00", fasTotal) : null,
     services.includes("paint") ? ServiceRow("Exterior Paint", paintSqFt.toFixed(0), "sq ft", "paintPerSqFt", "e.g. 2.50", pntTotal) : null,
-    services.includes("windows") ? ServiceRow("Window Installation", totalWindows, "units", "windowPerUnit", "e.g. 450.00", winTotal) : null,
+    services.includes("windows") ? React.createElement("div", { style: cardStyle },
+      React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 6 } }, "Window Installation"),
+      React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginBottom: 10 } },
+        "Total: ", React.createElement("strong", null, totalWindows + " units")
+      ),
+      React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "flex-end", marginBottom: 10 } },
+        React.createElement("div", { style: { flex: 1 } },
+          React.createElement("label", { style: labelStyle }, "Base price per unit ($)"),
+          React.createElement("input", { style: inputStyle, type: "number", value: p.windowPerUnit||"", onChange: function(e){ set("windowPerUnit", e.target.value); }, placeholder: "e.g. 450.00" })
+        ),
+        PriceBox("TOTAL", winTotal)
+      ),
+      React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6 } }, "Size & Option Upcharges"),
+      React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginBottom: 8 } }, "Add upcharges per unit for size or option upgrades"),
+      React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 8 } },
+        React.createElement("div", { style: { flex: 1 } },
+          React.createElement("label", { style: labelStyle }, "Large (36\"+ wide) +$"),
+          React.createElement("input", { style: inputStyle, type: "number", value: p.windowLargeUpcharge||"", onChange: function(e){ set("windowLargeUpcharge", e.target.value); }, placeholder: "e.g. 100" })
+        ),
+        React.createElement("div", { style: { flex: 1 } },
+          React.createElement("label", { style: labelStyle }, "XL (48\"+ wide) +$"),
+          React.createElement("input", { style: inputStyle, type: "number", value: p.windowXLUpcharge||"", onChange: function(e){ set("windowXLUpcharge", e.target.value); }, placeholder: "e.g. 200" })
+        )
+      ),
+      React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 8 } },
+        React.createElement("div", { style: { flex: 1 } },
+          React.createElement("label", { style: labelStyle }, "Impact Glass +$"),
+          React.createElement("input", { style: inputStyle, type: "number", value: p.windowImpactUpcharge||"", onChange: function(e){ set("windowImpactUpcharge", e.target.value); }, placeholder: "e.g. 150" })
+        ),
+        React.createElement("div", { style: { flex: 1 } },
+          React.createElement("label", { style: labelStyle }, "Bay / Picture +$"),
+          React.createElement("input", { style: inputStyle, type: "number", value: p.windowBayUpcharge||"", onChange: function(e){ set("windowBayUpcharge", e.target.value); }, placeholder: "e.g. 250" })
+        )
+      ),
+      React.createElement("div", { style: { display: "flex", gap: 8 } },
+        React.createElement("div", { style: { flex: 1 } },
+          React.createElement("label", { style: labelStyle }, "Custom Color +$"),
+          React.createElement("input", { style: inputStyle, type: "number", value: p.windowColorUpcharge||"", onChange: function(e){ set("windowColorUpcharge", e.target.value); }, placeholder: "e.g. 75" })
+        ),
+        React.createElement("div", { style: { flex: 1 } },
+          React.createElement("label", { style: labelStyle }, "Egress / Special +$"),
+          React.createElement("input", { style: inputStyle, type: "number", value: p.windowEgressUpcharge||"", onChange: function(e){ set("windowEgressUpcharge", e.target.value); }, placeholder: "e.g. 300" })
+        )
+      )
+    ) : null,
     services.includes("misc") && miscTotal > 0 ? React.createElement("div", { style: cardStyle },
       React.createElement("div", { style: { display: "flex", justifyContent: "space-between" } },
         React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#0f172a" } }, "Miscellaneous"),
@@ -310,10 +354,18 @@ function PricingStep({ state, onChange }) {
     React.createElement("div", { style: { ...cardStyle, borderColor: "#fde68a", background: "#fffbeb" } },
       React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#92400e", marginBottom: 4 } }, "Administrative Clearance Option"),
       React.createElement("div", { style: { fontSize: 11, color: "#a16207", marginBottom: 10, lineHeight: 1.5 } },
-        "Client gets this many days to shop & find a lower price. If they do, provide a written estimate — we will review and beat it by 10%."
+        "Set the shopping period and the percentage we will beat any matching quote by."
       ),
-      React.createElement("label", { style: labelStyle }, "Shopping Period (days)"),
-      React.createElement("input", { style: inputStyle, type: "number", value: p.clearanceDays||"14", onChange: function(e){ set("clearanceDays", e.target.value); }, placeholder: "e.g. 14" })
+      React.createElement("div", { style: { display: "flex", gap: 10 } },
+        React.createElement("div", { style: { flex: 1 } },
+          React.createElement("label", { style: labelStyle }, "Shopping Period (days)"),
+          React.createElement("input", { style: inputStyle, type: "number", value: p.clearanceDays||"14", onChange: function(e){ set("clearanceDays", e.target.value); }, placeholder: "e.g. 14" })
+        ),
+        React.createElement("div", { style: { flex: 1 } },
+          React.createElement("label", { style: labelStyle }, "Beat competing quote by (%)"),
+          React.createElement("input", { style: inputStyle, type: "number", value: p.clearanceBeatPct||"10", onChange: function(e){ set("clearanceBeatPct", e.target.value); }, placeholder: "e.g. 10" })
+        )
+      )
     ),
     React.createElement("div", { style: { background: "linear-gradient(135deg,#0f172a,#1e293b)", borderRadius: 12, padding: 16, marginTop: 4 } },
       React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 700, textTransform: "uppercase", marginBottom: 8 } }, "Job Summary"),
@@ -1025,7 +1077,7 @@ function buildProposalHTML(state, selectedOption, mode) {
     paint:    { walls: [], trim: [], other: [], combinedSqft: "", ...(state.paint || {}) },
     windows:  state.windows || [],
     misc:     { items: [], ...(state.misc || {}) },
-    pricing:  { adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", standardFinancingAdd: "", ...(state.pricing || {}) },
+    pricing:  { adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", clearanceBeatPct: "10", standardFinancingAdd: "", ...(state.pricing || {}) },
     financing: { monthlyPayment: "", ...(state.financing || {}) },
     customer:  { name: "", address: "", phone: "", email: "", photo: "", ...(state.customer || {}) },
     company:   { name: "", address: "", phone: "", license: "", ...(state.company || {}) },
@@ -1848,10 +1900,30 @@ function ContractStep({ state, selectedOption, setStep, steps }) {
     { n: 19, title: "Direct Contract Mandatory Provisions (F.S. 713)", body: "According to Florida's Construction Lien Law, those who work on your property or provide materials and have not been paid in full have a right to enforce their claim for payment against your property (a construction lien). Florida's Construction Lien Law is complex and it is recommended you consult an attorney whenever a specific problem arises." },
   ];
 
+  const clearanceDays = (state.pricing && state.pricing.clearanceDays) || "14";
+  const clearanceBeatPct = (state.pricing && state.pricing.clearanceBeatPct) || "10";
+  const [emailOverride, setEmailOverride] = useState((state.customer && state.customer.email) || "");
+  const [bccEmail, setBccEmail] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const contractPdfHtml = (() => { try { return buildProposalHTML(state, selectedOption, "pdf"); } catch(e) { return ""; } })();
+
   return (
     <div style={S.stepWrap}>
       <h2 style={S.stepTitle}>Contract &amp; Signature</h2>
       <p style={S.stepSub}>Review the full contract with your client, then collect their signature below.</p>
+
+      {/* Full scope of work — same as proposal, with materials list */}
+      <div style={{ marginBottom: 16, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden" }}>
+        <div style={{ padding: "10px 16px", background: "#0f172a", color: "white", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px" }}>
+          Proposal Overview &amp; Scope of Work
+        </div>
+        <iframe
+          srcDoc={contractPdfHtml}
+          style={{ width: "100%", height: 600, border: "none", display: "block" }}
+          title="Contract Scope"
+        />
+      </div>
 
       <div style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 20, marginBottom: 16 }}>
         {/* Header */}
@@ -1878,21 +1950,24 @@ function ContractStep({ state, selectedOption, setStep, steps }) {
             </div>
             <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a" }}>{fmt(chosenTotal)}</div>
           </div>
-          {selectedOption === "clearance" && (
-            <div style={{ background: "#fffbeb", border: "1.5px solid #fde68a", borderRadius: 8, padding: "12px 14px", fontSize: 11, color: "#78350f", lineHeight: 1.7, marginTop: 10 }}>
-              <strong>Administrative Clearance:</strong> Client has <strong>{(state.pricing && state.pricing.clearanceDays) || "14"} days</strong> to find a lower price. A written estimate on the competing company&apos;s official letterhead is required. If the scope matches exactly, New Direction Construction will beat it by 10%.
-            </div>
-          )}
         </div>
 
-        {/* Scope summary */}
-        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Scope of Work</div>
-          {state.services.map(svc => {
-            const labels = { siding: "James Hardie Siding Installation", soffit: "Soffit Installation", fascia: "Fascia Installation", paint: "Exterior Paint — Four-Directional Spray Method", windows: "Window Installation", misc: "Additional Items" };
-            return <div key={svc} style={{ display: "flex", alignItems: "center", padding: "4px 0", fontSize: 11, color: "#334155", borderBottom: "1px solid #f8fafc" }}><span style={{ color: "#22c55e", fontWeight: 800, marginRight: 8 }}>✓</span><span style={{ fontWeight: 600 }}>{labels[svc] || svc}</span></div>;
-          })}
-        </div>
+        {/* Price Assurance clause — clearance only */}
+        {selectedOption === "clearance" && (
+          <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
+            <div style={{ fontSize: 10, fontWeight: 800, color: "#92400e", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Price Assurance &amp; Comparison Guarantee</div>
+            <div style={{ fontSize: 10.5, color: "#78350f", lineHeight: 1.8, background: "#fffbeb", border: "1.5px solid #fde68a", borderRadius: 8, padding: "14px 16px" }}>
+              <p style={{ margin: "0 0 10px" }}>Client is authorized to execute this agreement with a review period of <strong>{clearanceDays} days</strong>, as specified in the contract, to obtain and evaluate alternative quotes. By signing this agreement, the Client affirms their intent to move forward with our company for the completion of the project, with the sole purpose of the review period being to confirm they are receiving the most competitive price.</p>
+              <p style={{ margin: "0 0 10px" }}>Should the Client receive a lower-priced quote during this period, the following conditions must be met for consideration:</p>
+              <div style={{ margin: "0 0 10px 0" }}>
+                <div style={{ margin: "4px 0" }}>1. The competing quote must be provided in written form. Verbal estimates will not be accepted.</div>
+                <div style={{ margin: "4px 0" }}>2. The scope of work, materials, quality, warranties, and overall services outlined in the competing quote must be equivalent to those included in this agreement.</div>
+              </div>
+              <p style={{ margin: 0 }}>Upon verification that the competing quote meets all criteria and represents an identical scope and standard of work, we agree to not only match the competitor&apos;s price but to beat it by an additional <strong>{clearanceBeatPct}%</strong>.</p>
+              <p style={{ margin: "8px 0 0", fontStyle: "italic", color: "#92400e" }}>This guarantee is contingent upon a fair and accurate comparison of all relevant project details and applies only within the specified review period.</p>
+            </div>
+          </div>
+        )}
 
         {/* Terms & Conditions */}
         <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
@@ -1937,6 +2012,39 @@ function ContractStep({ state, selectedOption, setStep, steps }) {
       </div>
 
       {hasSigned && <div style={{ background: "#dcfce7", border: "1.5px solid #86efac", borderRadius: 8, padding: "12px 16px", marginBottom: 12, fontSize: 12, fontWeight: 700, color: "#166534", textAlign: "center" }}>✓ Contract Signed!</div>}
+
+      {/* Email & PDF — always visible, more prominent after signing */}
+      <div style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 16, marginBottom: 12 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 12 }}>Send &amp; Save</div>
+        <div style={{ marginBottom: 10 }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>Customer Email</label>
+          <input style={{ width: "100%", boxSizing: "border-box", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 14, color: "#1e293b", outline: "none" }} type="email" value={emailOverride} onChange={e => setEmailOverride(e.target.value)} placeholder="customer@email.com" />
+        </div>
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>BCC — Your Email</label>
+          <input style={{ width: "100%", boxSizing: "border-box", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 14, color: "#1e293b", outline: "none" }} type="email" value={bccEmail} onChange={e => setBccEmail(e.target.value)} placeholder="yourname@email.com" />
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <button
+            style={{ background: "linear-gradient(135deg,#0ea5e9,#0369a1)", color: "white", border: "none", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 14, cursor: "pointer", opacity: sending ? 0.7 : 1 }}
+            onClick={() => { setSending(true); alert("Email integration: connect EmailJS or SendGrid to send. Download PDF and email manually for now."); setSending(false); }}
+            disabled={sending}
+          >
+            {sending ? "Sending..." : "📧 Email Signed Contract (with Materials List)"}
+          </button>
+          <button
+            style={{ background: "white", color: "#0f172a", border: "1.5px solid #0f172a", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
+            onClick={() => {
+              const clientName = (state.customer.name || "Client").replace(/[^a-zA-Z0-9 ]/g, "").trim().replace(/ /g, "_");
+              const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
+              const newWin = window.open("", "_blank");
+              if (newWin) { newWin.document.write(contractPdfHtml); newWin.document.close(); newWin.document.title = "NDC_Contract_" + clientName + "_" + dateStr; setTimeout(() => { newWin.focus(); newWin.print(); }, 800); }
+            }}
+          >
+            🖨️ Save / Print Contract PDF
+          </button>
+        </div>
+      </div>
 
       <button onClick={() => setStep(steps.findIndex(s => s.key === "preview"))} style={{ background: "white", color: "#475569", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "12px 24px", fontWeight: 600, fontSize: 14, cursor: "pointer", width: "100%" }}>
         ← Back to Proposal
