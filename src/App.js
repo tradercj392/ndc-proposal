@@ -1321,6 +1321,28 @@ function buildProposalHTML(state, selectedOption, mode) {
     // preview or pdf — show investment options
     body += `<div class='sec'><div class='lbl'>Investment Options</div>`;
     if (mode === "preview") {
+      // Build itemized pricing rows for standard option
+      const t = calcGrandTotal(state);
+      const svcPriceMap = {
+        siding:  { label: scopeMap.siding  ? scopeMap.siding.label  : "Siding",   val: t.sid  * 1.0835 },
+        soffit:  { label: scopeMap.soffit  ? scopeMap.soffit.label  : "Soffits",  val: t.sof  * 1.0835 },
+        fascia:  { label: scopeMap.fascia  ? scopeMap.fascia.label  : "Fascia",   val: t.fas  * 1.0835 },
+        paint:   { label: scopeMap.paint   ? scopeMap.paint.label   : "Paint",    val: t.pnt  * 1.0835 },
+        windows: { label: scopeMap.windows ? scopeMap.windows.label : "Windows",  val: t.win  * 1.0835 },
+        misc:    { label: scopeMap.misc    ? scopeMap.misc.label    : "Misc",     val: t.msc  * 1.0835 },
+      };
+      const itemizedRows = state.services
+        .filter(svc => svcPriceMap[svc] && svcPriceMap[svc].val > 0)
+        .map(svc => "<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#475569'>" + svcPriceMap[svc].label + "</span><span style='font-weight:700;color:#334155'>" + fmt(svcPriceMap[svc].val) + "</span></div>")
+        .join("");
+      const itemizedBlock = itemizedRows.length > 0
+        ? "<div style='margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0'>" +
+          "<div style='font-size:9.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px'>Price Breakdown</div>" +
+          itemizedRows +
+          "<div style='display:flex;justify-content:space-between;padding:8px 0 0;font-size:12px;font-weight:800;color:#0f172a'><span>Total</span><span>" + fmt(standard) + "</span></div>" +
+          "</div>"
+        : "";
+
       body += `
       <div class='opt ${selectedOption === "standard" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'standard'},'*')">
         <div style='display:flex;justify-content:space-between;align-items:center'>
@@ -1333,7 +1355,32 @@ function buildProposalHTML(state, selectedOption, mode) {
             ${standardMonthly ? "<div style='font-size:12px;color:#64748b;margin-top:3px'>or <strong style=\"color:#0f172a\">$" + standardMonthly.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo</strong></div>" : ""}
           </div>
         </div>
-      </div>
+        ${selectedOption === "standard" ? itemizedBlock : ""}
+      </div>`;
+
+      // Admin savings itemized block
+      const adminPriceMap = {
+        siding:  { label: scopeMap.siding  ? scopeMap.siding.label  : "Siding",   val: t.sid  },
+        soffit:  { label: scopeMap.soffit  ? scopeMap.soffit.label  : "Soffits",  val: t.sof  },
+        fascia:  { label: scopeMap.fascia  ? scopeMap.fascia.label  : "Fascia",   val: t.fas  },
+        paint:   { label: scopeMap.paint   ? scopeMap.paint.label   : "Paint",    val: t.pnt  },
+        windows: { label: scopeMap.windows ? scopeMap.windows.label : "Windows",  val: t.win  },
+        misc:    { label: scopeMap.misc    ? scopeMap.misc.label    : "Misc",     val: t.msc  },
+      };
+      const adminItemizedRows = state.services
+        .filter(svc => adminPriceMap[svc] && adminPriceMap[svc].val > 0)
+        .map(svc => "<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e0f2fe;font-size:11px'><span style='color:#475569'>" + adminPriceMap[svc].label + "</span><span style='font-weight:700;color:#0369a1'>" + fmt(adminPriceMap[svc].val) + "</span></div>")
+        .join("");
+      const adminItemizedBlock = adminItemizedRows.length > 0
+        ? "<div style='margin-top:12px;padding-top:12px;border-top:1px solid #bae6fd'>" +
+          "<div style='font-size:9.5px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px'>Price Breakdown</div>" +
+          adminItemizedRows +
+          "<div style='display:flex;justify-content:space-between;padding:8px 0 4px;font-size:12px;font-weight:800;color:#0ea5e9'><span>Total</span><span>" + fmt(priority) + "</span></div>" +
+          "<div style='font-size:10px;color:#166534;font-weight:700;margin-top:2px'>You save " + fmt(standard - priority) + " vs. standard pricing</div>" +
+          "</div>"
+        : "";
+
+      body += `
       <div class='opt ${selectedOption === "priority" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'priority'},'*')">
         <div style='display:flex;justify-content:space-between;align-items:center'>
           <div style='display:flex;align-items:center'>
@@ -1342,7 +1389,7 @@ function buildProposalHTML(state, selectedOption, mode) {
           </div>
           ${selectedOption === "priority" ? "<div style='text-align:right'><div style='font-size:24px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div>" + (monthlyPayment ? "<div style='font-size:12px;color:#64748b;margin-top:3px'>or <strong style=\"color:#0f172a\">$" + monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo</strong></div>" : "") + "</div>" : ""}
         </div>
-        ${selectedOption === "priority" ? "<div class='badge' style='margin-top:8px'>You save " + fmt(standard - priority) + "</div>" : ""}
+        ${selectedOption === "priority" ? "<div class='badge' style='margin-top:8px'>You save " + fmt(standard - priority) + "</div>" + adminItemizedBlock : ""}
       </div>
       <div class='opt ${selectedOption === "clearance" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'clearance'},'*')" style='border-color:${selectedOption === "clearance" ? "#f59e0b" : "#e2e8f0"};background:${selectedOption === "clearance" ? "#fffbeb" : "white"}'>
         <div style='display:flex;justify-content:space-between;align-items:center'>
