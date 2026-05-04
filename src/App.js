@@ -118,17 +118,25 @@ function calcWindows(windows) {
 }
 function calcGrandTotal(state) {
   const p = state.pricing || {};
-  const sidingArea = state.siding.walls.reduce((a,w)=>a+parseFloat(w.sqft||0),0);
-  const sid = state.services.includes("siding") ? (p.sidingPerSqFt ? sidingArea * parseFloat(p.sidingPerSqFt) : parseFloat(calcSiding(state.siding).totalCost)) : 0;
-  const soffitLinFt = state.soffit.items.reduce((a,i)=>a+parseFloat(i.linearFt||0),0);
-  const sof = state.services.includes("soffit") ? (p.soffitPerLinFt ? soffitLinFt * parseFloat(p.soffitPerLinFt) : calcSoffit(state.soffit)) : 0;
-  const fasciaLinFt = state.fascia.items.reduce((a,i)=>a+parseFloat(i.linearFt||0),0);
-  const fas = state.services.includes("fascia") ? (p.fasciaPerLinFt ? fasciaLinFt * parseFloat(p.fasciaPerLinFt) : calcSoffit(state.fascia)) : 0;
-  const paintSqFt = parseFloat(state.paint.combinedSqft||0);
-  const pnt = state.services.includes("paint") ? (p.paintPerSqFt ? paintSqFt * parseFloat(p.paintPerSqFt) : calcPaint(state.paint)) : 0;
-  const totalWindows = state.windows.reduce((a,w)=>a+parseFloat(w.qty||1),0);
-  const win = state.services.includes("windows") ? (p.windowPerUnit ? totalWindows * parseFloat(p.windowPerUnit) : calcWindows(state.windows).reduce((a,w)=>a+parseFloat(w.total||0),0)) : 0;
-  const msc = state.services.includes("misc") ? state.misc.items.reduce((a,i)=>a+parseFloat(i.qty||0)*parseFloat(i.unitPrice||0),0) : 0;
+  const services = state.services || [];
+  const sidingWalls = (state.siding && state.siding.walls) || [];
+  const soffitItems = (state.soffit && state.soffit.items) || [];
+  const fasciaItems = (state.fascia && state.fascia.items) || [];
+  const windows     = state.windows || [];
+  const miscItems   = (state.misc && state.misc.items) || [];
+  const paintData   = state.paint || {};
+
+  const sidingArea  = sidingWalls.reduce((a,w)=>a+parseFloat(w.sqft||0),0);
+  const sid = services.includes("siding") ? (p.sidingPerSqFt ? sidingArea * parseFloat(p.sidingPerSqFt) : parseFloat(calcSiding(state.siding||{}).totalCost||0)) : 0;
+  const soffitLinFt = soffitItems.reduce((a,i)=>a+parseFloat(i.linearFt||0),0);
+  const sof = services.includes("soffit") ? (p.soffitPerLinFt ? soffitLinFt * parseFloat(p.soffitPerLinFt) : calcSoffit(state.soffit||{})) : 0;
+  const fasciaLinFt = fasciaItems.reduce((a,i)=>a+parseFloat(i.linearFt||0),0);
+  const fas = services.includes("fascia") ? (p.fasciaPerLinFt ? fasciaLinFt * parseFloat(p.fasciaPerLinFt) : calcSoffit(state.fascia||{})) : 0;
+  const paintSqFt   = parseFloat(paintData.combinedSqft||0);
+  const pnt = services.includes("paint") ? (p.paintPerSqFt ? paintSqFt * parseFloat(p.paintPerSqFt) : calcPaint(paintData)) : 0;
+  const totalWindows = windows.reduce((a,w)=>a+parseFloat(w.qty||1),0);
+  const win = services.includes("windows") ? (p.windowPerUnit ? totalWindows * parseFloat(p.windowPerUnit) : calcWindows(windows).reduce((a,w)=>a+parseFloat(w.total||0),0)) : 0;
+  const msc = services.includes("misc") ? miscItems.reduce((a,i)=>a+parseFloat(i.qty||0)*parseFloat(i.unitPrice||0),0) : 0;
   return { sid, sof, fas, pnt, win, msc, total: sid+sof+fas+pnt+win+msc };
 }
 
@@ -214,12 +222,12 @@ function PriceGateStep({ onConfirm, services }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function PricingStep({ state, onChange }) {
   var p = state.pricing || {};
-  var services = state.services;
+  var services = state.services || [];
   function set(k, v) { onChange(Object.assign({}, p, { [k]: v })); }
 
-  var sidingArea = state.siding.walls.reduce(function(a,w){ return a + parseFloat(w.sqft||0); }, 0);
-  var soffitLinFt = state.soffit.items.reduce(function(a,i){ return a + parseFloat(i.linearFt||0); }, 0);
-  var fasciaLinFt = state.fascia.items.reduce(function(a,i){ return a + parseFloat(i.linearFt||0); }, 0);
+  var sidingArea  = ((state.siding && state.siding.walls) || []).reduce(function(a,w){ return a + parseFloat(w.sqft||0); }, 0);
+  var soffitLinFt = ((state.soffit && state.soffit.items) || []).reduce(function(a,i){ return a + parseFloat(i.linearFt||0); }, 0);
+  var fasciaLinFt = ((state.fascia && state.fascia.items) || []).reduce(function(a,i){ return a + parseFloat(i.linearFt||0); }, 0);
   var paintSqFt = parseFloat(state.paint.combinedSqft||0);
   var totalWindows = state.windows.reduce(function(a,w){ return a + parseFloat(w.qty||1); }, 0);
   var miscTotal = state.misc.items.reduce(function(a,i){ return a + parseFloat(i.qty||0)*parseFloat(i.unitPrice||0); }, 0);
@@ -1007,6 +1015,24 @@ function NotesStep({ notes, onChange }) {
 // mode: "pdf"     = overview + scope + pricing (static) + full materials list
 // ─────────────────────────────────────────────────────────────────────────────
 function buildProposalHTML(state, selectedOption, mode) {
+  // Null-safety: ensure all arrays exist before any access
+  const safe = {
+    ...state,
+    services: state.services || [],
+    siding:   { walls: [], sidingType: "", ...(state.siding || {}) },
+    soffit:   { items: [], ...(state.soffit || {}) },
+    fascia:   { items: [], ...(state.fascia || {}) },
+    paint:    { walls: [], trim: [], other: [], combinedSqft: "", ...(state.paint || {}) },
+    windows:  state.windows || [],
+    misc:     { items: [], ...(state.misc || {}) },
+    pricing:  { adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", standardFinancingAdd: "", ...(state.pricing || {}) },
+    financing: { monthlyPayment: "", ...(state.financing || {}) },
+    customer:  { name: "", address: "", phone: "", email: "", photo: "", ...(state.customer || {}) },
+    company:   { name: "", address: "", phone: "", license: "", ...(state.company || {}) },
+    notes:     state.notes || "",
+  };
+  // Use safe from here on
+  state = safe;
   const t = calcGrandTotal(state);
   const priority = t.total;
   const standard = t.total * 1.0835;
@@ -1439,9 +1465,9 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
     return () => window.removeEventListener("message", handler);
   }, []);
 
-  const scopeHtml   = buildProposalHTML(state, selectedOption, "scope");
-  const previewHtml = buildProposalHTML(state, selectedOption, "preview");
-  const pdfHtml     = buildProposalHTML(state, selectedOption, "pdf");
+  const scopeHtml   = (() => { try { return buildProposalHTML(state, selectedOption, "scope");   } catch(e) { return "<html><body><p style='padding:20px;color:red'>Proposal error: " + e.message + "</p></body></html>"; } })();
+  const previewHtml = (() => { try { return buildProposalHTML(state, selectedOption, "preview"); } catch(e) { return "<html><body><p style='padding:20px;color:red'>Proposal error: " + e.message + "</p></body></html>"; } })();
+  const pdfHtml     = (() => { try { return buildProposalHTML(state, selectedOption, "pdf");     } catch(e) { return "<html><body><p style='padding:20px;color:red'>Proposal error: " + e.message + "</p></body></html>"; } })();
   const iframeHtml  = pricingRevealed ? previewHtml : scopeHtml;
 
   const svcLabels = { siding: "James Hardie Siding Installation", soffit: "Soffit Installation", fascia: "Fascia Installation", paint: "Exterior Paint — Four-Directional Spray Method", windows: "Window Installation", misc: "Additional Items" };
@@ -1758,21 +1784,24 @@ function App() {
       const saved = localStorage.getItem("ndc_state");
       if (!saved) return makeInitialState();
       const parsed = JSON.parse(saved);
+      // Validate critical fields — if missing, merge with defaults
       const defaults = makeInitialState();
-      // Merge top-level keys so new fields (like clearanceDays) always exist
-      return {
+      const merged = {
         ...defaults,
         ...parsed,
-        pricing: { ...defaults.pricing, ...(parsed.pricing || {}) },
+        services:  Array.isArray(parsed.services)  ? parsed.services  : defaults.services,
+        windows:   Array.isArray(parsed.windows)   ? parsed.windows   : defaults.windows,
+        pricing:   { ...defaults.pricing,  ...(parsed.pricing  || {}) },
         financing: { ...defaults.financing, ...(parsed.financing || {}) },
-        company: { ...defaults.company, ...(parsed.company || {}) },
-        customer: { ...defaults.customer, ...(parsed.customer || {}) },
-        siding: { ...defaults.siding, ...(parsed.siding || {}) },
-        soffit: { ...defaults.soffit, ...(parsed.soffit || {}) },
-        fascia: { ...defaults.fascia, ...(parsed.fascia || {}) },
-        paint: { ...defaults.paint, ...(parsed.paint || {}) },
-        misc: { ...defaults.misc, ...(parsed.misc || {}) },
+        company:   { ...defaults.company,   ...(parsed.company   || {}) },
+        customer:  { ...defaults.customer,  ...(parsed.customer  || {}) },
+        siding:    { ...defaults.siding,    ...(parsed.siding    || {}), walls: Array.isArray(parsed.siding && parsed.siding.walls)   ? parsed.siding.walls   : defaults.siding.walls },
+        soffit:    { ...defaults.soffit,    ...(parsed.soffit    || {}), items: Array.isArray(parsed.soffit && parsed.soffit.items)   ? parsed.soffit.items   : defaults.soffit.items },
+        fascia:    { ...defaults.fascia,    ...(parsed.fascia    || {}), items: Array.isArray(parsed.fascia && parsed.fascia.items)   ? parsed.fascia.items   : defaults.fascia.items },
+        paint:     { ...defaults.paint,     ...(parsed.paint     || {}), walls: Array.isArray(parsed.paint  && parsed.paint.walls)   ? parsed.paint.walls    : defaults.paint.walls,  trim: Array.isArray(parsed.paint && parsed.paint.trim) ? parsed.paint.trim : defaults.paint.trim },
+        misc:      { ...defaults.misc,      ...(parsed.misc      || {}), items: Array.isArray(parsed.misc   && parsed.misc.items)    ? parsed.misc.items     : defaults.misc.items },
       };
+      return merged;
     } catch { return makeInitialState(); }
   });
   const [selectedOption, setSelectedOption] = useState(null);
