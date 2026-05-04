@@ -1320,25 +1320,18 @@ function buildProposalHTML(state, selectedOption, mode) {
         <div style='display:flex;justify-content:space-between;align-items:center'>
           <div style='display:flex;align-items:center'>
             <div class='radio ${selectedOption === "standard" ? "on" : ""}'>${selectedOption === "standard" ? "<div class='dot'></div>" : ""}</div>
-            <div>
-              <div style='font-weight:800;font-size:13px'>Standard Pricing</div>
-              <div style='font-size:10px;color:#64748b;margin-top:2px'>Email proposal — no contract today</div>
-            </div>
+            <div style='font-weight:800;font-size:13px'>Standard Pricing</div>
           </div>
-          ${selectedOption === "standard"
-            ? "<div style='text-align:right'><div style='font-size:24px;font-weight:800;color:#334155'>" + fmt(standard) + "</div>" + (standardMonthly ? "<div style='font-size:12px;color:#64748b;margin-top:3px'>or <strong style=\"color:#0f172a\">$" + standardMonthly.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo</strong></div>" : "") + "</div>"
-            : "<div style='font-size:11px;color:#94a3b8;font-style:italic'>Tap to reveal</div>"}
+          ${selectedOption === "standard" ? "<div style='text-align:right'><div style='font-size:24px;font-weight:800;color:#334155'>" + fmt(standard) + "</div>" + (standardMonthly ? "<div style='font-size:12px;color:#64748b;margin-top:3px'>or <strong style=\"color:#0f172a\">$" + standardMonthly.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo</strong></div>" : "") + "</div>" : ""}
         </div>
       </div>
       <div class='opt ${selectedOption === "priority" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'priority'},'*')">
         <div style='display:flex;justify-content:space-between;align-items:center'>
           <div style='display:flex;align-items:center'>
             <div class='radio ${selectedOption === "priority" ? "on" : ""}'>${selectedOption === "priority" ? "<div class='dot'></div>" : ""}</div>
-            <div style='font-size:9.5px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px'>Administrative Savings Incentive — Sign Today</div>
+            <div style='font-weight:800;font-size:13px;color:#0369a1'>Administrative Savings Incentive</div>
           </div>
-          ${selectedOption === "priority"
-            ? "<div style='text-align:right'><div style='font-size:24px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div>" + (monthlyPayment ? "<div style='font-size:12px;color:#64748b;margin-top:3px'>or <strong style=\"color:#0f172a\">$" + monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo</strong></div>" : "") + "</div>"
-            : "<div style='font-size:11px;color:#94a3b8;font-style:italic'>Tap to reveal</div>"}
+          ${selectedOption === "priority" ? "<div style='text-align:right'><div style='font-size:24px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div>" + (monthlyPayment ? "<div style='font-size:12px;color:#64748b;margin-top:3px'>or <strong style=\"color:#0f172a\">$" + monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo</strong></div>" : "") + "</div>" : ""}
         </div>
         ${selectedOption === "priority" ? "<div class='badge' style='margin-top:8px'>You save " + fmt(standard - priority) + "</div>" : ""}
       </div>
@@ -1346,14 +1339,9 @@ function buildProposalHTML(state, selectedOption, mode) {
         <div style='display:flex;justify-content:space-between;align-items:center'>
           <div style='display:flex;align-items:center'>
             <div class='radio' style='border-color:${selectedOption === "clearance" ? "#f59e0b" : "#cbd5e1"};background:${selectedOption === "clearance" ? "#f59e0b" : "white"}'>${selectedOption === "clearance" ? "<div class='dot'></div>" : ""}</div>
-            <div>
-              <div style='font-weight:800;font-size:13px;color:#92400e'>Administrative Clearance</div>
-              <div style='font-size:10px;color:#a16207;margin-top:2px'>Shop &amp; compare — we'll beat any matching quote by 10%</div>
-            </div>
+            <div style='font-weight:800;font-size:13px;color:#92400e'>Administrative Clearance</div>
           </div>
-          ${selectedOption === "clearance"
-            ? "<div style='text-align:right'><div style='font-size:24px;font-weight:800;color:#f59e0b'>" + fmt(priority) + "</div>" + (monthlyPayment ? "<div style='font-size:12px;color:#64748b;margin-top:3px'>or <strong style=\"color:#0f172a\">$" + monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo</strong></div>" : "") + "</div>"
-            : "<div style='font-size:11px;color:#94a3b8;font-style:italic'>Tap to reveal</div>"}
+          ${selectedOption === "clearance" ? "<div style='text-align:right'><div style='font-size:24px;font-weight:800;color:#f59e0b'>" + fmt(priority) + "</div>" + (monthlyPayment ? "<div style='font-size:12px;color:#64748b;margin-top:3px'>or <strong style=\"color:#0f172a\">$" + monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo</strong></div>" : "") + "</div>" : ""}
         </div>
         ${selectedOption === "clearance" ? "<div style='margin-top:12px;padding-top:12px;border-top:1px solid #fde68a;background:#fef3c7;border-radius:8px;padding:12px 14px;font-size:11px;color:#92400e;line-height:1.7'>You have <strong>" + clearanceDays + " days</strong> to shop and find a lower price for the exact same scope of work.<br><br>If you find a lower price, provide us with a <strong>written estimate on the competing company's official letterhead</strong> covering the exact same materials, specifications, and scope. We will review it to confirm it matches our proposal exactly.<br><br><strong>If it matches — we will not only meet their price, we will beat it by 10%.</strong></div>" : ""}
       </div>`;
