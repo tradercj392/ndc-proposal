@@ -1328,7 +1328,10 @@ function buildProposalHTML(state, selectedOption, mode) {
             <div class='radio ${selectedOption === "standard" ? "on" : ""}'>${selectedOption === "standard" ? "<div class='dot'></div>" : ""}</div>
             <div style='font-weight:800;font-size:13px'>Standard Pricing</div>
           </div>
-          ${selectedOption === "standard" ? "<div style='text-align:right'><div style='font-size:24px;font-weight:800;color:#334155'>" + fmt(standard) + "</div>" + (standardMonthly ? "<div style='font-size:12px;color:#64748b;margin-top:3px'>or <strong style=\"color:#0f172a\">$" + standardMonthly.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo</strong></div>" : "") + "</div>" : ""}
+          <div style='text-align:right'>
+            <div style='font-size:24px;font-weight:800;color:#334155'>${fmt(standard)}</div>
+            ${standardMonthly ? "<div style='font-size:12px;color:#64748b;margin-top:3px'>or <strong style=\"color:#0f172a\">$" + standardMonthly.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo</strong></div>" : ""}
+          </div>
         </div>
       </div>
       <div class='opt ${selectedOption === "priority" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'priority'},'*')">
@@ -1349,7 +1352,7 @@ function buildProposalHTML(state, selectedOption, mode) {
           </div>
           ${selectedOption === "clearance" ? "<div style='text-align:right'><div style='font-size:24px;font-weight:800;color:#f59e0b'>" + fmt(priority) + "</div>" + (monthlyPayment ? "<div style='font-size:12px;color:#64748b;margin-top:3px'>or <strong style=\"color:#0f172a\">$" + monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo</strong></div>" : "") + "</div>" : ""}
         </div>
-        ${selectedOption === "clearance" ? "<div style='margin-top:12px;padding-top:12px;border-top:1px solid #fde68a;background:#fef3c7;border-radius:8px;padding:12px 14px;font-size:11px;color:#92400e;line-height:1.7'>You have <strong>" + clearanceDays + " days</strong> to shop and find a lower price for the exact same scope of work.<br><br>If you find a lower price, provide us with a <strong>written estimate on the competing company's official letterhead</strong> covering the exact same materials, specifications, and scope. We will review it to confirm it matches our proposal exactly.<br><br><strong>If it matches — we will not only meet their price, we will beat it by 10%.</strong></div>" : ""}
+        ${selectedOption === "clearance" ? "<div style='margin-top:12px;padding-top:12px;border-top:1px solid #fde68a;background:#fef3c7;border-radius:8px;padding:12px 14px;font-size:11px;color:#92400e;line-height:1.7'>You have <strong>" + clearanceDays + " days</strong> to shop and find a lower price for the exact same scope of work.<br><br>If you find a lower price, provide us with a <strong>written estimate on the competing company&apos;s official letterhead</strong> covering the exact same materials, specifications, and scope. We will review it to confirm it matches our proposal exactly.<br><br><strong>If it matches — we will not only meet their price, we will beat it by 10%.</strong></div>" : ""}
       </div>`;
     } else {
       // pdf — static
@@ -1451,7 +1454,7 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
   useEffect(() => {
     function handler(e) {
       if (!e.data) return;
-      if (e.data.type === "revealPricing") setPricingRevealed(true);
+      if (e.data.type === "revealPricing") { setPricingRevealed(true); setSelectedOption(prev => prev || "standard"); }
       if (e.data.type === "selectOption")  setSelectedOption(prev => prev === e.data.option ? null : e.data.option);
       if (e.data.type === "selectPayment") setSelectedPayment(e.data.payment);
     }
@@ -1533,19 +1536,6 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
               {selectedOption === "standard" ? fmt(standard) : fmt(priority)}
             </span>
           </div>
-        )}
-
-        {/* Proceed to Contract button — shown when any signable option selected */}
-        {pricingRevealed && (selectedOption === "standard" || selectedOption === "priority" || selectedOption === "clearance") && (
-          <button
-            style={{
-              background: selectedOption === "clearance" ? "linear-gradient(135deg,#f59e0b,#d97706)" : selectedOption === "standard" ? "linear-gradient(135deg,#475569,#1e293b)" : "linear-gradient(135deg,#0ea5e9,#0369a1)",
-              color: "white", border: "none", borderRadius: 10, padding: "14px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%", marginBottom: 12
-            }}
-            onClick={() => { const el = document.getElementById("contract-section"); if (el) el.scrollIntoView({ behavior: "smooth" }); }}
-          >
-            ✍️ Proceed to Contract &amp; Sign
-          </button>
         )}
 
         {/* ── CONTRACT SECTIONS (shown after pricing revealed + option selected) ── */}
@@ -1709,9 +1699,21 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
 
         {hasSigned && <div style={{ background: "#dcfce7", border: "1.5px solid #86efac", borderRadius: 8, padding: "12px 16px", marginBottom: 12, fontSize: 12, fontWeight: 700, color: "#166534", textAlign: "center" }}>✓ Contract Signed — Ready to Send!</div>}
 
-        {/* Email / PDF */}
+        {/* All action buttons at bottom */}
         {pricingRevealed && (
           <>
+            {/* Proceed to Contract — only when option selected */}
+            {selectedOption && (
+              <button
+                style={{
+                  background: selectedOption === "clearance" ? "linear-gradient(135deg,#f59e0b,#d97706)" : selectedOption === "standard" ? "linear-gradient(135deg,#475569,#1e293b)" : "linear-gradient(135deg,#0ea5e9,#0369a1)",
+                  color: "white", border: "none", borderRadius: 10, padding: "14px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%", marginBottom: 10
+                }}
+                onClick={() => { const el = document.getElementById("contract-section"); if (el) el.scrollIntoView({ behavior: "smooth" }); }}
+              >
+                ✍️ Proceed to Contract &amp; Sign
+              </button>
+            )}
             <div style={{ marginBottom: 10 }}>
               <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>Customer Email</label>
               <input style={{ width: "100%", boxSizing: "border-box", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 15, color: "#1e293b", outline: "none" }} type="email" value={emailOverride} onChange={e => setEmailOverride(e.target.value)} placeholder="customer@email.com" />
@@ -1742,7 +1744,7 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
               </button>
             </div>
             <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 10, textAlign: "center", lineHeight: 1.5 }}>
-              Preview shows overview & scope only. PDF includes full materials list.
+              Preview shows overview &amp; scope only. PDF includes full materials list.
             </p>
           </>
         )}
