@@ -642,7 +642,7 @@ function SoffitStepSimple({ data, onChange, title = "Soffits" }) {
     : ["Wood Soffit", "Aluminum Soffit", "Vinyl Soffit", "T1-11 / Plywood Soffit", "Fiber Cement Soffit", "No Existing Material", "Other"];
   const newMaterials = title === "Fascia"
     ? ["Aluminum Fascia", "HardieTrim Fascia", "PVC Fascia", "Wood (painted)", "Other"]
-    : ["Aluminum Vented Soffit", "Vinyl Vented Soffit", "Aluminum Solid Soffit", "Vinyl Solid Soffit", "Other"];
+    : ["James Hardie Vented Soffit", "Aluminum Vented Soffit", "Vinyl Vented Soffit", "Aluminum Solid Soffit", "Vinyl Solid Soffit", "Other"];
 
   return (
     <div style={S.stepWrap}>
@@ -806,7 +806,7 @@ function PaintStep({ data, onChange }) {
 }
 
 const WIN_OPTS = {
-  manufacturers: ["PGT Innovations", "CGI Windows & Doors", "Impact Resistant Solutions (IRS)", "Andersen Windows", "Pella Windows", "Simonton Windows", "Jeld-Wen", "MI Windows", "Ply Gem / Atrium", "Thermoseal Windows", "Other"],
+  manufacturers: ["PGT Innovations", "CGI Windows & Doors", "Impact Resistant Solutions (IRS)", "Andersen Windows", "Pella Windows", "Simonton Windows", "Alside Mezzo", "Jeld-Wen", "MI Windows", "Ply Gem / Atrium", "Thermoseal Windows", "Other"],
   frameTypes: ["Vinyl", "Aluminum", "Fiberglass", "Wood-Clad", "Composite"],
   frameColors: ["White", "Bronze", "Black", "Tan / Beige", "Gray", "Cream", "Custom Color"],
   styles: ["Single Hung", "Double Hung", "Sliding / Gliding", "Casement", "Awning", "Fixed / Picture", "Hopper", "Bay / Bow", "Garden"],
@@ -1076,10 +1076,13 @@ function buildProposalHTML(state, selectedOption, mode) {
         "Install HardieTrim at all corners, windows, doors, and eaves",
         "Final inspection per James Hardie installation requirements",
       ].filter(Boolean),
-      detail: state.siding.walls.map(w => {
-        const prod = w.hardieProduct === "lap" ? "HardiePlank Lap" : w.hardieProduct === "panel" ? "HardiePanel" : w.hardieProduct === "shake" ? "HardieShingle" : "Hardie";
-        return (w.location || w.label) + ": " + prod + (w.hardieSize ? " " + w.hardieSize : "") + (w.hardieTexture ? ", " + w.hardieTexture : "") + (w.sqft ? " — " + w.sqft + " sq ft" : "") + (w.notes ? " (" + w.notes + ")" : "");
-      }),
+      detail: [
+        ...state.siding.walls.map(w => {
+          const prod = w.hardieProduct === "lap" ? "HardiePlank Lap" : w.hardieProduct === "panel" ? "HardiePanel" : w.hardieProduct === "shake" ? "HardieShingle" : "Hardie";
+          return (w.location || w.label) + ": " + prod + (w.hardieSize ? " " + w.hardieSize : "") + (w.hardieTexture ? ", " + w.hardieTexture : "") + (w.sqft ? " — " + w.sqft + " sq ft" : "") + (w.notes ? " (" + w.notes + ")" : "");
+        }),
+        "Total: " + state.siding.walls.reduce((a, w) => a + parseFloat(w.sqft || 0), 0).toFixed(0) + " sq ft",
+      ],
     },
     soffit: {
       label: "Soffit Installation",
@@ -1266,7 +1269,10 @@ function buildProposalHTML(state, selectedOption, mode) {
     if (info.detail && info.detail.length > 0) {
       body += `<div style='font-size:9.5px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px'>Details</div>`;
       info.detail.forEach((d, i) => {
-        body += `<div style='font-size:10.5px;color:#334155;line-height:1.8;padding:3px 0;border-bottom:1px solid #f8fafc'>&bull; ${d}</div>`;
+        const isTotal = d.startsWith("Total:");
+        body += isTotal
+          ? `<div style='font-size:11px;color:#0f172a;font-weight:800;line-height:1.8;padding:5px 0;border-top:1.5px solid #e2e8f0;margin-top:2px'>${d}</div>`
+          : `<div style='font-size:10.5px;color:#334155;line-height:1.8;padding:3px 0;border-bottom:1px solid #f8fafc'>&bull; ${d}</div>`;
       });
     }
 
@@ -1446,7 +1452,7 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
     function handler(e) {
       if (!e.data) return;
       if (e.data.type === "revealPricing") setPricingRevealed(true);
-      if (e.data.type === "selectOption")  setSelectedOption(e.data.option);
+      if (e.data.type === "selectOption")  setSelectedOption(prev => prev === e.data.option ? null : e.data.option);
       if (e.data.type === "selectPayment") setSelectedPayment(e.data.payment);
     }
     window.addEventListener("message", handler);
@@ -1529,9 +1535,22 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
           </div>
         )}
 
+        {/* Proceed to Contract button — shown when any signable option selected */}
+        {pricingRevealed && (selectedOption === "standard" || selectedOption === "priority" || selectedOption === "clearance") && (
+          <button
+            style={{
+              background: selectedOption === "clearance" ? "linear-gradient(135deg,#f59e0b,#d97706)" : selectedOption === "standard" ? "linear-gradient(135deg,#475569,#1e293b)" : "linear-gradient(135deg,#0ea5e9,#0369a1)",
+              color: "white", border: "none", borderRadius: 10, padding: "14px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%", marginBottom: 12
+            }}
+            onClick={() => { const el = document.getElementById("contract-section"); if (el) el.scrollIntoView({ behavior: "smooth" }); }}
+          >
+            ✍️ Proceed to Contract &amp; Sign
+          </button>
+        )}
+
         {/* ── CONTRACT SECTIONS (shown after pricing revealed + option selected) ── */}
         {pricingRevealed && selectedOption && (
-          <div style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+          <div id="contract-section" style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 20, marginBottom: 16 }}>
 
             {/* Agreed Investment */}
             <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
