@@ -1846,6 +1846,7 @@ function ContractStep({ state, selectedOption, setStep, steps }) {
   const canvasRef = useRef(null);
   const [isSigning, setIsSigning] = useState(false);
   const [hasSigned, setHasSigned] = useState(false);
+  const [sigDataUrl, setSigDataUrl] = useState(null);
   const [repName, setRepName] = useState("CJ Shires");
 
   const t = calcGrandTotal(state);
@@ -1872,10 +1873,15 @@ function ContractStep({ state, selectedOption, setStep, steps }) {
     ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.strokeStyle = "#0f172a";
     ctx.lineTo(x, y); ctx.stroke();
   };
-  const endDraw = () => { setIsSigning(false); setHasSigned(true); };
+  const endDraw = () => {
+    setIsSigning(false);
+    setHasSigned(true);
+    setSigDataUrl(canvasRef.current.toDataURL("image/png"));
+  };
   const clearSig = () => {
     canvasRef.current.getContext("2d").clearRect(0, 0, 600, 120);
     setHasSigned(false);
+    setSigDataUrl(null);
   };
 
   const terms = [
@@ -2037,8 +2043,34 @@ function ContractStep({ state, selectedOption, setStep, steps }) {
             onClick={() => {
               const clientName = (state.customer.name || "Client").replace(/[^a-zA-Z0-9 ]/g, "").trim().replace(/ /g, "_");
               const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
+              // Build contract PDF — same as proposal PDF but with signature block appended
+              const sigBlock = sigDataUrl
+                ? `<div style='margin-top:24px;padding-top:16px;border-top:2px solid #0f172a'>
+                    <div style='font-size:9.5px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Client Signature</div>
+                    <div style='font-size:10px;color:#475569;font-style:italic;margin-bottom:8px'>By signing below, I acknowledge that I have read and agree to all terms and conditions and authorize New Direction Construction to proceed with the scope of work for <strong>${fmt(chosenTotal)}</strong>.</div>
+                    <img src='${sigDataUrl}' style='width:100%;max-width:400px;height:80px;object-fit:contain;border:1px solid #e2e8f0;border-radius:4px;background:#f8fafc;display:block'/>
+                    <div style='display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:#64748b'>
+                      <span>${state.customer.name} — ${today}</span>
+                      <span>NDC Representative: ${repName} — ${today}</span>
+                    </div>
+                  </div>`
+                : `<div style='margin-top:24px;padding-top:16px;border-top:2px solid #0f172a'>
+                    <div style='font-size:9.5px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Client Signature</div>
+                    <div style='border-bottom:1.5px solid #0f172a;height:60px;margin-bottom:6px'></div>
+                    <div style='display:flex;justify-content:space-between;font-size:10px;color:#64748b'>
+                      <span>${state.customer.name} — ${today}</span>
+                      <span>NDC Representative: ${repName} — ${today}</span>
+                    </div>
+                  </div>`;
+              // Inject signature block into the PDF HTML before closing body
+              const pdfWithSig = contractPdfHtml.replace("</body>", sigBlock + "</body>");
               const newWin = window.open("", "_blank");
-              if (newWin) { newWin.document.write(contractPdfHtml); newWin.document.close(); newWin.document.title = "NDC_Contract_" + clientName + "_" + dateStr; setTimeout(() => { newWin.focus(); newWin.print(); }, 800); }
+              if (newWin) {
+                newWin.document.write(pdfWithSig);
+                newWin.document.close();
+                newWin.document.title = "NDC_Contract_" + clientName + "_" + dateStr;
+                setTimeout(() => { newWin.focus(); newWin.print(); }, 800);
+              }
             }}
           >
             🖨️ Save / Print Contract PDF
