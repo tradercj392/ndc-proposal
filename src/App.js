@@ -839,11 +839,41 @@ function PaintStep({ data, onChange }) {
       <h2 style={S.stepTitle}>Paint</h2>
       <p style={S.stepSub}>Select paint products and colors. Enter the total area — pricing is reviewed after all services.</p>
 
+      {/* Whole house vs partial */}
+      <div style={{ ...S.card, marginBottom: 16, background: "white", border: "1.5px solid #e2e8f0" }}>
+        <label style={{ fontSize: 12, fontWeight: 800, color: "#0f172a", display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>Paint Scope</label>
+        <select
+          style={{ ...S.input, fontWeight: 700, fontSize: 14, background: "white" }}
+          value={data.paintScope || ""}
+          onChange={e => onChange({ ...data, paintScope: e.target.value })}
+        >
+          <option value="">-- Select Scope --</option>
+          <option value="Whole House">Whole House</option>
+          <option value="Partial — Front Only">Partial — Front Only</option>
+          <option value="Partial — Rear Only">Partial — Rear Only</option>
+          <option value="Partial — Selected Sides">Partial — Selected Sides</option>
+          <option value="Trim Only">Trim Only</option>
+          <option value="Accent Areas Only">Accent Areas Only</option>
+        </select>
+        {data.paintScope && data.paintScope.startsWith("Partial") && (
+          <div style={{ marginTop: 10 }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>Describe which areas/sides</label>
+            <input
+              style={{ ...S.input }}
+              type="text"
+              value={data.paintScopeDetail || ""}
+              onChange={e => onChange({ ...data, paintScopeDetail: e.target.value })}
+              placeholder="e.g. Front and left side only, excluding garage"
+            />
+          </div>
+        )}
+      </div>
+
       <div style={{ ...S.card, marginBottom: 20, background: "#f0f9ff", border: "1.5px solid #7dd3fc" }}>
         <label style={{ fontSize: 12, fontWeight: 800, color: "#0369a1", display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>Total Paint Area</label>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 120 }}>
-            <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>TOTAL SQ FT (Walls & Trim)</label>
+            <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>TOTAL SQ FT (Walls &amp; Trim)</label>
             <input style={{ ...S.input, fontSize: 15, fontWeight: 700 }} type="number" value={data.combinedSqft || ""} onChange={(e) => onChange({ ...data, combinedSqft: e.target.value })} placeholder="e.g. 1200" />
           </div>
         </div>
@@ -1159,8 +1189,9 @@ function buildProposalHTML(state, selectedOption, mode) {
       detail: state.fascia.items.map(i => (i.label || "Area") + ": " + (i.newMaterial || "Material TBD") + (i.linearFt ? " — " + i.linearFt + " linear ft" : "") + (i.notes ? " (" + i.notes + ")" : "")),
     },
     paint: {
-      label: "Exterior Paint",
+      label: "Exterior Paint" + (state.paint.paintScope ? " — " + state.paint.paintScope : "") + " — Four-Directional Spray Method",
       bullets: [
+        state.paint.paintScope ? "Scope: " + state.paint.paintScope + (state.paint.paintScopeDetail ? " (" + state.paint.paintScopeDetail + ")" : "") : null,
         "Pressure wash all exterior surfaces — allow to fully dry",
         "Fill all cracks, gaps, and holes with exterior-grade elastomeric caulk",
         "Mask all windows, doors, fixtures, and landscaping",
@@ -1169,7 +1200,7 @@ function buildProposalHTML(state, selectedOption, mode) {
         "Hand-paint all trim, corners, shutters, and detail areas for complete coverage",
         "Remove masking, clean overspray, dispose of materials properly",
         "Final walk-through to confirm coverage and finish quality",
-      ],
+      ].filter(Boolean),
       detail: [
         ...state.paint.walls.filter(a => a.paintProduct || a.colorName).map(a => "Walls: " + (a.paintProduct || "") + (a.colorName ? " — " + a.colorName : "") + (a.notes ? " (" + a.notes + ")" : "")),
         ...state.paint.trim.filter(a => a.paintProduct || a.colorName).map(a => "Trim: " + (a.paintProduct || "") + (a.colorName ? " — " + a.colorName : "") + (a.notes ? " (" + a.notes + ")" : "")),
@@ -1599,7 +1630,7 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
   const pdfHtml     = (() => { try { return buildProposalHTML(state, selectedOption, "pdf");     } catch(e) { return "<html><body><p style='padding:20px;color:red'>Proposal error: " + e.message + "</p></body></html>"; } })();
   const iframeHtml  = pricingRevealed ? previewHtml : scopeHtml;
 
-  const svcLabels = { siding: "James Hardie Siding Installation", soffit: "Soffit Installation", fascia: "Fascia Installation", paint: "Exterior Paint — Four-Directional Spray Method", windows: "Window Installation", misc: "Additional Items" };
+  const svcLabels = { siding: "James Hardie Siding Installation", soffit: "Soffit Installation", fascia: "Fascia Installation", paint: "Exterior Paint" + (state.paint && state.paint.paintScope ? " — " + state.paint.paintScope : "") + " — Four-Directional Spray Method", windows: "Window Installation", misc: "Additional Items" };
 
   const terms = [
     { n: 1,  title: "Office Approval", body: "All contracts are subject to approval by Company manager and/or officer of the Company." },
