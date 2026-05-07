@@ -1463,10 +1463,16 @@ function buildProposalHTML(state, selectedOption, mode) {
         }
       } else if (selectedOption === "clearance") {
         body += `<div class='row' style='font-size:13px'><span style='font-weight:700;color:#92400e'>Administrative Clearance</span><span style='font-weight:800;color:#f59e0b'>${fmt(priority)}</span></div>`;
-        body += `<div style='margin-top:10px;border:2px solid #fde68a;border-radius:8px;padding:12px 14px;background:#fffbeb'>`;
-        body += `<div style='font-size:10px;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Administrative Clearance Terms</div>`;
-        body += `<div style='font-size:11px;color:#78350f;line-height:1.7'>You have <strong>${clearanceDays} days</strong> to shop and find a lower price for the exact same scope of work. If you find a lower price, provide a <strong>written estimate on the competing company's official letterhead</strong> covering the exact same materials, specifications, and scope. We will review it carefully to confirm it matches our proposal exactly. <strong>If it matches — we will not only meet their price, we will beat it by 10%.</strong></div>`;
-        body += `</div>`;
+        body += `<div style='margin-top:14px;border:2px solid #fde68a;border-radius:8px;padding:14px 16px;background:#fffbeb'>`;
+        body += `<div style='font-size:10px;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px'>Price Assurance &amp; Comparison Guarantee</div>`;
+        body += `<div style='font-size:10.5px;color:#78350f;line-height:1.8'>`;
+        body += `<p style='margin:0 0 8px'>Client is authorized to execute this agreement with a review period of <strong>${clearanceDays} days</strong> to obtain and evaluate alternative quotes. By signing this agreement, the Client affirms their intent to move forward with our company, with the sole purpose of the review period being to confirm they are receiving the most competitive price.</p>`;
+        body += `<p style='margin:0 0 8px'>Should the Client receive a lower-priced quote during this period, the following conditions must be met:</p>`;
+        body += `<p style='margin:0 0 4px'>1. The competing quote must be provided in written form. Verbal estimates will not be accepted.</p>`;
+        body += `<p style='margin:0 0 8px'>2. The scope of work, materials, quality, warranties, and overall services must be equivalent to those included in this agreement.</p>`;
+        body += `<p style='margin:0 0 8px'>Upon verification that the competing quote meets all criteria and represents an identical scope and standard of work, we agree to not only match the competitor's price but to beat it by an additional <strong>${clearanceDays && state.pricing ? (state.pricing.clearanceBeatPct || "10") : "10"}%</strong>.</p>`;
+        body += `<p style='margin:0;font-style:italic'>This guarantee is contingent upon a fair and accurate comparison of all relevant project details and applies only within the specified review period.</p>`;
+        body += `</div></div>`;
       } else {
         // standard (default)
         body += `<div class='row' style='font-size:12px'><span>Standard Pricing</span><span style='font-weight:800'>${fmt(standard)}</span></div>`;
@@ -1481,6 +1487,51 @@ function buildProposalHTML(state, selectedOption, mode) {
   // Notes section if any
   if (state.notes) {
     body += `<div class='sec'><div class='lbl'>Notes</div><div style='font-size:11px;color:#334155;line-height:1.8;white-space:pre-wrap'>${state.notes}</div></div>`;
+  }
+
+  // Terms & Conditions — pdf mode only
+  if (mode === "pdf") {
+    const tcItems = [
+      { n: 1,  title: "Office Approval", body: "All contracts are subject to approval by Company manager and/or officer of the Company." },
+      { n: 2,  title: "Damages for Cancellation", body: "You have a limited right to cancel this contract. You may do so only in the time stated in the contract or allowed by law." },
+      { n: 3,  title: "Amount of Cancellation Damages", body: "The agreed damages are 25% of the contracted price. If any part of the work has been completed, the agreed damages are the proportionate price of the work completed plus 24% of the balance of the cash contracted price. You will also be liable for court costs, interest and our attorney fees. The buyer is liable for all costs incurred for special ordered material and/or products if cancelled after the cancellation time frame allowed by law." },
+      { n: 4,  title: "Access", body: "You will permit us to go onto the premises. The premises include the land and the buildings. You will obtain any consent needed for us to go onto the premises to complete work. If we are prevented from completing the work, because of denial of access, then we have no further duty to perform the contract. You will then immediately pay us agreed damages as stated in Paragraph 3." },
+      { n: 5,  title: "Insurance", body: "We have Public Liability Insurance, Property Damage Insurance and Installer/Applicators have Workers Compensation Insurance." },
+      { n: 6,  title: "Debris", body: "We will remove the job related debris." },
+      { n: 7,  title: "Interference and Performance", body: "We are not responsible for any interference with performance for reason beyond our reasonable control. This includes strikes, fires, weather, inability to obtain materials, etc." },
+      { n: 8,  title: "Warranties", body: "The only express warranties which apply to labor or materials furnished under this contract are those in our warranty certificates. The only remedies for breach of warranty are those stated in our warranty certificates. We have no liability for incidental or consequential damages." },
+      { n: 9,  title: "Option to Declare Balance Due", body: "We may declare the contract cancelled by you and collect both for work completed and agreed damages if: (a) You sell, mortgage or transfer any interest of the premises before full payment to us; (b) Anyone places an attachment, writ, lien or any other process against the premises; (c) There is a default in payment of taxes on the premises." },
+      { n: 10, title: "Consumer Credit Contract Notice", body: "NOTICE: Any holder of this consumer credit contract is subject to all claims and defenses which the debtor could assert against the seller of goods or services obtained herewith. Recovery hereunder by the debtor shall not exceed amounts paid by the debtor hereunder." },
+      { n: 11, title: "Entire Agreement", body: "This contract sets forth the entire agreement between the parties and supersedes any and all prior understandings, agreements or representations made by Company, its agents or representatives. This contract can only be changed in writing by an amendment signed by both Company and you." },
+      { n: 12, title: "Compliance with Law", body: "If any provision or term contained herein shall be construed to be invalid, unenforceable or in violation of any law, rule or regulation, then this contract shall be interpreted as if said provision or term has been omitted and the validity of the remaining provisions shall not be affected." },
+      { n: 13, title: "Florida Homeowner's Construction Recovery Fund (F.S.489)", body: "Payment may be available from the Homeowner's Construction Recovery Fund if you lose money on a project performed under contract where the loss results from specified violations of Florida Law by a licensed contractor. Contact: Florida Homeowner's Construction Recovery Fund, 1940 N. Monroe Street, Suite 60, Tallahassee, FL 32339." },
+      { n: 14, title: "Binding Arbitration Agreement", body: "Any disputes arising in any manner relating to this agreement that cannot be resolved by negotiation shall be subject to mandatory exclusive and binding arbitration. Neither party may take any other action by way of request for injunctive relief or otherwise. The purchaser and dealer agree to abide by the ruling of the Arbitration Association in lieu of filing a lawsuit." },
+      { n: 15, title: "Transfer", body: "You may not transfer your duties under this contract to any person without written consent by us." },
+      { n: 16, title: "Successors", body: "This contract binds your heirs, executors and administrators." },
+      { n: 17, title: "Verification", body: "Our construction specialists check the measurements and calculations made by the sales representative. If a significant mistake or special construction problems occur, we reserve the right to cancel the contract without liability and will refund any down payment made by you." },
+      { n: 18, title: "Notice to all Florida Residents", body: "Florida law requires that sixty days before you file a lawsuit for defective construction, you must deliver written notice of any construction conditions you allege are defective and provide the contractor the opportunity to inspect. There are strict deadlines and procedures under Florida Law." },
+      { n: 19, title: "Direct Contract Mandatory Provisions (F.S. 713)", body: "According to Florida's Construction Lien Law (Florida Statutes 713.001-713.37), those who work on your property or provide materials and have not been paid in full have a right to enforce their claim for payment against your property. This claim is known as a construction lien. Florida's Construction Lien Law is complex and it is recommended you consult an attorney whenever a specific problem arises." },
+      { n: 20, title: "Scope Inclusions", body: "This contract includes all necessary permits, labor, and materials required to complete the agreed scope of work. This also includes all finish work as needed to deliver a complete and professional final result." },
+    ];
+    body += `<div class='sec'><div class='lbl'>Terms and Conditions</div>`;
+    tcItems.forEach((tc, i) => {
+      body += `<div style='margin-bottom:9px;padding-bottom:9px;${i < tcItems.length - 1 ? "border-bottom:1px solid #f8fafc" : ""}'>`;
+      body += `<div style='font-size:11px;font-weight:800;color:#0f172a;margin-bottom:2px'>${tc.n}. ${tc.title}</div>`;
+      body += `<div style='font-size:10.5px;color:#475569;line-height:1.75'>${tc.body}</div>`;
+      body += `</div>`;
+    });
+    body += `</div>`;
+
+    // Signature block placeholder — replaced with real sig when printing
+    body += `<div class='sec' id='sig-block'>
+      <div class='lbl'>Client Signature</div>
+      <div style='font-size:10px;color:#475569;font-style:italic;margin-bottom:10px'>By signing below, I acknowledge that I have read and agree to all terms and conditions and authorize New Direction Construction to proceed with the scope of work above for <strong>${fmt(selectedOption === "standard" ? standard : priority)}</strong>.</div>
+      <div id='sig-img-container' style='border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;height:80px;margin-bottom:8px'></div>
+      <div style='display:flex;justify-content:space-between;font-size:10px;color:#64748b;border-top:1.5px solid #0f172a;padding-top:6px;margin-top:4px'>
+        <span>Client: _________________________________ &nbsp; Date: __________</span>
+        <span>NDC Rep: _________________________________ &nbsp; Date: __________</span>
+      </div>
+    </div>`;
   }
 
   const script = mode !== "pdf"
@@ -1885,29 +1936,6 @@ function ContractStep({ state, selectedOption, setStep, steps }) {
     setSigDataUrl(null);
   };
 
-  const terms = [
-    { n: 1,  title: "Office Approval", body: "All contracts are subject to approval by Company manager and/or officer of the Company." },
-    { n: 2,  title: "Damages for Cancellation", body: "You have a limited right to cancel this contract. You may do so only in the time stated in the contract or allowed by law." },
-    { n: 3,  title: "Amount of Cancellation Damages", body: "The agreed damages are 25% of the contracted price. If any part of the work has been completed, the agreed damages are the proportionate price of the work completed plus 24% of the balance of the cash contracted price. You will also be liable for court costs, interest and our attorney fees. The buyer is liable for all costs incurred for special ordered material and/or products if cancelled after the cancellation time frame allowed by law." },
-    { n: 4,  title: "Access", body: "You will permit us to go onto the premises. The premises include the land and the buildings. You will obtain any consent needed for us to go onto the premises to complete work. If we are prevented from completing the work, because of denial of access, then we have no further duty to perform the contract. You will then immediately pay us agreed damages as stated in Paragraph 3." },
-    { n: 5,  title: "Insurance", body: "We have Public Liability Insurance, Property Damage Insurance and Installer/Applicators have Workers Compensation Insurance." },
-    { n: 6,  title: "Debris", body: "We will remove the job related debris." },
-    { n: 7,  title: "Interference and Performance", body: "We are not responsible for any interference with performance for reason beyond our reasonable control. This includes strikes, fires, weather, inability to obtain materials, etc." },
-    { n: 8,  title: "Warranties", body: "The only express warranties which apply to labor or materials furnished under this contract are those in our warranty certificates. The only remedies for breach of warranty are those stated in our warranty certificates. We have no liability for incidental or consequential damages." },
-    { n: 9,  title: "Option to Declare Balance Due", body: "We may declare the contract cancelled by you and collect both for work completed and agreed damages if: (a) You sell, mortgage or transfer any interest of the premises before full payment to us; (b) Anyone places an attachment, writ, lien or any other process against the premises; (c) There is a default in payment of taxes on the premises." },
-    { n: 10, title: "Consumer Credit Contract Notice", body: "NOTICE: Any holder of this consumer credit contract is subject to all claims and defenses which the debtor could assert against the seller of goods or services obtained herewith. Recovery hereunder by the debtor shall not exceed amounts paid by the debtor hereunder." },
-    { n: 11, title: "Entire Agreement", body: "This contract sets forth the entire agreement between the parties and supersedes any and all prior understandings, agreements or representations made by Company, its agents or representatives. This contract can only be changed in writing by an amendment signed by both Company and you." },
-    { n: 12, title: "Compliance with Law", body: "If any provision or term contained herein shall be construed to be invalid, unenforceable or in violation of any law, rule or regulation by any court having jurisdiction thereof, then this contract shall be interpreted as if said provision or term has been omitted and the validity of the remaining provisions shall not be affected." },
-    { n: 13, title: "Florida Homeowner's Construction Recovery Fund (F.S.489)", body: "Payment may be available from the Homeowner's Construction Recovery Fund if you lose money on a project performed under contract where the loss results from specified violations of Florida Law by a licensed contractor. Contact: Florida Homeowner's Construction Recovery Fund, 1940 N. Monroe Street, Suite 60, Tallahassee, FL 32339." },
-    { n: 14, title: "Binding Arbitration Agreement", body: "Any disputes arising in any manner relating to this agreement that cannot be resolved by negotiation shall be subject to mandatory exclusive and binding arbitration. Neither party may take any other action by way of request for injunctive relief or otherwise. The purchaser and dealer agree to abide by the ruling of the Arbitration Association in lieu of filing a lawsuit." },
-    { n: 15, title: "Transfer", body: "You may not transfer your duties under this contract to any person without written consent by us." },
-    { n: 16, title: "Successors", body: "This contract binds your heirs, executors and administrators." },
-    { n: 17, title: "Verification", body: "Our construction specialists check the measurements and calculations made by the sales representative. If a significant mistake or special construction problems occur, we reserve the right to cancel the contract without liability and will refund any down payment made by you." },
-    { n: 18, title: "Notice to all Florida Residents", body: "Florida law requires that sixty days before you file a lawsuit for defective construction, you must deliver written notice of any construction conditions you allege are defective and provide the contractor the opportunity to inspect. There are strict deadlines and procedures under Florida Law." },
-    { n: 19, title: "Direct Contract Mandatory Provisions (F.S. 713)", body: "According to Florida's Construction Lien Law, those who work on your property or provide materials and have not been paid in full have a right to enforce their claim for payment against your property (a construction lien). Florida's Construction Lien Law is complex and it is recommended you consult an attorney whenever a specific problem arises." },
-    { n: 20, title: "Scope Inclusions", body: "This contract includes all necessary permits, labor, and materials required to complete the agreed scope of work. This also includes all finish work as needed to deliver a complete and professional final result." },
-  ];
-
   const clearanceDays = (state.pricing && state.pricing.clearanceDays) || "14";
   const clearanceBeatPct = (state.pricing && state.pricing.clearanceBeatPct) || "10";
   const [emailOverride, setEmailOverride] = useState((state.customer && state.customer.email) || "");
@@ -1921,93 +1949,39 @@ function ContractStep({ state, selectedOption, setStep, steps }) {
       <h2 style={S.stepTitle}>Contract &amp; Signature</h2>
       <p style={S.stepSub}>Review the full contract with your client, then collect their signature below.</p>
 
-      {/* Full scope of work — same as proposal, with materials list */}
-      <div style={{ marginBottom: 16, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden" }}>
+      {/* Full contract in iframe — scope, materials, pricing, T&C */}
+      <div style={{ marginBottom: 16, border: "1.5px solid #e2e8f0", borderRadius: 10, overflow: "hidden" }}>
         <div style={{ padding: "10px 16px", background: "#0f172a", color: "white", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px" }}>
-          Proposal Overview &amp; Scope of Work
+          Full Contract — Scope, Materials &amp; Terms
         </div>
         <iframe
           srcDoc={contractPdfHtml}
-          style={{ width: "100%", height: 600, border: "none", display: "block" }}
-          title="Contract Scope"
+          style={{ width: "100%", height: 700, border: "none", display: "block" }}
+          title="Contract"
         />
       </div>
 
+      {/* Signature canvas */}
       <div style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, paddingBottom: 16, borderBottom: "2.5px solid #0f172a" }}>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 800 }}>{state.company.name || "New Direction Construction"}</div>
-            <div style={{ fontSize: 11, color: "#64748b" }}>{state.company.address}</div>
-            <div style={{ fontSize: 11, color: "#64748b" }}>{state.company.phone} · Lic# {state.company.license}</div>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 9.5, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 4 }}>Prepared For</div>
-            <div style={{ fontSize: 15, fontWeight: 800 }}>{state.customer.name}</div>
-            <div style={{ fontSize: 11, color: "#64748b" }}>{state.customer.address}</div>
-            <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4 }}>{today}</div>
-          </div>
+        <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Client Signature</div>
+        <div style={{ fontSize: 10.5, color: "#475569", lineHeight: 1.7, marginBottom: 10, fontStyle: "italic" }}>
+          By signing below, I acknowledge that I have read and agree to all terms and conditions and authorize New Direction Construction to proceed with the scope of work above for <strong>{fmt(chosenTotal)}</strong>.
+        </div>
+        <div style={{ position: "relative", border: "1.5px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", overflow: "hidden", height: 120 }}>
+          <canvas ref={canvasRef} width={600} height={120}
+            style={{ display: "block", width: "100%", height: 120, touchAction: "none", cursor: "crosshair" }}
+            onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw}
+            onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw}
+          />
+          {!hasSigned && <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 12, color: "#cbd5e1", pointerEvents: "none", fontStyle: "italic" }}>Sign here</div>}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+          <div style={{ fontSize: 10, color: "#64748b" }}>{state.customer.name} · {today}</div>
+          <button onClick={clearSig} style={{ fontSize: 10, color: "#94a3b8", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Clear</button>
         </div>
 
-        {/* Agreed Investment */}
-        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Agreed Investment</div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ fontSize: 12, color: "#334155", fontWeight: 600 }}>
-              {selectedOption === "priority" ? "Administrative Savings Incentive" : selectedOption === "clearance" ? "Administrative Clearance" : "Standard Pricing"}
-            </div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a" }}>{fmt(chosenTotal)}</div>
-          </div>
-        </div>
-
-        {/* Price Assurance clause — clearance only */}
-        {selectedOption === "clearance" && (
-          <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
-            <div style={{ fontSize: 10, fontWeight: 800, color: "#92400e", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Price Assurance &amp; Comparison Guarantee</div>
-            <div style={{ fontSize: 10.5, color: "#78350f", lineHeight: 1.8, background: "#fffbeb", border: "1.5px solid #fde68a", borderRadius: 8, padding: "14px 16px" }}>
-              <p style={{ margin: "0 0 10px" }}>Client is authorized to execute this agreement with a review period of <strong>{clearanceDays} days</strong>, as specified in the contract, to obtain and evaluate alternative quotes. By signing this agreement, the Client affirms their intent to move forward with our company for the completion of the project, with the sole purpose of the review period being to confirm they are receiving the most competitive price.</p>
-              <p style={{ margin: "0 0 10px" }}>Should the Client receive a lower-priced quote during this period, the following conditions must be met for consideration:</p>
-              <div style={{ margin: "0 0 10px 0" }}>
-                <div style={{ margin: "4px 0" }}>1. The competing quote must be provided in written form. Verbal estimates will not be accepted.</div>
-                <div style={{ margin: "4px 0" }}>2. The scope of work, materials, quality, warranties, and overall services outlined in the competing quote must be equivalent to those included in this agreement.</div>
-              </div>
-              <p style={{ margin: 0 }}>Upon verification that the competing quote meets all criteria and represents an identical scope and standard of work, we agree to not only match the competitor&apos;s price but to beat it by an additional <strong>{clearanceBeatPct}%</strong>.</p>
-              <p style={{ margin: "8px 0 0", fontStyle: "italic", color: "#92400e" }}>This guarantee is contingent upon a fair and accurate comparison of all relevant project details and applies only within the specified review period.</p>
-            </div>
-          </div>
-        )}
-
-        {/* Terms & Conditions */}
-        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 12 }}>Terms and Conditions</div>
-          {terms.map((term, i) => (
-            <div key={term.n} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: i < terms.length - 1 ? "1px solid #f8fafc" : "none" }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: "#0f172a", marginBottom: 3 }}>{term.n}. {term.title}</div>
-              <div style={{ fontSize: 10.5, color: "#475569", lineHeight: 1.75 }}>{term.body}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Client Signature */}
-        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Client Signature</div>
-          <div style={{ fontSize: 10.5, color: "#475569", lineHeight: 1.7, marginBottom: 10, fontStyle: "italic" }}>
-            By signing below, I acknowledge that I have read and agree to all terms and conditions and authorize New Direction Construction to proceed with the scope of work above for <strong>{fmt(chosenTotal)}</strong>.
-          </div>
-          <div style={{ position: "relative", border: "1.5px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", overflow: "hidden", height: 120 }}>
-            <canvas ref={canvasRef} width={600} height={120} style={{ display: "block", width: "100%", height: 120, touchAction: "none", cursor: "crosshair" }}
-              onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw}
-              onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw} />
-            {!hasSigned && <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 12, color: "#cbd5e1", pointerEvents: "none", fontStyle: "italic" }}>Sign here</div>}
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-            <div style={{ fontSize: 10, color: "#64748b" }}>{state.customer.name} · {today}</div>
-            <button onClick={clearSig} style={{ fontSize: 10, color: "#94a3b8", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Clear</button>
-          </div>
-        </div>
-
-        {/* Rep Signature */}
-        <div style={{ display: "flex", gap: 16 }}>
+        {/* Rep line */}
+        <div style={{ display: "flex", gap: 16, marginTop: 16 }}>
           <div style={{ flex: 2 }}>
             <input value={repName} onChange={e => setRepName(e.target.value)} style={{ width: "100%", borderBottom: "1.5px solid #0f172a", borderTop: "none", borderLeft: "none", borderRight: "none", outline: "none", fontSize: 14, fontFamily: "Georgia, serif", color: "#0f172a", background: "transparent", boxSizing: "border-box", marginBottom: 4 }} />
             <div style={{ fontSize: 10, color: "#64748b" }}>NDC Representative</div>
@@ -2045,27 +2019,12 @@ function ContractStep({ state, selectedOption, setStep, steps }) {
             onClick={() => {
               const clientName = (state.customer.name || "Client").replace(/[^a-zA-Z0-9 ]/g, "").trim().replace(/ /g, "_");
               const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
-              // Build contract PDF — same as proposal PDF but with signature block appended
-              const sigBlock = sigDataUrl
-                ? `<div style='margin-top:24px;padding-top:16px;border-top:2px solid #0f172a'>
-                    <div style='font-size:9.5px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Client Signature</div>
-                    <div style='font-size:10px;color:#475569;font-style:italic;margin-bottom:8px'>By signing below, I acknowledge that I have read and agree to all terms and conditions and authorize New Direction Construction to proceed with the scope of work for <strong>${fmt(chosenTotal)}</strong>.</div>
-                    <img src='${sigDataUrl}' style='width:100%;max-width:400px;height:80px;object-fit:contain;border:1px solid #e2e8f0;border-radius:4px;background:#f8fafc;display:block'/>
-                    <div style='display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:#64748b'>
-                      <span>${state.customer.name} — ${today}</span>
-                      <span>NDC Representative: ${repName} — ${today}</span>
-                    </div>
-                  </div>`
-                : `<div style='margin-top:24px;padding-top:16px;border-top:2px solid #0f172a'>
-                    <div style='font-size:9.5px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Client Signature</div>
-                    <div style='border-bottom:1.5px solid #0f172a;height:60px;margin-bottom:6px'></div>
-                    <div style='display:flex;justify-content:space-between;font-size:10px;color:#64748b'>
-                      <span>${state.customer.name} — ${today}</span>
-                      <span>NDC Representative: ${repName} — ${today}</span>
-                    </div>
-                  </div>`;
-              // Inject signature block into the PDF HTML before closing body
-              const pdfWithSig = contractPdfHtml.replace("</body>", sigBlock + "</body>");
+              const pdfWithSig = sigDataUrl
+                ? contractPdfHtml.replace(
+                    `<div id='sig-img-container' style='border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;height:80px;margin-bottom:8px'></div>`,
+                    `<img src='${sigDataUrl}' style='width:100%;max-width:400px;height:80px;object-fit:contain;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;display:block'/>`
+                  )
+                : contractPdfHtml;
               const newWin = window.open("", "_blank");
               if (newWin) {
                 newWin.document.write(pdfWithSig);
