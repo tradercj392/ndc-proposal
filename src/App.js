@@ -90,7 +90,7 @@ const makeInitialState = () => ({
   misc: { items: [{ id: uid(), description: "", qty: "", unitPrice: "", notes: "" }] },
   notes: "",
   financing: { monthlyPayment: "", customPayment: "" },
-  pricing: { sidingPerSqFt: "", soffitPerLinFt: "", fasciaPerLinFt: "", paintPerSqFt: "", windowPerUnit: "", miscMarkup: "", adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", clearanceBeatPct: "10", standardFinancingAdd: "" },
+  pricing: { sidingPerSqFt: "", soffitPerLinFt: "", fasciaPerLinFt: "", paintPerSqFt: "", windowPerUnit: "", miscMarkup: "", adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", clearanceBeatPct: "10", standardFinancingAdd: "", daysToBegin: "", daysToComplete: "" },
   priceRevealed: false,
 });
 
@@ -364,6 +364,22 @@ function PricingStep({ state, onChange }) {
         React.createElement("div", { style: { flex: 1 } },
           React.createElement("label", { style: labelStyle }, "Beat competing quote by (%)"),
           React.createElement("input", { style: inputStyle, type: "number", value: p.clearanceBeatPct||"10", onChange: function(e){ set("clearanceBeatPct", e.target.value); }, placeholder: "e.g. 10" })
+        )
+      )
+    ),
+    React.createElement("div", { style: { ...cardStyle, borderColor: "#c7d2fe", background: "#eef2ff" } },
+      React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#3730a3", marginBottom: 4 } }, "Project Timeline"),
+      React.createElement("div", { style: { fontSize: 11, color: "#4338ca", marginBottom: 10, lineHeight: 1.5 } },
+        "These dates will appear on the contract."
+      ),
+      React.createElement("div", { style: { display: "flex", gap: 10 } },
+        React.createElement("div", { style: { flex: 1 } },
+          React.createElement("label", { style: labelStyle }, "Days to begin project"),
+          React.createElement("input", { style: inputStyle, type: "number", value: p.daysToBegin||"", onChange: function(e){ set("daysToBegin", e.target.value); }, placeholder: "e.g. 21" })
+        ),
+        React.createElement("div", { style: { flex: 1 } },
+          React.createElement("label", { style: labelStyle }, "Days to complete project"),
+          React.createElement("input", { style: inputStyle, type: "number", value: p.daysToComplete||"", onChange: function(e){ set("daysToComplete", e.target.value); }, placeholder: "e.g. 14" })
         )
       )
     ),
@@ -1107,7 +1123,7 @@ function buildProposalHTML(state, selectedOption, mode) {
     paint:    { walls: [], trim: [], other: [], combinedSqft: "", ...(state.paint || {}) },
     windows:  state.windows || [],
     misc:     { items: [], ...(state.misc || {}) },
-    pricing:  { adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", clearanceBeatPct: "10", standardFinancingAdd: "", ...(state.pricing || {}) },
+    pricing:  { adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", clearanceBeatPct: "10", standardFinancingAdd: "", daysToBegin: "", daysToComplete: "", ...(state.pricing || {}) },
     financing: { monthlyPayment: "", ...(state.financing || {}) },
     customer:  { name: "", address: "", phone: "", email: "", photo: "", ...(state.customer || {}) },
     company:   { name: "", address: "", phone: "", license: "", ...(state.company || {}) },
@@ -2021,20 +2037,21 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
       </div>
 
       {/* Aqua Financing — shown if client selected financing during proposal */}
-      {usingFinancing && applicableMonthly && (
+      {usingFinancing && (
         <div style={{ background: "white", border: "1.5px solid #bae6fd", borderRadius: 10, padding: 16, marginBottom: 16 }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Aqua Financing</div>
           <div style={{ background: "#f0f9ff", borderRadius: 8, padding: "12px 14px", fontSize: 11, color: "#0f172a", lineHeight: 1.8 }}>
             <div style={{ fontWeight: 800, color: "#0369a1", marginBottom: 6, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.5px" }}>Aqua Financing Agreement</div>
             The client agrees to utilize <strong>Aqua Financing</strong> to cover <strong>{financingPct}%</strong> of the total project cost of <strong>{fmt(chosenTotal)}</strong>, amounting to <strong>{fmt(chosenTotal * financingPct / 100)}</strong>.
             {financingPct < 100 && <span> The remaining balance of <strong>{fmt(chosenTotal * (100 - financingPct) / 100)}</strong> ({100 - financingPct}%) is due out of pocket.</span>}
-            {" "}The approximate monthly payment through Aqua Financing is <strong>${(applicableMonthly * financingPct / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</strong>. Financing is subject to credit approval and the terms of the Aqua Financing agreement, which will be provided separately.
+            {applicableMonthly ? <span> The approximate monthly payment through Aqua Financing is <strong>${(applicableMonthly * financingPct / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</strong>.</span> : null}
+            {" "}Financing is subject to credit approval and the terms of the Aqua Financing agreement, which will be provided separately.
           </div>
         </div>
       )}
 
-      {/* Deposit & Payment Schedule — shown if selected during proposal */}
-      {showDeposit && depositOption && (
+      {/* Deposit & Payment Schedule — shown if any deposit option was selected */}
+      {depositOption && (
         <div style={{ background: "white", border: "1.5px solid #bae6fd", borderRadius: 10, padding: 16, marginBottom: 16 }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Deposit &amp; Payment Schedule</div>
           <div style={{ background: "#f0f9ff", borderRadius: 8, padding: "12px 14px", fontSize: 11, color: "#0f172a", lineHeight: 1.8 }}>
@@ -2042,6 +2059,25 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
             {depositOption === "50" && <span>A deposit of <strong>{fmt(chosenTotal * 0.5)}</strong> (50% of the total project cost of <strong>{fmt(chosenTotal)}</strong>) is due at the time of signing. The remaining balance of <strong>{fmt(chosenTotal * 0.5)}</strong> is due upon satisfactory completion of all work.</span>}
             {depositOption === "33" && <span>A deposit of <strong>{fmt(chosenTotal * 0.33)}</strong> (33%) is due at the time of signing. A second payment of <strong>{fmt(chosenTotal * 0.33)}</strong> (33%) is due upon delivery of materials and commencement of work by the crew. The final balance of <strong>{fmt(chosenTotal - chosenTotal * 0.33 * 2)}</strong> is due upon satisfactory completion of all work.</span>}
             {depositOption === "custom" && customDepositText && <span>{customDepositText}</span>}
+          </div>
+        </div>
+      )}
+
+      {/* Project Timeline — shown when days are entered in rep pricing */}
+      {(state.pricing && (state.pricing.daysToBegin || state.pricing.daysToComplete)) && (
+        <div style={{ background: "white", border: "1.5px solid #c7d2fe", borderRadius: 10, padding: 16, marginBottom: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: "#3730a3", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Project Timeline</div>
+          <div style={{ background: "#eef2ff", borderRadius: 8, padding: "12px 14px", fontSize: 11, color: "#0f172a", lineHeight: 1.8 }}>
+            {state.pricing.daysToBegin && (
+              <div style={{ marginBottom: state.pricing.daysToComplete ? 8 : 0 }}>
+                New Direction Construction agrees to begin work on this project within <strong>{state.pricing.daysToBegin} days</strong> of the signed contract date, subject to material availability and weather conditions.
+              </div>
+            )}
+            {state.pricing.daysToComplete && (
+              <div>
+                The project is expected to be completed within <strong>{state.pricing.daysToComplete} days</strong> of commencement, barring unforeseen circumstances, weather delays, or client-requested changes to scope.
+              </div>
+            )}
           </div>
         </div>
       )}
