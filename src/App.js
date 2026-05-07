@@ -1586,7 +1586,7 @@ function buildProposalHTML(state, selectedOption, mode) {
   return `<!DOCTYPE html><html><head><meta charset='utf-8'><style>${css}</style></head><body>${body}${script}</body></html>`;
 }
 
-function PreviewStep({ state, setState, setStep, steps, selectedOption, setSelectedOption, selectedPayment, setSelectedPayment, showDeposit, setShowDeposit, depositOption, setDepositOption, customDepositText, setCustomDepositText }) {
+function PreviewStep({ state, setState, setStep, steps, selectedOption, setSelectedOption, selectedPayment, setSelectedPayment, showDeposit, setShowDeposit, depositOption, setDepositOption, customDepositText, setCustomDepositText, usingFinancing, setUsingFinancing, financingPct, setFinancingPct }) {
   const [sending, setSending] = useState(false);
   const [emailOverride, setEmailOverride] = useState(state.customer.email);
   const [bccEmail, setBccEmail] = useState("");
@@ -1594,8 +1594,6 @@ function PreviewStep({ state, setState, setStep, steps, selectedOption, setSelec
 
   // Contract state
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-  const [usingFinancing, setUsingFinancing] = useState(false);
-  const [financingPct, setFinancingPct] = useState(100);
 
   const t = calcGrandTotal(state);
   const priority = t.total;
@@ -1949,7 +1947,7 @@ function PreviewStep({ state, setState, setStep, steps, selectedOption, setSelec
 // ─────────────────────────────────────────────────────────────────────────────
 // ContractStep — T&C + signature, shown after client selects option on preview
 // ─────────────────────────────────────────────────────────────────────────────
-function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depositOption, customDepositText }) {
+function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depositOption, customDepositText, usingFinancing, financingPct }) {
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const canvasRef = useRef(null);
   const [isSigning, setIsSigning] = useState(false);
@@ -1961,6 +1959,11 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
   const priority = t.total;
   const standard = t.total * 1.0835;
   const chosenTotal = selectedOption === "standard" ? standard : priority;
+
+  const monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
+  const standardFinancingAdd = state.pricing && state.pricing.standardFinancingAdd ? parseFloat(state.pricing.standardFinancingAdd) : null;
+  const standardMonthly = (monthlyPayment && standardFinancingAdd) ? monthlyPayment + standardFinancingAdd : null;
+  const applicableMonthly = selectedOption === "standard" ? standardMonthly : monthlyPayment;
 
   const startDraw = (e) => {
     setIsSigning(true);
@@ -2016,6 +2019,19 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
           title="Contract"
         />
       </div>
+
+      {/* Aqua Financing — shown if client selected financing during proposal */}
+      {usingFinancing && applicableMonthly && (
+        <div style={{ background: "white", border: "1.5px solid #bae6fd", borderRadius: 10, padding: 16, marginBottom: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Aqua Financing</div>
+          <div style={{ background: "#f0f9ff", borderRadius: 8, padding: "12px 14px", fontSize: 11, color: "#0f172a", lineHeight: 1.8 }}>
+            <div style={{ fontWeight: 800, color: "#0369a1", marginBottom: 6, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.5px" }}>Aqua Financing Agreement</div>
+            The client agrees to utilize <strong>Aqua Financing</strong> to cover <strong>{financingPct}%</strong> of the total project cost of <strong>{fmt(chosenTotal)}</strong>, amounting to <strong>{fmt(chosenTotal * financingPct / 100)}</strong>.
+            {financingPct < 100 && <span> The remaining balance of <strong>{fmt(chosenTotal * (100 - financingPct) / 100)}</strong> ({100 - financingPct}%) is due out of pocket.</span>}
+            {" "}The approximate monthly payment through Aqua Financing is <strong>${(applicableMonthly * financingPct / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</strong>. Financing is subject to credit approval and the terms of the Aqua Financing agreement, which will be provided separately.
+          </div>
+        </div>
+      )}
 
       {/* Deposit & Payment Schedule — shown if selected during proposal */}
       {showDeposit && depositOption && (
@@ -2189,6 +2205,8 @@ function App() {
   const [showDeposit, setShowDeposit] = useState(false);
   const [depositOption, setDepositOption] = useState(null);
   const [customDepositText, setCustomDepositText] = useState("");
+  const [usingFinancing, setUsingFinancing] = useState(false);
+  const [financingPct, setFinancingPct] = useState(100);
   const [showPricingModal, setShowPricingModal] = useState(false);
 
   const steps = buildSteps(state.services);
@@ -2304,8 +2322,8 @@ function App() {
         {currentKey === "paint"      && <PaintStep data={state.paint} onChange={(v) => setState((s) => ({ ...s, paint: v }))} />}
         {currentKey === "windows"    && <WindowsStep windows={state.windows} onChange={(v) => setState((s) => ({ ...s, windows: v }))} />}
         {currentKey === "misc"       && <MiscStep data={state.misc} onChange={(v) => setState((s) => ({ ...s, misc: v }))} />}
-        {currentKey === "preview"    && <PreviewStep state={state} setState={setState} setStep={setStep} steps={steps} selectedOption={selectedOption} setSelectedOption={setSelectedOption} selectedPayment={selectedPayment} setSelectedPayment={setSelectedPayment} showDeposit={showDeposit} setShowDeposit={setShowDeposit} depositOption={depositOption} setDepositOption={setDepositOption} customDepositText={customDepositText} setCustomDepositText={setCustomDepositText} />}
-        {currentKey === "contract"   && <ContractStep state={state} selectedOption={selectedOption} setStep={setStep} steps={steps} showDeposit={showDeposit} depositOption={depositOption} customDepositText={customDepositText} />}
+        {currentKey === "preview"    && <PreviewStep state={state} setState={setState} setStep={setStep} steps={steps} selectedOption={selectedOption} setSelectedOption={setSelectedOption} selectedPayment={selectedPayment} setSelectedPayment={setSelectedPayment} showDeposit={showDeposit} setShowDeposit={setShowDeposit} depositOption={depositOption} setDepositOption={setDepositOption} customDepositText={customDepositText} setCustomDepositText={setCustomDepositText} usingFinancing={usingFinancing} setUsingFinancing={setUsingFinancing} financingPct={financingPct} setFinancingPct={setFinancingPct} />}
+        {currentKey === "contract"   && <ContractStep state={state} selectedOption={selectedOption} setStep={setStep} steps={steps} showDeposit={showDeposit} depositOption={depositOption} customDepositText={customDepositText} usingFinancing={usingFinancing} financingPct={financingPct} />}
       </div>
 
       {/* Nav buttons */}
