@@ -1586,7 +1586,7 @@ function buildProposalHTML(state, selectedOption, mode) {
   return `<!DOCTYPE html><html><head><meta charset='utf-8'><style>${css}</style></head><body>${body}${script}</body></html>`;
 }
 
-function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption, selectedPayment, setSelectedPayment }) {
+function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption, selectedPayment, setSelectedPayment, showDeposit, setShowDeposit, depositOption, setDepositOption, customDepositText, setCustomDepositText }) {
   const [sending, setSending] = useState(false);
   const [emailOverride, setEmailOverride] = useState(state.customer.email);
   const [bccEmail, setBccEmail] = useState("");
@@ -1596,9 +1596,6 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const [usingFinancing, setUsingFinancing] = useState(false);
   const [financingPct, setFinancingPct] = useState(100);
-  const [showDeposit, setShowDeposit] = useState(false);
-  const [depositOption, setDepositOption] = useState(null);
-  const [customDepositText, setCustomDepositText] = useState("");
 
   const t = calcGrandTotal(state);
   const priority = t.total;
@@ -1936,7 +1933,7 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
 // ─────────────────────────────────────────────────────────────────────────────
 // ContractStep — T&C + signature, shown after client selects option on preview
 // ─────────────────────────────────────────────────────────────────────────────
-function ContractStep({ state, selectedOption, setStep, steps }) {
+function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depositOption, customDepositText }) {
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const canvasRef = useRef(null);
   const [isSigning, setIsSigning] = useState(false);
@@ -2003,6 +2000,19 @@ function ContractStep({ state, selectedOption, setStep, steps }) {
           title="Contract"
         />
       </div>
+
+      {/* Deposit & Payment Schedule — shown if selected during proposal */}
+      {showDeposit && depositOption && (
+        <div style={{ background: "white", border: "1.5px solid #bae6fd", borderRadius: 10, padding: 16, marginBottom: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Deposit &amp; Payment Schedule</div>
+          <div style={{ background: "#f0f9ff", borderRadius: 8, padding: "12px 14px", fontSize: 11, color: "#0f172a", lineHeight: 1.8 }}>
+            <div style={{ fontWeight: 800, color: "#0369a1", marginBottom: 6, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.5px" }}>Agreed Payment Terms</div>
+            {depositOption === "50" && <span>A deposit of <strong>{fmt(chosenTotal * 0.5)}</strong> (50% of the total project cost of <strong>{fmt(chosenTotal)}</strong>) is due at the time of signing. The remaining balance of <strong>{fmt(chosenTotal * 0.5)}</strong> is due upon satisfactory completion of all work.</span>}
+            {depositOption === "33" && <span>A deposit of <strong>{fmt(chosenTotal * 0.33)}</strong> (33%) is due at the time of signing. A second payment of <strong>{fmt(chosenTotal * 0.33)}</strong> (33%) is due upon delivery of materials and commencement of work by the crew. The final balance of <strong>{fmt(chosenTotal - chosenTotal * 0.33 * 2)}</strong> is due upon satisfactory completion of all work.</span>}
+            {depositOption === "custom" && customDepositText && <span>{customDepositText}</span>}
+          </div>
+        </div>
+      )}
 
       {/* Signature canvas */}
       <div style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 20, marginBottom: 16 }}>
@@ -2160,6 +2170,9 @@ function App() {
   });
   const [selectedOption, setSelectedOption] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
+  const [showDeposit, setShowDeposit] = useState(false);
+  const [depositOption, setDepositOption] = useState(null);
+  const [customDepositText, setCustomDepositText] = useState("");
   const [showPricingModal, setShowPricingModal] = useState(false);
 
   const steps = buildSteps(state.services);
@@ -2275,8 +2288,8 @@ function App() {
         {currentKey === "paint"      && <PaintStep data={state.paint} onChange={(v) => setState((s) => ({ ...s, paint: v }))} />}
         {currentKey === "windows"    && <WindowsStep windows={state.windows} onChange={(v) => setState((s) => ({ ...s, windows: v }))} />}
         {currentKey === "misc"       && <MiscStep data={state.misc} onChange={(v) => setState((s) => ({ ...s, misc: v }))} />}
-        {currentKey === "preview"    && <PreviewStep state={state} setStep={setStep} steps={steps} selectedOption={selectedOption} setSelectedOption={setSelectedOption} selectedPayment={selectedPayment} setSelectedPayment={setSelectedPayment} />}
-        {currentKey === "contract"   && <ContractStep state={state} selectedOption={selectedOption} setStep={setStep} steps={steps} />}
+        {currentKey === "preview"    && <PreviewStep state={state} setStep={setStep} steps={steps} selectedOption={selectedOption} setSelectedOption={setSelectedOption} selectedPayment={selectedPayment} setSelectedPayment={setSelectedPayment} showDeposit={showDeposit} setShowDeposit={setShowDeposit} depositOption={depositOption} setDepositOption={setDepositOption} customDepositText={customDepositText} setCustomDepositText={setCustomDepositText} />}
+        {currentKey === "contract"   && <ContractStep state={state} selectedOption={selectedOption} setStep={setStep} steps={steps} showDeposit={showDeposit} depositOption={depositOption} customDepositText={customDepositText} />}
       </div>
 
       {/* Nav buttons */}
