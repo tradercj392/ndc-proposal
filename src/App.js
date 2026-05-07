@@ -1112,7 +1112,12 @@ function NotesStep({ notes, onChange }) {
 // mode: "preview" = overview + scope + interactive pricing options
 // mode: "pdf"     = overview + scope + pricing (static) + full materials list
 // ─────────────────────────────────────────────────────────────────────────────
-function buildProposalHTML(state, selectedOption, mode) {
+function buildProposalHTML(state, selectedOption, mode, extras) {
+  extras = extras || {};
+  const usingFinancing   = extras.usingFinancing   || false;
+  const financingPct     = extras.financingPct     || 100;
+  const depositOption    = extras.depositOption    || null;
+  const customDepositText = extras.customDepositText || "";
   // Null-safety: ensure all arrays exist before any access
   const safe = {
     ...state,
@@ -1556,6 +1561,55 @@ function buildProposalHTML(state, selectedOption, mode) {
   // Notes section if any
   if (state.notes) {
     body += `<div class='sec'><div class='lbl'>Notes</div><div style='font-size:11px;color:#334155;line-height:1.8;white-space:pre-wrap'>${state.notes}</div></div>`;
+  }
+
+  // Aqua Financing — pdf mode only, when client selected financing
+  if (mode === "pdf" && usingFinancing) {
+    const chosenForPdf = selectedOption === "standard" ? standard : priority;
+    const financedAmt = chosenForPdf * financingPct / 100;
+    const outOfPocket = chosenForPdf * (100 - financingPct) / 100;
+    body += `<div class='sec'>
+      <div class='lbl'>Aqua Financing Agreement</div>
+      <div style='background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:12px 14px;font-size:11px;color:#0f172a;line-height:1.8'>
+        <div style='font-weight:800;color:#0369a1;margin-bottom:6px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px'>Financing Terms</div>
+        The client agrees to utilize <strong>Aqua Financing</strong> to cover <strong>${financingPct}%</strong> of the total project cost of <strong>${fmt(chosenForPdf)}</strong>, amounting to <strong>${fmt(financedAmt)}</strong>.
+        ${financingPct < 100 ? `The remaining balance of <strong>${fmt(outOfPocket)}</strong> (${100 - financingPct}%) is due out of pocket.` : ""}
+        Financing is subject to credit approval and the terms of the Aqua Financing agreement, which will be provided separately.
+      </div>
+    </div>`;
+  }
+
+  // Deposit & Payment Schedule — pdf mode only, when client selected deposit option
+  if (mode === "pdf" && depositOption) {
+    const chosenForPdf = selectedOption === "standard" ? standard : priority;
+    let depositText = "";
+    if (depositOption === "50") {
+      depositText = `A deposit of <strong>${fmt(chosenForPdf * 0.5)}</strong> (50% of the total project cost of <strong>${fmt(chosenForPdf)}</strong>) is due at the time of signing. The remaining balance of <strong>${fmt(chosenForPdf * 0.5)}</strong> is due upon satisfactory completion of all work.`;
+    } else if (depositOption === "33") {
+      depositText = `A deposit of <strong>${fmt(chosenForPdf * 0.33)}</strong> (33%) is due at the time of signing. A second payment of <strong>${fmt(chosenForPdf * 0.33)}</strong> (33%) is due upon delivery of materials and commencement of work by the crew. The final balance of <strong>${fmt(chosenForPdf - chosenForPdf * 0.33 * 2)}</strong> is due upon satisfactory completion of all work.`;
+    } else if (depositOption === "custom" && customDepositText) {
+      depositText = customDepositText;
+    }
+    if (depositText) {
+      body += `<div class='sec'>
+        <div class='lbl'>Deposit &amp; Payment Schedule</div>
+        <div style='background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:12px 14px;font-size:11px;color:#0f172a;line-height:1.8'>
+          <div style='font-weight:800;color:#0369a1;margin-bottom:6px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px'>Agreed Payment Terms</div>
+          ${depositText}
+        </div>
+      </div>`;
+    }
+  }
+
+  // Project Timeline — pdf mode only
+  if (mode === "pdf" && state.pricing && (state.pricing.daysToBegin || state.pricing.daysToComplete)) {
+    body += `<div class='sec'>
+      <div class='lbl'>Project Timeline</div>
+      <div style='background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:8px;padding:12px 14px;font-size:11px;color:#0f172a;line-height:1.8'>
+        ${state.pricing.daysToBegin ? `<div style='margin-bottom:${state.pricing.daysToComplete ? "8px" : "0"}'>New Direction Construction agrees to begin work on this project within <strong>${state.pricing.daysToBegin} days</strong> of the signed contract date, subject to material availability and weather conditions.</div>` : ""}
+        ${state.pricing.daysToComplete ? `<div>The project is expected to be completed within <strong>${state.pricing.daysToComplete} days</strong> of commencement, barring unforeseen circumstances, weather delays, or client-requested changes to scope.</div>` : ""}
+      </div>
+    </div>`;
   }
 
   // Terms & Conditions — pdf mode only
@@ -2017,7 +2071,7 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
   const [bccEmail, setBccEmail] = useState("");
   const [sending, setSending] = useState(false);
 
-  const contractPdfHtml = (() => { try { return buildProposalHTML(state, selectedOption, "pdf"); } catch(e) { return ""; } })();
+  const contractPdfHtml = (() => { try { return buildProposalHTML(state, selectedOption, "pdf", { usingFinancing, financingPct, depositOption, customDepositText }); } catch(e) { return ""; } })();
 
   return (
     <div style={S.stepWrap}>
