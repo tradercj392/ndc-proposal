@@ -1337,7 +1337,7 @@ function buildProposalHTML(state, selectedOption, mode) {
       <div style='font-size:18px;font-weight:800'>${state.customer.name || "—"}</div>
       <div style='color:#64748b;font-size:11px;margin-top:4px'>${state.customer.address || ""}</div>
       <div style='color:#64748b;font-size:11px'>${state.customer.phone || ""}</div>
-      <div style='color:#94a3b8;font-size:10px;margin-top:6px'>${today} &nbsp;·&nbsp; Valid 30 days</div>
+      <div style='color:#94a3b8;font-size:10px;margin-top:6px'>${today} &nbsp;·&nbsp; Valid for 30 days</div>
     </div>
   </div>`;
 
@@ -2024,18 +2024,6 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
       <h2 style={S.stepTitle}>Contract &amp; Signature</h2>
       <p style={S.stepSub}>Review the full contract with your client, then collect their signature below.</p>
 
-      {/* Full contract in iframe — scope, materials, pricing, T&C */}
-      <div style={{ marginBottom: 16, border: "1.5px solid #e2e8f0", borderRadius: 10, overflow: "hidden" }}>
-        <div style={{ padding: "10px 16px", background: "#0f172a", color: "white", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px" }}>
-          Full Contract — Scope, Materials &amp; Terms
-        </div>
-        <iframe
-          srcDoc={contractPdfHtml}
-          style={{ width: "100%", height: 700, border: "none", display: "block" }}
-          title="Contract"
-        />
-      </div>
-
       {/* Aqua Financing — shown if client selected financing during proposal */}
       {usingFinancing && (
         <div style={{ background: "white", border: "1.5px solid #bae6fd", borderRadius: 10, padding: 16, marginBottom: 16 }}>
@@ -2050,7 +2038,7 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
         </div>
       )}
 
-      {/* Deposit & Payment Schedule — shown if any deposit option was selected */}
+      {/* Deposit & Payment Schedule */}
       {depositOption && (
         <div style={{ background: "white", border: "1.5px solid #bae6fd", borderRadius: 10, padding: 16, marginBottom: 16 }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Deposit &amp; Payment Schedule</div>
@@ -2063,7 +2051,7 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
         </div>
       )}
 
-      {/* Project Timeline — shown when days are entered in rep pricing */}
+      {/* Project Timeline */}
       {(state.pricing && (state.pricing.daysToBegin || state.pricing.daysToComplete)) && (
         <div style={{ background: "white", border: "1.5px solid #c7d2fe", borderRadius: 10, padding: 16, marginBottom: 16 }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#3730a3", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Project Timeline</div>
@@ -2081,6 +2069,18 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
           </div>
         </div>
       )}
+
+      {/* Full contract in iframe — scope, materials, pricing, T&C */}
+      <div style={{ marginBottom: 16, border: "1.5px solid #e2e8f0", borderRadius: 10, overflow: "hidden" }}>
+        <div style={{ padding: "10px 16px", background: "#0f172a", color: "white", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px" }}>
+          Full Contract — Scope, Materials &amp; Terms
+        </div>
+        <iframe
+          srcDoc={contractPdfHtml}
+          style={{ width: "100%", height: 700, border: "none", display: "block" }}
+          title="Contract"
+        />
+      </div>
 
       {/* Signature canvas */}
       <div style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 20, marginBottom: 16 }}>
