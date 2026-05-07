@@ -1586,7 +1586,7 @@ function buildProposalHTML(state, selectedOption, mode) {
   return `<!DOCTYPE html><html><head><meta charset='utf-8'><style>${css}</style></head><body>${body}${script}</body></html>`;
 }
 
-function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption, selectedPayment, setSelectedPayment, showDeposit, setShowDeposit, depositOption, setDepositOption, customDepositText, setCustomDepositText }) {
+function PreviewStep({ state, setState, setStep, steps, selectedOption, setSelectedOption, selectedPayment, setSelectedPayment, showDeposit, setShowDeposit, depositOption, setDepositOption, customDepositText, setCustomDepositText }) {
   const [sending, setSending] = useState(false);
   const [emailOverride, setEmailOverride] = useState(state.customer.email);
   const [bccEmail, setBccEmail] = useState("");
@@ -1670,6 +1670,22 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
           {state.services.includes("misc")     && <button onClick={() => setStep(steps.findIndex(s => s.key === "misc"))}     style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Misc</button>}
           <button onClick={() => setStep(0)} style={{ background: "#fef2f2", border: "1.5px solid #fecaca", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#dc2626", cursor: "pointer" }}>Edit Services</button>
           <span style={{ fontSize: 10, color: "#94a3b8", alignSelf: "center", whiteSpace: "nowrap" }}>Pricing &amp; financing → 🔧 Rep Pricing</span>
+        </div>
+      </div>
+
+      {/* Notes for proposal & contract */}
+      <div style={{ padding: "0 24px 12px" }}>
+        <div style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+            <label style={{ fontSize: 11, fontWeight: 800, color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.5px" }}>📝 Proposal Notes</label>
+            <span style={{ fontSize: 10, color: "#94a3b8" }}>Appears on proposal &amp; contract</span>
+          </div>
+          <textarea
+            style={{ width: "100%", boxSizing: "border-box", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "#0f172a", outline: "none", resize: "vertical", height: 80, lineHeight: 1.6, fontFamily: "inherit" }}
+            value={state.notes || ""}
+            onChange={e => setState(s => ({ ...s, notes: e.target.value }))}
+            placeholder="e.g. Work begins within 3 weeks of signing. 1-year labor warranty included. All permits pulled by NDC..."
+          />
         </div>
       </div>
 
@@ -2288,7 +2304,7 @@ function App() {
         {currentKey === "paint"      && <PaintStep data={state.paint} onChange={(v) => setState((s) => ({ ...s, paint: v }))} />}
         {currentKey === "windows"    && <WindowsStep windows={state.windows} onChange={(v) => setState((s) => ({ ...s, windows: v }))} />}
         {currentKey === "misc"       && <MiscStep data={state.misc} onChange={(v) => setState((s) => ({ ...s, misc: v }))} />}
-        {currentKey === "preview"    && <PreviewStep state={state} setStep={setStep} steps={steps} selectedOption={selectedOption} setSelectedOption={setSelectedOption} selectedPayment={selectedPayment} setSelectedPayment={setSelectedPayment} showDeposit={showDeposit} setShowDeposit={setShowDeposit} depositOption={depositOption} setDepositOption={setDepositOption} customDepositText={customDepositText} setCustomDepositText={setCustomDepositText} />}
+        {currentKey === "preview"    && <PreviewStep state={state} setState={setState} setStep={setStep} steps={steps} selectedOption={selectedOption} setSelectedOption={setSelectedOption} selectedPayment={selectedPayment} setSelectedPayment={setSelectedPayment} showDeposit={showDeposit} setShowDeposit={setShowDeposit} depositOption={depositOption} setDepositOption={setDepositOption} customDepositText={customDepositText} setCustomDepositText={setCustomDepositText} />}
         {currentKey === "contract"   && <ContractStep state={state} selectedOption={selectedOption} setStep={setStep} steps={steps} showDeposit={showDeposit} depositOption={depositOption} customDepositText={customDepositText} />}
       </div>
 
