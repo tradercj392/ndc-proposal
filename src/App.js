@@ -1330,14 +1330,17 @@ function buildProposalHTML(state, selectedOption, mode) {
     body += `<div class='sec'><div class='lbl'>Property</div><img src='${state.customer.photo}' style='max-width:100%;max-height:220px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0'/></div>`;
   }
 
-  // Project overview — all services with sqft summary for siding
+  // Project overview — all services with sqft summary for siding and paint
   const totalSidingSqFt = state.siding.walls.reduce((a, w) => a + parseFloat(w.sqft || 0), 0);
+  const totalPaintSqFt = parseFloat(state.paint.combinedSqft || 0);
   body += `<div class='sec'><div class='lbl'>Project Overview</div>`;
   state.services.forEach(svc => {
     if (!scopeMap[svc]) return;
-    const extra = svc === "siding" && totalSidingSqFt > 0
-      ? ` <span style='color:#64748b;font-weight:400;font-size:10px'>— ${totalSidingSqFt.toFixed(0)} sq ft total</span>`
-      : "";
+    let extra = "";
+    if (svc === "siding" && totalSidingSqFt > 0)
+      extra = ` <span style='color:#64748b;font-weight:400;font-size:10px'>— ${totalSidingSqFt.toFixed(0)} sq ft total</span>`;
+    if (svc === "paint" && totalPaintSqFt > 0)
+      extra = ` <span style='color:#64748b;font-weight:400;font-size:10px'>— ${totalPaintSqFt.toFixed(0)} sq ft total</span>`;
     body += `<div style='display:flex;align-items:center;padding:4px 0;border-bottom:1px solid #f8fafc;font-size:11px;color:#334155'><span class='check'>✓</span><span style='font-weight:700'>${scopeMap[svc].label}${extra}</span></div>`;
   });
   // Total house sqft if siding is selected
