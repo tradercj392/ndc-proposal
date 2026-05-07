@@ -1342,7 +1342,7 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
       <div style='font-size:18px;font-weight:800'>${state.customer.name || "—"}</div>
       <div style='color:#64748b;font-size:11px;margin-top:4px'>${state.customer.address || ""}</div>
       <div style='color:#64748b;font-size:11px'>${state.customer.phone || ""}</div>
-      <div style='color:#94a3b8;font-size:10px;margin-top:6px'>${today} &nbsp;·&nbsp; Valid for 30 days</div>
+      <div style='color:#94a3b8;font-size:10px;margin-top:6px'>${today}</div>
     </div>
   </div>`;
 
