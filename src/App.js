@@ -1189,7 +1189,7 @@ function buildProposalHTML(state, selectedOption, mode) {
       detail: state.fascia.items.map(i => (i.label || "Area") + ": " + (i.newMaterial || "Material TBD") + (i.linearFt ? " — " + i.linearFt + " linear ft" : "") + (i.notes ? " (" + i.notes + ")" : "")),
     },
     paint: {
-      label: "Exterior Paint" + (state.paint.paintScope ? " — " + state.paint.paintScope : "") + " — Four-Directional Spray Method",
+      label: "Exterior Paint" + (state.paint.paintScope ? " — " + state.paint.paintScope : ""),
       bullets: [
         state.paint.paintScope ? "Scope: " + state.paint.paintScope + (state.paint.paintScopeDetail ? " (" + state.paint.paintScopeDetail + ")" : "") : null,
         "Pressure wash all exterior surfaces — allow to fully dry",
@@ -1633,7 +1633,7 @@ function PreviewStep({ state, setStep, steps, selectedOption, setSelectedOption,
   const pdfHtml     = (() => { try { return buildProposalHTML(state, selectedOption, "pdf");     } catch(e) { return "<html><body><p style='padding:20px;color:red'>Proposal error: " + e.message + "</p></body></html>"; } })();
   const iframeHtml  = pricingRevealed ? previewHtml : scopeHtml;
 
-  const svcLabels = { siding: "James Hardie Siding Installation", soffit: "Soffit Installation", fascia: "Fascia Installation", paint: "Exterior Paint" + (state.paint && state.paint.paintScope ? " — " + state.paint.paintScope : "") + " — Four-Directional Spray Method", windows: "Window Installation", misc: "Additional Items" };
+  const svcLabels = { siding: "James Hardie Siding Installation", soffit: "Soffit Installation", fascia: "Fascia Installation", paint: "Exterior Paint" + (state.paint && state.paint.paintScope ? " — " + state.paint.paintScope : ""), windows: "Window Installation", misc: "Additional Items" };
 
   const terms = [
     { n: 1,  title: "Office Approval", body: "All contracts are subject to approval by Company manager and/or officer of the Company." },
