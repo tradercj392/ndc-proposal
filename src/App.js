@@ -1299,12 +1299,31 @@ function buildProposalHTML(state, selectedOption, mode) {
     body += `<div class='sec'><div class='lbl'>Property</div><img src='${state.customer.photo}' style='max-width:100%;max-height:220px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0'/></div>`;
   }
 
-  // Project overview — all services in one list
+  // Project overview — all services with sqft summary for siding
+  const totalSidingSqFt = state.siding.walls.reduce((a, w) => a + parseFloat(w.sqft || 0), 0);
   body += `<div class='sec'><div class='lbl'>Project Overview</div>`;
   state.services.forEach(svc => {
     if (!scopeMap[svc]) return;
-    body += `<div style='display:flex;align-items:center;padding:4px 0;border-bottom:1px solid #f8fafc;font-size:11px;color:#334155'><span class='check'>✓</span><span style='font-weight:700'>${scopeMap[svc].label}</span></div>`;
+    const extra = svc === "siding" && totalSidingSqFt > 0
+      ? ` <span style='color:#64748b;font-weight:400;font-size:10px'>— ${totalSidingSqFt.toFixed(0)} sq ft total</span>`
+      : "";
+    body += `<div style='display:flex;align-items:center;padding:4px 0;border-bottom:1px solid #f8fafc;font-size:11px;color:#334155'><span class='check'>✓</span><span style='font-weight:700'>${scopeMap[svc].label}${extra}</span></div>`;
   });
+  // Total house sqft if siding is selected
+  if (state.services.includes("siding") && totalSidingSqFt > 0) {
+    body += `<div style='display:flex;justify-content:space-between;padding:8px 0 2px;border-top:1px solid #e2e8f0;margin-top:6px;font-size:11px'>
+      <span style='color:#475569;font-weight:600'>Total Exterior Wall Area</span>
+      <span style='font-weight:800;color:#0f172a'>${totalSidingSqFt.toFixed(0)} sq ft</span>
+    </div>`;
+    state.siding.walls.forEach(w => {
+      if (w.sqft) {
+        body += `<div style='display:flex;justify-content:space-between;padding:3px 0;font-size:10.5px;color:#64748b;border-bottom:1px solid #f8fafc'>
+          <span>&nbsp;&nbsp;&nbsp;${w.location || w.label || "Wall"}</span>
+          <span>${parseFloat(w.sqft).toFixed(0)} sq ft</span>
+        </div>`;
+      }
+    });
+  }
   body += `</div>`;
 
   // Detailed scope per service
@@ -1522,16 +1541,6 @@ function buildProposalHTML(state, selectedOption, mode) {
     });
     body += `</div>`;
 
-    // Signature block placeholder — replaced with real sig when printing
-    body += `<div class='sec' id='sig-block'>
-      <div class='lbl'>Client Signature</div>
-      <div style='font-size:10px;color:#475569;font-style:italic;margin-bottom:10px'>By signing below, I acknowledge that I have read and agree to all terms and conditions and authorize New Direction Construction to proceed with the scope of work above for <strong>${fmt(selectedOption === "standard" ? standard : priority)}</strong>.</div>
-      <div id='sig-img-container' style='border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;height:80px;margin-bottom:8px'></div>
-      <div style='display:flex;justify-content:space-between;font-size:10px;color:#64748b;border-top:1.5px solid #0f172a;padding-top:6px;margin-top:4px'>
-        <span>Client: _________________________________ &nbsp; Date: __________</span>
-        <span>NDC Rep: _________________________________ &nbsp; Date: __________</span>
-      </div>
-    </div>`;
   }
 
   const script = mode !== "pdf"
@@ -2019,12 +2028,19 @@ function ContractStep({ state, selectedOption, setStep, steps }) {
             onClick={() => {
               const clientName = (state.customer.name || "Client").replace(/[^a-zA-Z0-9 ]/g, "").trim().replace(/ /g, "_");
               const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
-              const pdfWithSig = sigDataUrl
-                ? contractPdfHtml.replace(
-                    `<div id='sig-img-container' style='border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;height:80px;margin-bottom:8px'></div>`,
-                    `<img src='${sigDataUrl}' style='width:100%;max-width:400px;height:80px;object-fit:contain;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;display:block'/>`
-                  )
-                : contractPdfHtml;
+              const sigBlock = `<div style='padding:20px;border-top:2px solid #0f172a;margin-top:8px'>
+                <div style='font-size:9.5px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Client Signature</div>
+                <div style='font-size:10px;color:#475569;font-style:italic;margin-bottom:10px'>By signing below, I acknowledge that I have read and agree to all terms and conditions and authorize New Direction Construction to proceed with the scope of work above for <strong>${fmt(chosenTotal)}</strong>.</div>
+                ${sigDataUrl
+                  ? `<img src='${sigDataUrl}' style='width:100%;max-width:420px;height:90px;object-fit:contain;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;display:block;margin-bottom:8px'/>`
+                  : `<div style='border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;height:90px;margin-bottom:8px'></div>`
+                }
+                <div style='display:flex;justify-content:space-between;font-size:10px;color:#64748b;border-top:1.5px solid #0f172a;padding-top:6px'>
+                  <span>${state.customer.name || "Client"} &nbsp;&nbsp; Date: ${today}</span>
+                  <span>NDC Rep: ${repName} &nbsp;&nbsp; Date: ${today}</span>
+                </div>
+              </div>`;
+              const pdfWithSig = contractPdfHtml.replace("</body>", sigBlock + "</body>");
               const newWin = window.open("", "_blank");
               if (newWin) {
                 newWin.document.write(pdfWithSig);
