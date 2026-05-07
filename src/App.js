@@ -1564,7 +1564,7 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
   }
 
   // Aqua Financing — pdf mode only, when client selected financing
-  if (mode === "pdf" && usingFinancing) {
+  if (mode === "pdf" && usingFinancing && !depositOption) {
     const chosenForPdf = selectedOption === "standard" ? standard : priority;
     const financedAmt = chosenForPdf * financingPct / 100;
     const outOfPocket = chosenForPdf * (100 - financingPct) / 100;
@@ -1580,7 +1580,7 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
   }
 
   // Deposit & Payment Schedule — pdf mode only, when client selected deposit option
-  if (mode === "pdf" && depositOption) {
+  if (mode === "pdf" && depositOption && !usingFinancing) {
     const chosenForPdf = selectedOption === "standard" ? standard : priority;
     let depositText = "";
     if (depositOption === "50") {
@@ -2078,8 +2078,8 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
       <h2 style={S.stepTitle}>Contract &amp; Signature</h2>
       <p style={S.stepSub}>Review the full contract with your client, then collect their signature below.</p>
 
-      {/* Aqua Financing — shown if client selected financing during proposal */}
-      {usingFinancing && (
+      {/* Aqua Financing — only shown if financing selected AND no deposit option chosen */}
+      {usingFinancing && !depositOption && (
         <div style={{ background: "white", border: "1.5px solid #bae6fd", borderRadius: 10, padding: 16, marginBottom: 16 }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Aqua Financing</div>
           <div style={{ background: "#f0f9ff", borderRadius: 8, padding: "12px 14px", fontSize: 11, color: "#0f172a", lineHeight: 1.8 }}>
@@ -2092,8 +2092,8 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
         </div>
       )}
 
-      {/* Deposit & Payment Schedule */}
-      {depositOption && (
+      {/* Deposit & Payment Schedule — only shown if deposit selected AND not using financing */}
+      {depositOption && !usingFinancing && (
         <div style={{ background: "white", border: "1.5px solid #bae6fd", borderRadius: 10, padding: 16, marginBottom: 16 }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Deposit &amp; Payment Schedule</div>
           <div style={{ background: "#f0f9ff", borderRadius: 8, padding: "12px 14px", fontSize: 11, color: "#0f172a", lineHeight: 1.8 }}>
