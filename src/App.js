@@ -149,7 +149,7 @@ function calcGrandTotal(state) {
   const msc = services.includes("misc") ? miscItems.reduce((a,i)=>a+parseFloat(i.qty||0)*parseFloat(i.unitPrice||0),0) : 0;
   const total = sid + sof + fas + pntAdmin + win + msc;
   const standardTotal = sidStd + sofStd + fasStd + pntStandard + winStd + msc;
-  return { sid, sof, fas, pnt: pntAdmin, pntStandard, win, msc, total, standardTotal };
+  return { sid, sidStd, sof, sofStd, fas, fasStd, pnt: pntAdmin, pntStandard, win, winStd, msc, total, standardTotal };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -257,8 +257,6 @@ function PricingStep({ state, onChange }) {
   var grandAdminTotal = sidTotal + sofTotal + fasTotal + pntTotal + winTotal + miscTotal;
   var grandStandardTotal = sidStdTotal + sofStdTotal + fasStdTotal + pntStandardTotal + winStdTotal + miscTotal;
   var grandTotal = grandAdminTotal;
-  var discount = parseFloat(p.adminSavingsDiscount||8.35) / 100;
-  var adminTotal = grandTotal * (1 - discount);
 
   var cardStyle = { background: "white", border: "1.5px solid #e2e8f0", borderRadius: 12, padding: 16, marginBottom: 12 };
   var labelStyle = { fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: 4 };
@@ -369,16 +367,6 @@ function PricingStep({ state, onChange }) {
       )
     ) : null,
     React.createElement("div", { style: cardStyle },
-      React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 6 } }, "Admin Savings Incentive Discount"),
-      React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "flex-end" } },
-        React.createElement("div", { style: { flex: 1 } },
-          React.createElement("label", { style: labelStyle }, "Discount % (default 8.35%)"),
-          React.createElement("input", { style: inputStyle, type: "number", value: p.adminSavingsDiscount||"8.35", onChange: function(e){ set("adminSavingsDiscount", e.target.value); }, placeholder: "8.35" })
-        ),
-        PriceBox("ADMIN PRICE", adminTotal)
-      )
-    ),
-    React.createElement("div", { style: cardStyle },
       React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 6 } }, "Financing (Optional)"),
       React.createElement("label", { style: labelStyle }, "Admin Savings monthly payment ($/mo)"),
       React.createElement("input", { style: inputStyle, type: "number", value: p.monthlyPayment||"", onChange: function(e){ set("monthlyPayment", e.target.value); }, placeholder: "e.g. 285.00" }),
@@ -430,7 +418,7 @@ function PricingStep({ state, onChange }) {
       ),
       React.createElement("div", { style: { display: "flex", justifyContent: "space-between" } },
         React.createElement("span", { style: { fontSize: 13, color: "#7dd3fc" } }, "Admin Savings Incentive"),
-        React.createElement("span", { style: { fontSize: 16, fontWeight: 800, color: "#7dd3fc" } }, fmt(adminTotal))
+        React.createElement("span", { style: { fontSize: 16, fontWeight: 800, color: "#7dd3fc" } }, fmt(grandAdminTotal))
       ),
       p.monthlyPayment ? React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginTop: 6 } },
         React.createElement("span", { style: { fontSize: 12, color: "rgba(255,255,255,0.5)" } }, "Financing (Admin price)"),
@@ -1177,7 +1165,7 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
   state = safe;
   const t = calcGrandTotal(state);
   const priority = t.total;
-  const standard = t.standardTotal > t.total ? t.standardTotal : t.total * 1.0835;
+  const standard = t.standardTotal || t.total;
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
   const standardFinancingAdd = (state.pricing && state.pricing.standardFinancingAdd) ? parseFloat(state.pricing.standardFinancingAdd) : null;
@@ -1489,12 +1477,12 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
       // Build itemized pricing rows for standard option
       const t = calcGrandTotal(state);
       const svcPriceMap = {
-        siding:  { label: scopeMap.siding  ? scopeMap.siding.label  : "Siding",   val: t.sid  * 1.0835 },
-        soffit:  { label: scopeMap.soffit  ? scopeMap.soffit.label  : "Soffits",  val: t.sof  * 1.0835 },
-        fascia:  { label: scopeMap.fascia  ? scopeMap.fascia.label  : "Fascia",   val: t.fas  * 1.0835 },
-        paint:   { label: scopeMap.paint   ? scopeMap.paint.label   : "Paint",    val: t.pnt  * 1.0835 },
-        windows: { label: scopeMap.windows ? scopeMap.windows.label : "Windows",  val: t.win  * 1.0835 },
-        misc:    { label: scopeMap.misc    ? scopeMap.misc.label    : "Misc",     val: t.msc  * 1.0835 },
+        siding:  { label: scopeMap.siding  ? scopeMap.siding.label  : "Siding",   val: t.sidStd  || t.sid  },
+        soffit:  { label: scopeMap.soffit  ? scopeMap.soffit.label  : "Soffits",  val: t.sofStd  || t.sof  },
+        fascia:  { label: scopeMap.fascia  ? scopeMap.fascia.label  : "Fascia",   val: t.fasStd  || t.fas  },
+        paint:   { label: scopeMap.paint   ? scopeMap.paint.label   : "Paint",    val: t.pntStandard || t.pnt },
+        windows: { label: scopeMap.windows ? scopeMap.windows.label : "Windows",  val: t.winStd  || t.win  },
+        misc:    { label: scopeMap.misc    ? scopeMap.misc.label    : "Misc",     val: t.msc  },
       };
       const itemizedRows = state.services
         .filter(svc => svcPriceMap[svc] && svcPriceMap[svc].val > 0)
@@ -1706,7 +1694,7 @@ function PreviewStep({ state, setState, setStep, steps, selectedOption, setSelec
 
   const t = calcGrandTotal(state);
   const priority = t.total;
-  const standard = t.standardTotal > t.total ? t.standardTotal : t.total * 1.0835;
+  const standard = t.standardTotal || t.total;
   const chosenTotal = selectedOption === "standard" ? standard : priority;
 
   const monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
@@ -2066,7 +2054,7 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
 
   const t = calcGrandTotal(state);
   const priority = t.total;
-  const standard = t.standardTotal > t.total ? t.standardTotal : t.total * 1.0835;
+  const standard = t.standardTotal || t.total;
   const chosenTotal = selectedOption === "standard" ? standard : priority;
 
   const monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
