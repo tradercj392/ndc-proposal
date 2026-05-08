@@ -90,7 +90,7 @@ const makeInitialState = () => ({
   misc: { items: [{ id: uid(), description: "", qty: "", unitPrice: "", notes: "" }] },
   notes: "",
   financing: { monthlyPayment: "", customPayment: "" },
-  pricing: { sidingPerSqFt: "", soffitPerLinFt: "", fasciaPerLinFt: "", paintPerSqFt: "", windowPerUnit: "", miscMarkup: "", adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", clearanceBeatPct: "10", standardFinancingAdd: "", daysToBegin: "", daysToComplete: "" },
+  pricing: { sidingPerSqFt: "", sidingStandardMarkupPct: "", soffitPerLinFt: "", soffitStandardMarkupPct: "", fasciaPerLinFt: "", fasciaStandardMarkupPct: "", paintPerSqFt: "", paintStandardMarkupPct: "", windowPerUnit: "", windowStandardMarkupPct: "", miscMarkup: "", adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", clearanceBeatPct: "10", standardFinancingAdd: "", daysToBegin: "", daysToComplete: "" },
   priceRevealed: false,
 });
 
@@ -126,18 +126,30 @@ function calcGrandTotal(state) {
   const miscItems   = (state.misc && state.misc.items) || [];
   const paintData   = state.paint || {};
 
+  function applyMarkup(adminVal, markupKey) {
+    const pct = p[markupKey] ? parseFloat(p[markupKey]) / 100 : null;
+    return pct !== null ? adminVal * (1 + pct) : adminVal;
+  }
+
   const sidingArea  = sidingWalls.reduce((a,w)=>a+parseFloat(w.sqft||0),0);
   const sid = services.includes("siding") ? (p.sidingPerSqFt ? sidingArea * parseFloat(p.sidingPerSqFt) : parseFloat(calcSiding(state.siding||{}).totalCost||0)) : 0;
+  const sidStd = applyMarkup(sid, "sidingStandardMarkupPct");
   const soffitLinFt = soffitItems.reduce((a,i)=>a+parseFloat(i.linearFt||0),0);
   const sof = services.includes("soffit") ? (p.soffitPerLinFt ? soffitLinFt * parseFloat(p.soffitPerLinFt) : calcSoffit(state.soffit||{})) : 0;
+  const sofStd = applyMarkup(sof, "soffitStandardMarkupPct");
   const fasciaLinFt = fasciaItems.reduce((a,i)=>a+parseFloat(i.linearFt||0),0);
   const fas = services.includes("fascia") ? (p.fasciaPerLinFt ? fasciaLinFt * parseFloat(p.fasciaPerLinFt) : calcSoffit(state.fascia||{})) : 0;
+  const fasStd = applyMarkup(fas, "fasciaStandardMarkupPct");
   const paintSqFt   = parseFloat(paintData.combinedSqft||0);
-  const pnt = services.includes("paint") ? (p.paintPerSqFt ? paintSqFt * parseFloat(p.paintPerSqFt) : calcPaint(paintData)) : 0;
+  const pntAdmin = services.includes("paint") ? (p.paintPerSqFt ? paintSqFt * parseFloat(p.paintPerSqFt) : calcPaint(paintData)) : 0;
+  const pntStandard = applyMarkup(pntAdmin, "paintStandardMarkupPct");
   const totalWindows = windows.reduce((a,w)=>a+parseFloat(w.qty||1),0);
   const win = services.includes("windows") ? (p.windowPerUnit ? totalWindows * parseFloat(p.windowPerUnit) : calcWindows(windows).reduce((a,w)=>a+parseFloat(w.total||0),0)) : 0;
+  const winStd = applyMarkup(win, "windowStandardMarkupPct");
   const msc = services.includes("misc") ? miscItems.reduce((a,i)=>a+parseFloat(i.qty||0)*parseFloat(i.unitPrice||0),0) : 0;
-  return { sid, sof, fas, pnt, win, msc, total: sid+sof+fas+pnt+win+msc };
+  const total = sid + sof + fas + pntAdmin + win + msc;
+  const standardTotal = sidStd + sofStd + fasStd + pntStandard + winStd + msc;
+  return { sid, sof, fas, pnt: pntAdmin, pntStandard, win, msc, total, standardTotal };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -233,11 +245,18 @@ function PricingStep({ state, onChange }) {
   var miscTotal = state.misc.items.reduce(function(a,i){ return a + parseFloat(i.qty||0)*parseFloat(i.unitPrice||0); }, 0);
 
   var sidTotal = services.includes("siding") ? sidingArea * parseFloat(p.sidingPerSqFt||0) : 0;
+  var sidStdTotal = sidTotal * (1 + parseFloat(p.sidingStandardMarkupPct||0) / 100);
   var sofTotal = services.includes("soffit") ? soffitLinFt * parseFloat(p.soffitPerLinFt||0) : 0;
+  var sofStdTotal = sofTotal * (1 + parseFloat(p.soffitStandardMarkupPct||0) / 100);
   var fasTotal = services.includes("fascia") ? fasciaLinFt * parseFloat(p.fasciaPerLinFt||0) : 0;
+  var fasStdTotal = fasTotal * (1 + parseFloat(p.fasciaStandardMarkupPct||0) / 100);
   var pntTotal = services.includes("paint") ? paintSqFt * parseFloat(p.paintPerSqFt||0) : 0;
+  var pntStandardTotal = pntTotal * (1 + parseFloat(p.paintStandardMarkupPct||0) / 100);
   var winTotal = services.includes("windows") ? totalWindows * parseFloat(p.windowPerUnit||0) : 0;
-  var grandTotal = sidTotal + sofTotal + fasTotal + pntTotal + winTotal + miscTotal;
+  var winStdTotal = winTotal * (1 + parseFloat(p.windowStandardMarkupPct||0) / 100);
+  var grandAdminTotal = sidTotal + sofTotal + fasTotal + pntTotal + winTotal + miscTotal;
+  var grandStandardTotal = sidStdTotal + sofStdTotal + fasStdTotal + pntStandardTotal + winStdTotal + miscTotal;
+  var grandTotal = grandAdminTotal;
   var discount = parseFloat(p.adminSavingsDiscount||8.35) / 100;
   var adminTotal = grandTotal * (1 - discount);
 
@@ -252,18 +271,29 @@ function PricingStep({ state, onChange }) {
     );
   }
 
-  function ServiceRow(label, qty, qtyLabel, rateKey, placeholder, total) {
-    return React.createElement("div", { style: cardStyle, key: rateKey },
-      React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 6 } }, label),
+  function ServicePricingCard(label, qty, qtyLabel, adminKey, markupKey, adminTotal, placeholder) {
+    var markupPct = parseFloat(p[markupKey]||0);
+    var stdTotal = adminTotal * (1 + markupPct / 100);
+    return React.createElement("div", { style: cardStyle },
+      React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 4 } }, label),
       React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginBottom: 10 } },
         "Total: ", React.createElement("strong", null, qty + " " + qtyLabel)
       ),
+      React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-end" } },
+        React.createElement("div", { style: { flex: 1 } },
+          React.createElement("label", { style: { ...labelStyle, color: "#0369a1" } }, "Admin Savings price (per " + qtyLabel + ")"),
+          React.createElement("div", { style: { fontSize: 10, color: "#64748b", marginBottom: 4 } }, "Admin Savings Incentive price"),
+          React.createElement("input", { style: inputStyle, type: "number", value: p[adminKey]||"", onChange: function(e){ set(adminKey, e.target.value); }, placeholder: placeholder })
+        ),
+        PriceBox("ADMIN TOTAL", adminTotal)
+      ),
       React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "flex-end" } },
         React.createElement("div", { style: { flex: 1 } },
-          React.createElement("label", { style: labelStyle }, "Price per " + qtyLabel + " ($)"),
-          React.createElement("input", { style: inputStyle, type: "number", value: p[rateKey]||"", onChange: function(e){ set(rateKey, e.target.value); }, placeholder: placeholder })
+          React.createElement("label", { style: { ...labelStyle, color: "#475569" } }, "Standard pricing markup (%)"),
+          React.createElement("div", { style: { fontSize: 10, color: "#64748b", marginBottom: 4 } }, "Standard = Admin price + this % on top"),
+          React.createElement("input", { style: inputStyle, type: "number", value: p[markupKey]||"", onChange: function(e){ set(markupKey, e.target.value); }, placeholder: "e.g. 15" })
         ),
-        PriceBox("TOTAL", total)
+        PriceBox("STANDARD TOTAL", stdTotal)
       )
     );
   }
@@ -274,21 +304,30 @@ function PricingStep({ state, onChange }) {
     React.createElement("div", { style: { background: "#fef9c3", border: "1.5px solid #fde68a", borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#92400e", fontWeight: 600 } },
       "This step is for your eyes only. Enter your pricing rates below."
     ),
-    services.includes("siding") ? ServiceRow("James Hardie Siding", sidingArea.toFixed(0), "sq ft", "sidingPerSqFt", "e.g. 15.00", sidTotal) : null,
-    services.includes("soffit") ? ServiceRow("Soffit Installation", soffitLinFt.toFixed(0), "linear ft", "soffitPerLinFt", "e.g. 8.00", sofTotal) : null,
-    services.includes("fascia") ? ServiceRow("Fascia Installation", fasciaLinFt.toFixed(0), "linear ft", "fasciaPerLinFt", "e.g. 8.00", fasTotal) : null,
-    services.includes("paint") ? ServiceRow("Exterior Paint", paintSqFt.toFixed(0), "sq ft", "paintPerSqFt", "e.g. 2.50", pntTotal) : null,
+    services.includes("siding")  ? ServicePricingCard("James Hardie Siding", sidingArea.toFixed(0), "sq ft",     "sidingPerSqFt",  "sidingStandardMarkupPct",  sidTotal,  "e.g. 15.00") : null,
+    services.includes("soffit")  ? ServicePricingCard("Soffit Installation",  soffitLinFt.toFixed(0), "linear ft", "soffitPerLinFt", "soffitStandardMarkupPct",  sofTotal,  "e.g. 8.00")  : null,
+    services.includes("fascia")  ? ServicePricingCard("Fascia Installation",   fasciaLinFt.toFixed(0), "linear ft", "fasciaPerLinFt", "fasciaStandardMarkupPct",  fasTotal,  "e.g. 8.00")  : null,
+    services.includes("paint")   ? ServicePricingCard("Exterior Paint",        paintSqFt.toFixed(0),   "sq ft",     "paintPerSqFt",   "paintStandardMarkupPct",   pntTotal,  "e.g. 2.50")  : null,
     services.includes("windows") ? React.createElement("div", { style: cardStyle },
-      React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 6 } }, "Window Installation"),
+      React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 4 } }, "Window Installation"),
       React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginBottom: 10 } },
         "Total: ", React.createElement("strong", null, totalWindows + " units")
       ),
-      React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "flex-end", marginBottom: 10 } },
+      React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-end" } },
         React.createElement("div", { style: { flex: 1 } },
-          React.createElement("label", { style: labelStyle }, "Base price per unit ($)"),
+          React.createElement("label", { style: { ...labelStyle, color: "#0369a1" } }, "Admin Savings price (per unit)"),
+          React.createElement("div", { style: { fontSize: 10, color: "#64748b", marginBottom: 4 } }, "Admin Savings Incentive price"),
           React.createElement("input", { style: inputStyle, type: "number", value: p.windowPerUnit||"", onChange: function(e){ set("windowPerUnit", e.target.value); }, placeholder: "e.g. 450.00" })
         ),
-        PriceBox("TOTAL", winTotal)
+        PriceBox("ADMIN TOTAL", winTotal)
+      ),
+      React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-end" } },
+        React.createElement("div", { style: { flex: 1 } },
+          React.createElement("label", { style: { ...labelStyle, color: "#475569" } }, "Standard pricing markup (%)"),
+          React.createElement("div", { style: { fontSize: 10, color: "#64748b", marginBottom: 4 } }, "Standard = Admin price + this % on top"),
+          React.createElement("input", { style: inputStyle, type: "number", value: p.windowStandardMarkupPct||"", onChange: function(e){ set("windowStandardMarkupPct", e.target.value); }, placeholder: "e.g. 15" })
+        ),
+        PriceBox("STANDARD TOTAL", p.windowStandardMarkupPct ? winTotal * (1 + parseFloat(p.windowStandardMarkupPct) / 100) : winTotal)
       ),
       React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6 } }, "Size & Option Upcharges"),
       React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginBottom: 8 } }, "Add upcharges per unit for size or option upgrades"),
@@ -387,7 +426,7 @@ function PricingStep({ state, onChange }) {
       React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 700, textTransform: "uppercase", marginBottom: 8 } }, "Job Summary"),
       React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 6 } },
         React.createElement("span", { style: { fontSize: 13, color: "rgba(255,255,255,0.8)" } }, "Standard Pricing"),
-        React.createElement("span", { style: { fontSize: 16, fontWeight: 800, color: "white" } }, fmt(grandTotal))
+        React.createElement("span", { style: { fontSize: 16, fontWeight: 800, color: "white" } }, fmt(grandStandardTotal))
       ),
       React.createElement("div", { style: { display: "flex", justifyContent: "space-between" } },
         React.createElement("span", { style: { fontSize: 13, color: "#7dd3fc" } }, "Admin Savings Incentive"),
@@ -1128,7 +1167,7 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
     paint:    { walls: [], trim: [], other: [], combinedSqft: "", ...(state.paint || {}) },
     windows:  state.windows || [],
     misc:     { items: [], ...(state.misc || {}) },
-    pricing:  { adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", clearanceBeatPct: "10", standardFinancingAdd: "", daysToBegin: "", daysToComplete: "", ...(state.pricing || {}) },
+    pricing:  { adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", clearanceBeatPct: "10", standardFinancingAdd: "", daysToBegin: "", daysToComplete: "", sidingStandardMarkupPct: "", soffitStandardMarkupPct: "", fasciaStandardMarkupPct: "", paintStandardMarkupPct: "", windowStandardMarkupPct: "", ...(state.pricing || {}) },
     financing: { monthlyPayment: "", ...(state.financing || {}) },
     customer:  { name: "", address: "", phone: "", email: "", photo: "", ...(state.customer || {}) },
     company:   { name: "", address: "", phone: "", license: "", ...(state.company || {}) },
@@ -1138,7 +1177,7 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
   state = safe;
   const t = calcGrandTotal(state);
   const priority = t.total;
-  const standard = t.total * 1.0835;
+  const standard = t.standardTotal > t.total ? t.standardTotal : t.total * 1.0835;
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
   const standardFinancingAdd = (state.pricing && state.pricing.standardFinancingAdd) ? parseFloat(state.pricing.standardFinancingAdd) : null;
@@ -1667,7 +1706,7 @@ function PreviewStep({ state, setState, setStep, steps, selectedOption, setSelec
 
   const t = calcGrandTotal(state);
   const priority = t.total;
-  const standard = t.total * 1.0835;
+  const standard = t.standardTotal > t.total ? t.standardTotal : t.total * 1.0835;
   const chosenTotal = selectedOption === "standard" ? standard : priority;
 
   const monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
@@ -2027,7 +2066,7 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
 
   const t = calcGrandTotal(state);
   const priority = t.total;
-  const standard = t.total * 1.0835;
+  const standard = t.standardTotal > t.total ? t.standardTotal : t.total * 1.0835;
   const chosenTotal = selectedOption === "standard" ? standard : priority;
 
   const monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
