@@ -374,8 +374,8 @@ function PricingStep({ state, onChange }) {
       React.createElement("label", { style: labelStyle }, "Standard pricing — add-on amount ($/mo)"),
       React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginBottom: 6 } }, "Standard financing shown = this amount + Admin Savings amount"),
       React.createElement("input", { style: inputStyle, type: "number", value: p.standardFinancingAdd||"", onChange: function(e){ set("standardFinancingAdd", e.target.value); }, placeholder: "e.g. 47.00" }),
-      (p.monthlyPayment && p.standardFinancingAdd) ? React.createElement("div", { style: { fontSize: 11, color: "#0369a1", marginTop: 8, fontWeight: 700 } },
-        "Standard financing displays as: $" + (parseFloat(p.monthlyPayment) + parseFloat(p.standardFinancingAdd)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo"
+      p.monthlyPayment ? React.createElement("div", { style: { fontSize: 11, color: "#0369a1", marginTop: 8, fontWeight: 700 } },
+        "Standard financing displays as: $" + (parseFloat(p.monthlyPayment) + parseFloat(p.standardFinancingAdd||0)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo"
       ) : null
     ),
     React.createElement("div", { style: { ...cardStyle, borderColor: "#fde68a", background: "#fffbeb" } },
@@ -1169,7 +1169,7 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
   const standardFinancingAdd = (state.pricing && state.pricing.standardFinancingAdd) ? parseFloat(state.pricing.standardFinancingAdd) : null;
-  const standardMonthly = (monthlyPayment && standardFinancingAdd) ? monthlyPayment + standardFinancingAdd : null;
+  const standardMonthly = monthlyPayment ? (standardFinancingAdd ? monthlyPayment + standardFinancingAdd : monthlyPayment) : null;
   const clearanceDays = (state.pricing && state.pricing.clearanceDays) ? state.pricing.clearanceDays : "14";
 
   const css = `
@@ -1378,17 +1378,24 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
     body += `<div class='sec'><div class='lbl'>Property</div><img src='${state.customer.photo}' style='max-width:100%;max-height:220px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0'/></div>`;
   }
 
-  // Project overview — all services with sqft summary for siding and paint
+  // Project overview — all services with totals
   const totalSidingSqFt = state.siding.walls.reduce((a, w) => a + parseFloat(w.sqft || 0), 0);
-  const totalPaintSqFt = parseFloat(state.paint.combinedSqft || 0);
+  const totalPaintSqFt  = parseFloat(state.paint.combinedSqft || 0);
+  const totalSoffitLf   = state.soffit.items.reduce((a, i) => a + parseFloat(i.linearFt || 0), 0);
+  const totalFasciaLf   = state.fascia.items.reduce((a, i) => a + parseFloat(i.linearFt || 0), 0);
+  const totalWindows    = state.windows.reduce((a, w) => a + parseFloat(w.qty || 1), 0);
+  const totalMiscItems  = state.misc.items.filter(i => i.description).length;
+
   body += `<div class='sec'><div class='lbl'>Project Overview</div>`;
   state.services.forEach(svc => {
     if (!scopeMap[svc]) return;
     let extra = "";
-    if (svc === "siding" && totalSidingSqFt > 0)
-      extra = ` <span style='color:#64748b;font-weight:400;font-size:10px'>— ${totalSidingSqFt.toFixed(0)} sq ft total</span>`;
-    if (svc === "paint" && totalPaintSqFt > 0)
-      extra = ` <span style='color:#64748b;font-weight:400;font-size:10px'>— ${totalPaintSqFt.toFixed(0)} sq ft total</span>`;
+    if (svc === "siding"   && totalSidingSqFt > 0) extra = ` <span style='color:#64748b;font-weight:400;font-size:10px'>— ${totalSidingSqFt.toFixed(0)} sq ft</span>`;
+    if (svc === "paint"    && totalPaintSqFt  > 0) extra = ` <span style='color:#64748b;font-weight:400;font-size:10px'>— ${totalPaintSqFt.toFixed(0)} sq ft</span>`;
+    if (svc === "soffit"   && totalSoffitLf   > 0) extra = ` <span style='color:#64748b;font-weight:400;font-size:10px'>— ${totalSoffitLf.toFixed(0)} linear ft</span>`;
+    if (svc === "fascia"   && totalFasciaLf   > 0) extra = ` <span style='color:#64748b;font-weight:400;font-size:10px'>— ${totalFasciaLf.toFixed(0)} linear ft</span>`;
+    if (svc === "windows"  && totalWindows    > 0) extra = ` <span style='color:#64748b;font-weight:400;font-size:10px'>— ${totalWindows} unit${totalWindows !== 1 ? "s" : ""}</span>`;
+    if (svc === "misc"     && totalMiscItems  > 0) extra = ` <span style='color:#64748b;font-weight:400;font-size:10px'>— ${totalMiscItems} item${totalMiscItems !== 1 ? "s" : ""}</span>`;
     body += `<div style='display:flex;align-items:center;padding:4px 0;border-bottom:1px solid #f8fafc;font-size:11px;color:#334155'><span class='check'>✓</span><span style='font-weight:700'>${scopeMap[svc].label}${extra}</span></div>`;
   });
   // Total house sqft if siding is selected
@@ -1699,7 +1706,7 @@ function PreviewStep({ state, setState, setStep, steps, selectedOption, setSelec
 
   const monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
   const standardFinancingAdd = state.pricing && state.pricing.standardFinancingAdd ? parseFloat(state.pricing.standardFinancingAdd) : null;
-  const standardMonthly = (monthlyPayment && standardFinancingAdd) ? monthlyPayment + standardFinancingAdd : null;
+  const standardMonthly = monthlyPayment ? (standardFinancingAdd ? monthlyPayment + standardFinancingAdd : monthlyPayment) : null;
   const applicableMonthly = selectedOption === "standard" ? standardMonthly : monthlyPayment;
 
   const handleSend = async () => {
@@ -2059,7 +2066,7 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
 
   const monthlyPayment = state.financing && state.financing.monthlyPayment ? parseFloat(state.financing.monthlyPayment) : null;
   const standardFinancingAdd = state.pricing && state.pricing.standardFinancingAdd ? parseFloat(state.pricing.standardFinancingAdd) : null;
-  const standardMonthly = (monthlyPayment && standardFinancingAdd) ? monthlyPayment + standardFinancingAdd : null;
+  const standardMonthly = monthlyPayment ? (standardFinancingAdd ? monthlyPayment + standardFinancingAdd : monthlyPayment) : null;
   const applicableMonthly = selectedOption === "standard" ? standardMonthly : monthlyPayment;
 
   const startDraw = (e) => {
