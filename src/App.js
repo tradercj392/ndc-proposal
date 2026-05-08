@@ -1566,7 +1566,7 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
       if (selectedOption === "priority") {
         body += `<div class='row' style='font-size:13px'><span style='font-weight:700;color:#0369a1'>Administrative Savings Incentive</span><span style='font-weight:800;color:#0ea5e9'>${fmt(priority)}</span></div>`;
         body += `<div style='background:#dcfce7;color:#166534;border-radius:8px;padding:8px 14px;margin-top:6px;font-size:11px;font-weight:700'>You save ${fmt(standard - priority)} by signing today</div>`;
-        if (monthlyPayment) {
+        if (monthlyPayment && !depositOption) {
           body += `<div style='margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0'><div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px'>Financing</div><div style='font-size:22px;font-weight:800;color:#0f172a'>$${monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<span style='font-size:13px;color:#64748b;font-weight:600'>/mo</span></div><div style='font-size:10px;color:#94a3b8;margin-top:3px'>Subject to credit approval</div></div>`;
         }
       } else if (selectedOption === "clearance") {
@@ -1584,7 +1584,7 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
       } else {
         // standard (default)
         body += `<div class='row' style='font-size:12px'><span>Standard Pricing</span><span style='font-weight:800'>${fmt(standard)}</span></div>`;
-        if (standardMonthly) {
+        if (standardMonthly && !depositOption) {
           body += `<div style='margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0'><div style='font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px'>Financing</div><div style='font-size:22px;font-weight:800;color:#0f172a'>$${standardMonthly.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<span style='font-size:13px;color:#64748b;font-weight:600'>/mo</span></div><div style='font-size:10px;color:#94a3b8;margin-top:3px'>Subject to credit approval</div></div>`;
         }
       }
