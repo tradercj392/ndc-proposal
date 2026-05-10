@@ -197,7 +197,83 @@ function CreditAppStep({ data, onChange, projectTotal }) {
   const set = (k, v) => onChange({ ...data, [k]: v });
 
   const isJoint = data.appType === "joint";
-  const showPriorAddr = parseInt(data.bYearsAddr || "99") < 3;
+  const showPriorAddr = parseInt(data.bYearsAddr || "99") < 2;
+
+  // SVG-based signature state — survives re-renders because it's just data
+  const [bStrokes, setBStrokes] = useState([]);
+  const [cbStrokes, setCBStrokes] = useState([]);
+  const [bCurrentStroke, setBCurrentStroke] = useState(null);
+  const [cbCurrentStroke, setCBCurrentStroke] = useState(null);
+
+  const getPos = (e, el) => {
+    const rect = el.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    // Scale from display size to SVG coordinate space (600x120)
+    const scaleX = 600 / rect.width;
+    const scaleY = 120 / rect.height;
+    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+  };
+
+  const sigStart = (e, setCurrentStroke) => {
+    e.preventDefault();
+    const pos = getPos(e, e.currentTarget);
+    setCurrentStroke([pos]);
+  };
+  const sigMove = (e, currentStroke, setCurrentStroke) => {
+    if (!currentStroke) return; e.preventDefault();
+    const pos = getPos(e, e.currentTarget);
+    setCurrentStroke(prev => prev ? [...prev, pos] : [pos]);
+  };
+  const sigEnd = (currentStroke, setCurrentStroke, setStrokes) => {
+    if (!currentStroke || currentStroke.length < 2) { setCurrentStroke(null); return; }
+    setStrokes(prev => [...prev, currentStroke]);
+    setCurrentStroke(null);
+  };
+
+  const strokeToPath = (pts) => {
+    if (!pts || pts.length < 2) return "";
+    return "M" + pts[0].x.toFixed(1) + "," + pts[0].y.toFixed(1) +
+      pts.slice(1).map(p => "L" + p.x.toFixed(1) + "," + p.y.toFixed(1)).join("");
+  };
+
+  const SigPad = ({ strokes, currentStroke, onStart, onMove, onEnd, onClear, hasSigned }) => (
+    <div style={{ marginBottom: 14 }}>
+      <label style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.6px", display: "block", marginBottom: 8 }}>
+        Signature <span style={{ color: "#e85d04" }}>*</span>
+      </label>
+      <div style={{ position: "relative", border: "1.5px solid #e2e8f0", borderRadius: 8, background: "white", overflow: "hidden", height: 120, touchAction: "none", cursor: "crosshair" }}
+        onMouseDown={onStart} onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd}
+        onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={onEnd}
+      >
+        <svg width="100%" height="120" viewBox="0 0 600 120" style={{ display: "block" }}>
+          {strokes.map((pts, i) => (
+            <path key={i} d={strokeToPath(pts)} fill="none" stroke="#0f172a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          ))}
+          {currentStroke && currentStroke.length > 1 && (
+            <path d={strokeToPath(currentStroke)} fill="none" stroke="#0f172a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          )}
+        </svg>
+        {!hasSigned && strokes.length === 0 && (
+          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 12, color: "#cbd5e1", pointerEvents: "none", fontStyle: "italic" }}>Sign here</div>
+        )}
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
+        {strokes.length > 0
+          ? <span style={{ fontSize: 10, color: "#22c55e", fontWeight: 700 }}>✓ Signed</span>
+          : <span style={{ fontSize: 10, color: "#94a3b8", fontStyle: "italic" }}>Draw your signature above</span>
+        }
+        <button onClick={onClear} style={{ fontSize: 10, color: "#94a3b8", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Clear</button>
+      </div>
+    </div>
+  );
+
+  // Convert strokes to SVG data URL for PDF
+  const strokesToDataUrl = (strokes) => {
+    const paths = strokes.map(pts => strokeToPath(pts)).join(" ");
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="120" viewBox="0 0 600 120"><path d="${paths}" fill="none" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    return "data:image/svg+xml;base64," + btoa(svg);
+  };
 
   // Auto-calc amount financed
   useEffect(() => {
@@ -437,7 +513,7 @@ function CreditAppStep({ data, onChange, projectTotal }) {
           {showPriorAddr && (
             <>
               <div style={{ height: 1, background: "#f1f5f9", margin: "8px 0 14px" }} />
-              <div style={{ fontSize: 11, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10 }}>Prior Address <span style={{ fontSize: 10, fontWeight: 400, color: "#94a3b8", textTransform: "none" }}>(less than 3 years at current)</span></div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10 }}>Prior Address <span style={{ fontSize: 10, fontWeight: 400, color: "#94a3b8", textTransform: "none" }}>(less than 2 years at current)</span></div>
               <Row>
                 <F label="Street" flex={3}><input style={inp} value={data.bPriorStreet} onChange={e => set("bPriorStreet", e.target.value)} placeholder="Prior street address" /></F>
                 <F label="City" flex={2}><input style={inp} value={data.bPriorCity} onChange={e => set("bPriorCity", e.target.value)} placeholder="City" /></F>
@@ -585,10 +661,19 @@ function CreditAppStep({ data, onChange, projectTotal }) {
           {/* Borrower sig block */}
           <div style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 16, marginBottom: 16 }}>
             <div style={{ fontSize: 11, fontWeight: 800, color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 14 }}>Borrower</div>
+
+            {/* Borrower Signature Pad */}
+            <SigPad
+              strokes={bStrokes}
+              currentStroke={bCurrentStroke}
+              hasSigned={bStrokes.length > 0}
+              onStart={e => sigStart(e, setBCurrentStroke)}
+              onMove={e => sigMove(e, bCurrentStroke, setBCurrentStroke)}
+              onEnd={() => sigEnd(bCurrentStroke, setBCurrentStroke, setBStrokes)}
+              onClear={() => { setBStrokes([]); setBCurrentStroke(null); }}
+            />
+
             <Row>
-              <F label="Signature (type full legal name)" flex={2} required>
-                <input style={{ ...inp, fontStyle: "italic", fontSize: 16 }} value={data.bSignature} onChange={e => set("bSignature", e.target.value)} placeholder="Type full legal name" />
-              </F>
               <F label="Date" required>
                 <input style={inp} type="date" value={data.bSigDate} onChange={e => set("bSigDate", e.target.value)} />
               </F>
@@ -608,10 +693,19 @@ function CreditAppStep({ data, onChange, projectTotal }) {
           {isJoint && (
             <div style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 16 }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 14 }}>Co-Borrower</div>
+
+              {/* Co-Borrower Signature Pad */}
+              <SigPad
+                strokes={cbStrokes}
+                currentStroke={cbCurrentStroke}
+                hasSigned={cbStrokes.length > 0}
+                onStart={e => sigStart(e, setCBCurrentStroke)}
+                onMove={e => sigMove(e, cbCurrentStroke, setCBCurrentStroke)}
+                onEnd={() => sigEnd(cbCurrentStroke, setCBCurrentStroke, setCBStrokes)}
+                onClear={() => { setCBStrokes([]); setCBCurrentStroke(null); }}
+              />
+
               <Row>
-                <F label="Signature (type full legal name)" flex={2} required>
-                  <input style={{ ...inp, fontStyle: "italic", fontSize: 16 }} value={data.cbSignature} onChange={e => set("cbSignature", e.target.value)} placeholder="Type full legal name" />
-                </F>
                 <F label="Date" required>
                   <input style={inp} type="date" value={data.cbSigDate} onChange={e => set("cbSigDate", e.target.value)} />
                 </F>
@@ -633,7 +727,13 @@ function CreditAppStep({ data, onChange, projectTotal }) {
       {/* Save as PDF button */}
       <button
         onClick={() => {
-          const creditHtml = buildCreditAppPDF(data, projectTotal);
+          // Inject current signature data from refs before building PDF
+          const dataWithSigs = {
+            ...data,
+            bSignature: bStrokes.length > 0 ? strokesToDataUrl(bStrokes) : null,
+            cbSignature: cbStrokes.length > 0 ? strokesToDataUrl(cbStrokes) : null,
+          };
+          const creditHtml = buildCreditAppPDF(dataWithSigs, projectTotal);
           const clientName = (data.bFirst + "_" + data.bLast).replace(/[^a-zA-Z0-9_]/g, "") || "Client";
           const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
           const newWin = window.open("", "_blank");
@@ -733,7 +833,7 @@ function buildCreditAppPDF(data, projectTotal) {
       ${field("State", data.bState)} ${field("Zip", data.bZip)}
     </div>`;
 
-  if (parseInt(data.bYearsAddr || "99") < 3) {
+  if (parseInt(data.bYearsAddr || "99") < 2) {
     body += `${divider}<div class="sub">Prior Address</div>
     <div class="row">
       ${field("Street", data.bPriorStreet, 3)} ${field("City", data.bPriorCity, 2)}
@@ -833,14 +933,16 @@ function buildCreditAppPDF(data, projectTotal) {
   </div></div>`;
 
   // Signatures
-  const sigBlock = (prefix, label, sig, dlNum, dlExp, dlPhoto) => `
-    <div style="margin-bottom:${isJoint ? "16px" : "0"}">
+  const sigBlock = (prefix, label, sig, sigDate, dlNum, dlExp, dlPhoto) => `
+    <div style="margin-bottom:${isJoint ? "20px" : "0"}">
       <div style="font-size:10px;font-weight:800;color:#0f172a;margin-bottom:10px">${label}</div>
-      <div class="row">
-        ${field("Signature", sig ? `<em>${sig}</em>` : "", 3)}
-        ${field("Date", dlExp ? new Date().toLocaleDateString("en-US") : "")}
-      </div>
-      <div class="row">
+      <div style="font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:5px">Signature</div>
+      ${sig
+        ? `<img src="${sig}" style="width:100%;max-width:380px;height:80px;object-fit:contain;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;display:block;margin-bottom:8px" alt="${label} Signature"/>`
+        : `<div style="border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;height:80px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:10px;font-style:italic">No signature captured</div>`
+      }
+      <div style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap">
+        ${field("Date", sigDate || new Date().toLocaleDateString("en-US"))}
         ${field("Driver's License No. & State", dlNum, 2)}
         ${field("DL Expiration Date", dlExp)}
       </div>
@@ -849,8 +951,8 @@ function buildCreditAppPDF(data, projectTotal) {
 
   body += `<div class="sec"><div class="sec-head">Authorization & Signatures</div><div class="sec-body">
     <p style="font-size:9.5px;color:#64748b;margin:0 0 14px;line-height:1.65">I/we have read this "Financing Application" Quality Assurance and "Terms and Conditions" for the financing and by signing below, I/we agree to be bound by the requirements and provisions herein. I/we certify that the information I/we given is true and complete to the best of my/our knowledge. I/we authorize the lender of choice to verify any of the information given about me/us and obtain information from my/our employer(s) and to obtain credit reports. <strong>THIS APPLICATION MAY BE SUBMITTED TO MORE THAN ONE POTENTIAL LENDER.</strong></p>
-    ${sigBlock("b", "Borrower", data.bSignature, data.bDLNum, data.bDLExp, data.bDLPhoto)}
-    ${isJoint ? sigBlock("cb", "Co-Borrower", data.cbSignature, data.cbDLNum, data.cbDLExp, data.cbDLPhoto) : ""}
+    ${sigBlock("b", "Borrower", data.bSignature, data.bSigDate, data.bDLNum, data.bDLExp, data.bDLPhoto)}
+    ${isJoint ? sigBlock("cb", "Co-Borrower", data.cbSignature, data.cbSigDate, data.cbDLNum, data.cbDLExp, data.cbDLPhoto) : ""}
   </div></div>`;
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${css}</style></head><body>${body}</body></html>`;
@@ -1744,12 +1846,6 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
     body += `</div>`;
   }
 
-  if (state.notes) { body += `<div class='sec'><div class='lbl'>Notes</div><div style='font-size:11px;color:#334155;line-height:1.8;white-space:pre-wrap'>${state.notes}</div></div>`; }
-
-  if (mode === "pdf" && (state.pricing && (state.pricing.daysToBegin || state.pricing.daysToComplete))) {
-    body += `<div class='sec'><div class='lbl'>Project Timeline</div><div style='background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:8px;padding:12px 14px;font-size:11px;color:#0f172a;line-height:1.8'>${state.pricing.daysToBegin ? `New Direction Construction agrees to begin work within <strong>${state.pricing.daysToBegin} days</strong> of the signed contract date.` : ""}${state.pricing.daysToComplete ? ` The project is expected to be completed within <strong>${state.pricing.daysToComplete} days</strong> of commencement.` : ""}</div></div>`;
-  }
-
   if (mode === "pdf") {
     const chosenTotal = selectedOption === "standard" ? standard : priority;
     const finAmt   = chosenTotal * financingPct / 100;
@@ -1816,6 +1912,12 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
     }
 
     body += `</div></div>`;
+
+    if (state.notes) { body += `<div class='sec'><div class='lbl'>Notes</div><div style='font-size:11px;color:#334155;line-height:1.8;white-space:pre-wrap'>${state.notes}</div></div>`; }
+
+    if (state.pricing && (state.pricing.daysToBegin || state.pricing.daysToComplete)) {
+      body += `<div class='sec'><div class='lbl'>Project Timeline</div><div style='background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:8px;padding:12px 14px;font-size:11px;color:#0f172a;line-height:1.8'>${state.pricing.daysToBegin ? `New Direction Construction agrees to begin work within <strong>${state.pricing.daysToBegin} days</strong> of the signed contract date.` : ""}${state.pricing.daysToComplete ? ` The project is expected to be completed within <strong>${state.pricing.daysToComplete} days</strong> of commencement.` : ""}</div></div>`;
+    }
 
     const tcItems = [
       { n: 1,  title: "Office Approval", body: "All contracts are subject to approval by Company manager and/or officer of the Company." },
