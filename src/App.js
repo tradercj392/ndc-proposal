@@ -194,10 +194,27 @@ function calcGrandTotal(state) {
 const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
 
 function CreditAppStep({ data, onChange, projectTotal }) {
-  const set = (k, v) => onChange({ ...data, [k]: v });
+  // Local state for all fields — prevents parent re-render on every keystroke
+  const [local, setLocal] = useState(data);
+  const setL = (k, v) => setLocal(prev => ({ ...prev, [k]: v }));
+  // Sync to parent on blur (not on every keystroke)
+  const syncToParent = () => onChange(local);
+  const blurProps = { onBlur: syncToParent };
 
-  const isJoint = data.appType === "joint";
-  const showPriorAddr = parseInt(data.bYearsAddr || "99") < 2;
+  // Keep local in sync if parent data changes externally (e.g. appType toggle)
+  const set = (k, v) => {
+    const updated = { ...local, [k]: v };
+    setLocal(updated);
+    onChange(updated); // immediate sync for toggles/selects (not text fields)
+  };
+
+  const isJoint = local.appType === "joint";
+  const showPriorAddr = parseInt(local.bYearsAddr || "99") < 2;
+
+  // Sync local when parent data changes (e.g. from outside)
+  useEffect(() => {
+    setLocal(prev => ({ ...data, ...prev }));
+  }, [local.appType, local.amountFinanced, local.totalPrice]);
 
   // SVG-based signature state — survives re-renders because it's just data
   const [bStrokes, setBStrokes] = useState([]);
@@ -209,7 +226,6 @@ function CreditAppStep({ data, onChange, projectTotal }) {
     const rect = el.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    // Scale from display size to SVG coordinate space (600x120)
     const scaleX = 600 / rect.width;
     const scaleY = 120 / rect.height;
     return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
@@ -277,16 +293,16 @@ function CreditAppStep({ data, onChange, projectTotal }) {
 
   // Auto-calc amount financed
   useEffect(() => {
-    const total = parseFloat((data.totalPrice || "0").replace(/[^0-9.]/g, "")) || 0;
-    const down  = parseFloat((data.downPayment || "0").replace(/[^0-9.]/g, "")) || 0;
+    const total = parseFloat((local.totalPrice || "0").replace(/[^0-9.]/g, "")) || 0;
+    const down  = parseFloat((local.downPayment || "0").replace(/[^0-9.]/g, "")) || 0;
     const fin = total - down;
     if (fin > 0) set("amountFinanced", "$" + fin.toFixed(2));
     else set("amountFinanced", "");
-  }, [data.totalPrice, data.downPayment]);
+  }, [local.totalPrice, local.downPayment]);
 
   // Pre-fill project total from proposal pricing
   useEffect(() => {
-    if (projectTotal > 0 && !data.totalPrice) {
+    if (projectTotal > 0 && !local.totalPrice) {
       set("totalPrice", "$" + projectTotal.toFixed(2));
     }
   }, []);
@@ -452,7 +468,7 @@ function CreditAppStep({ data, onChange, projectTotal }) {
       {/* App type toggle */}
       <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
         {["individual", "joint"].map(type => (
-          <button key={type} onClick={() => set("appType", type)} style={{ flex: 1, padding: "13px", border: "2px solid " + (data.appType === type ? "#0f172a" : "#e2e8f0"), borderRadius: 10, background: data.appType === type ? "#0f172a" : "white", color: data.appType === type ? "white" : "#64748b", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
+          <button key={type} onClick={() => set("appType", type)} style={{ flex: 1, padding: "13px", border: "2px solid " + (local.appType === type ? "#0f172a" : "#e2e8f0"), borderRadius: 10, background: local.appType === type ? "#0f172a" : "white", color: local.appType === type ? "white" : "#64748b", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
             {type === "individual" ? "👤 Individual Application" : "👥 Joint Application"}
           </button>
         ))}
@@ -464,13 +480,13 @@ function CreditAppStep({ data, onChange, projectTotal }) {
         <CardBody>
           <Row>
             <F label="Total Contract Price" required>
-              <input style={inp} value={data.totalPrice} onChange={e => set("totalPrice", fmtCurr(e.target.value))} placeholder="$0.00" />
+              <input style={inp} value={local.totalPrice} onChange={e => setL("totalPrice", fmtCurr(e.target.value))} onBlur={syncToParent} placeholder="$0.00" />
             </F>
             <F label="Down Payment">
-              <input style={inp} value={data.downPayment} onChange={e => set("downPayment", fmtCurr(e.target.value))} placeholder="$0.00" />
+              <input style={inp} value={local.downPayment} onChange={e => setL("downPayment", fmtCurr(e.target.value))} onBlur={syncToParent} placeholder="$0.00" />
             </F>
             <F label="Amount Financed">
-              <input style={{ ...inp, background: "#f8fafc", color: "#64748b" }} value={data.amountFinanced} readOnly placeholder="Auto-calculated" />
+              <input style={{ ...inp, background: "#f8fafc", color: "#64748b" }} value={local.amountFinanced} readOnly placeholder="Auto-calculated" />
             </F>
           </Row>
         </CardBody>
@@ -483,30 +499,30 @@ function CreditAppStep({ data, onChange, projectTotal }) {
           {/* Name */}
           <div style={{ fontSize: 11, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10 }}>Personal</div>
           <Row>
-            <F label="Last Name" flex={2} required><input style={inp} value={data.bLast} onChange={e => set("bLast", e.target.value)} placeholder="Last name" /></F>
-            <F label="First Name" flex={2} required><input style={inp} value={data.bFirst} onChange={e => set("bFirst", e.target.value)} placeholder="First name" /></F>
-            <F label="M.I." flex={0} minWidth={60}><input style={inp} value={data.bMI} onChange={e => set("bMI", e.target.value)} placeholder="M" maxLength={2} /></F>
+            <F label="Last Name" flex={2} required><input style={inp} value={local.bLast} onChange={e => setL("bLast", e.target.value)} onBlur={syncToParent} placeholder="Last name" /></F>
+            <F label="First Name" flex={2} required><input style={inp} value={local.bFirst} onChange={e => setL("bFirst", e.target.value)} onBlur={syncToParent} placeholder="First name" /></F>
+            <F label="M.I." flex={0} minWidth={60}><input style={inp} value={local.bMI} onChange={e => setL("bMI", e.target.value)} onBlur={syncToParent} placeholder="M" maxLength={2} /></F>
           </Row>
           <Row>
-            <F label="Social Security Number" required><input style={inp} value={data.bSSN} onChange={e => set("bSSN", fmtSSN(e.target.value))} placeholder="XXX-XX-XXXX" /></F>
-            <F label="Date of Birth" required><input style={inp} type="date" value={data.bDOB} onChange={e => set("bDOB", e.target.value)} /></F>
-            <F label="Home Phone" required><input style={inp} value={data.bPhone} onChange={e => set("bPhone", fmtPhone(e.target.value))} placeholder="(555) 000-0000" /></F>
+            <F label="Social Security Number" required><input style={inp} value={local.bSSN} onChange={e => setL("bSSN", fmtSSN(e.target.value))} onBlur={syncToParent} placeholder="XXX-XX-XXXX" /></F>
+            <F label="Date of Birth" required><input style={inp} type="date" value={local.bDOB} onChange={e => setL("bDOB", e.target.value)} onBlur={syncToParent} /></F>
+            <F label="Home Phone" required><input style={inp} value={local.bPhone} onChange={e => setL("bPhone", fmtPhone(e.target.value))} onBlur={syncToParent} placeholder="(555) 000-0000" /></F>
           </Row>
           <Row>
-            <F label="Email Address" flex={2} required><input style={inp} type="email" value={data.bEmail} onChange={e => set("bEmail", e.target.value)} placeholder="email@example.com" /></F>
-            <F label="Years at Present Address" required><input style={inp} type="number" value={data.bYearsAddr} onChange={e => set("bYearsAddr", e.target.value)} placeholder="0" min="0" /></F>
+            <F label="Email Address" flex={2} required><input style={inp} type="email" value={local.bEmail} onChange={e => setL("bEmail", e.target.value)} onBlur={syncToParent} placeholder="email@example.com" /></F>
+            <F label="Years at Present Address" required><input style={inp} type="number" value={local.bYearsAddr} onChange={e => setL("bYearsAddr", e.target.value)} onBlur={syncToParent} placeholder="0" min="0" /></F>
           </Row>
 
           {/* Address */}
           <div style={{ height: 1, background: "#f1f5f9", margin: "8px 0 14px" }} />
           <div style={{ fontSize: 11, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10 }}>Current Address</div>
           <Row>
-            <F label="Street" flex={3} required><input style={inp} value={data.bStreet} onChange={e => set("bStreet", e.target.value)} placeholder="123 Main St" /></F>
-            <F label="City" flex={2} required><input style={inp} value={data.bCity} onChange={e => set("bCity", e.target.value)} placeholder="City" /></F>
+            <F label="Street" flex={3} required><input style={inp} value={local.bStreet} onChange={e => setL("bStreet", e.target.value)} onBlur={syncToParent} placeholder="123 Main St" /></F>
+            <F label="City" flex={2} required><input style={inp} value={local.bCity} onChange={e => setL("bCity", e.target.value)} onBlur={syncToParent} placeholder="City" /></F>
           </Row>
           <Row>
-            <F label="State" required><StateSelect value={data.bState} onChange={v => set("bState", v)} /></F>
-            <F label="Zip Code" required><input style={inp} value={data.bZip} onChange={e => set("bZip", e.target.value.replace(/\D/g,"").slice(0,5))} placeholder="00000" /></F>
+            <F label="State" required><StateSelect value={local.bState} onChange={v => set("bState", v)} /></F>
+            <F label="Zip Code" required><input style={inp} value={local.bZip} onChange={e => setL("bZip", e.target.value.replace(/\D/g,"").slice(0,5)} onBlur={syncToParent})} placeholder="00000" /></F>
           </Row>
 
           {/* Prior address */}
@@ -515,12 +531,12 @@ function CreditAppStep({ data, onChange, projectTotal }) {
               <div style={{ height: 1, background: "#f1f5f9", margin: "8px 0 14px" }} />
               <div style={{ fontSize: 11, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10 }}>Prior Address <span style={{ fontSize: 10, fontWeight: 400, color: "#94a3b8", textTransform: "none" }}>(less than 2 years at current)</span></div>
               <Row>
-                <F label="Street" flex={3}><input style={inp} value={data.bPriorStreet} onChange={e => set("bPriorStreet", e.target.value)} placeholder="Prior street address" /></F>
-                <F label="City" flex={2}><input style={inp} value={data.bPriorCity} onChange={e => set("bPriorCity", e.target.value)} placeholder="City" /></F>
+                <F label="Street" flex={3}><input style={inp} value={local.bPriorStreet} onChange={e => setL("bPriorStreet", e.target.value)} onBlur={syncToParent} placeholder="Prior street address" /></F>
+                <F label="City" flex={2}><input style={inp} value={local.bPriorCity} onChange={e => setL("bPriorCity", e.target.value)} onBlur={syncToParent} placeholder="City" /></F>
               </Row>
               <Row>
-                <F label="State"><StateSelect value={data.bPriorState} onChange={v => set("bPriorState", v)} /></F>
-                <F label="Zip"><input style={inp} value={data.bPriorZip} onChange={e => set("bPriorZip", e.target.value.replace(/\D/g,"").slice(0,5))} placeholder="00000" /></F>
+                <F label="State"><StateSelect value={local.bPriorState} onChange={v => set("bPriorState", v)} /></F>
+                <F label="Zip"><input style={inp} value={local.bPriorZip} onChange={e => setL("bPriorZip", e.target.value.replace(/\D/g,"").slice(0,5)} onBlur={syncToParent})} placeholder="00000" /></F>
               </Row>
             </>
           )}
@@ -529,21 +545,21 @@ function CreditAppStep({ data, onChange, projectTotal }) {
           <div style={{ height: 1, background: "#f1f5f9", margin: "8px 0 14px" }} />
           <div style={{ fontSize: 11, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10 }}>Employment</div>
           <Row>
-            <F label="Employer Name" flex={3} required><input style={inp} value={data.bEmployer} onChange={e => set("bEmployer", e.target.value)} placeholder="Employer name" /></F>
-            <F label="Time on Job"><input style={inp} value={data.bJobTime} onChange={e => set("bJobTime", e.target.value)} placeholder="e.g. 3 years" /></F>
+            <F label="Employer Name" flex={3} required><input style={inp} value={local.bEmployer} onChange={e => setL("bEmployer", e.target.value)} onBlur={syncToParent} placeholder="Employer name" /></F>
+            <F label="Time on Job"><input style={inp} value={local.bJobTime} onChange={e => setL("bJobTime", e.target.value)} onBlur={syncToParent} placeholder="e.g. 3 years" /></F>
           </Row>
           <Row>
-            <F label="Employer Street" flex={3}><input style={inp} value={data.bEmpStreet} onChange={e => set("bEmpStreet", e.target.value)} placeholder="Street address" /></F>
-            <F label="City" flex={2}><input style={inp} value={data.bEmpCity} onChange={e => set("bEmpCity", e.target.value)} placeholder="City" /></F>
+            <F label="Employer Street" flex={3}><input style={inp} value={local.bEmpStreet} onChange={e => setL("bEmpStreet", e.target.value)} onBlur={syncToParent} placeholder="Street address" /></F>
+            <F label="City" flex={2}><input style={inp} value={local.bEmpCity} onChange={e => setL("bEmpCity", e.target.value)} onBlur={syncToParent} placeholder="City" /></F>
           </Row>
           <Row>
-            <F label="State"><StateSelect value={data.bEmpState} onChange={v => set("bEmpState", v)} /></F>
-            <F label="Zip"><input style={inp} value={data.bEmpZip} onChange={e => set("bEmpZip", e.target.value.replace(/\D/g,"").slice(0,5))} placeholder="00000" /></F>
-            <F label="Employer Phone"><input style={inp} value={data.bEmpPhone} onChange={e => set("bEmpPhone", fmtPhone(e.target.value))} placeholder="(555) 000-0000" /></F>
+            <F label="State"><StateSelect value={local.bEmpState} onChange={v => set("bEmpState", v)} /></F>
+            <F label="Zip"><input style={inp} value={local.bEmpZip} onChange={e => setL("bEmpZip", e.target.value.replace(/\D/g,"").slice(0,5)} onBlur={syncToParent})} placeholder="00000" /></F>
+            <F label="Employer Phone"><input style={inp} value={local.bEmpPhone} onChange={e => setL("bEmpPhone", fmtPhone(e.target.value))} onBlur={syncToParent} placeholder="(555) 000-0000" /></F>
           </Row>
           <Row>
-            <F label="Current Position"><input style={inp} value={data.bPosition} onChange={e => set("bPosition", e.target.value)} placeholder="Job title" /></F>
-            <F label="Gross Salary" required><input style={inp} value={data.bSalary} onChange={e => set("bSalary", fmtCurr(e.target.value))} placeholder="$0.00" /></F>
+            <F label="Current Position"><input style={inp} value={local.bPosition} onChange={e => setL("bPosition", e.target.value)} onBlur={syncToParent} placeholder="Job title" /></F>
+            <F label="Gross Salary" required><input style={inp} value={local.bSalary} onChange={e => setL("bSalary", fmtCurr(e.target.value))} onBlur={syncToParent} placeholder="$0.00" /></F>
             <F label="Frequency">
               <div style={{ display: "flex", gap: 8 }}>
                 <RadioPill name="bSalaryFreq" value="weekly" checked={data.bSalaryFreq === "weekly"} onChange={() => set("bSalaryFreq", "weekly")} label="Weekly" />
@@ -552,8 +568,8 @@ function CreditAppStep({ data, onChange, projectTotal }) {
             </F>
           </Row>
           <Row>
-            <F label="Other Income"><input style={inp} value={data.bOtherIncome} onChange={e => set("bOtherIncome", fmtCurr(e.target.value))} placeholder="$0.00" /></F>
-            <F label="Source"><input style={inp} value={data.bIncomeSource} onChange={e => set("bIncomeSource", e.target.value)} placeholder="e.g. Rental income" /></F>
+            <F label="Other Income"><input style={inp} value={local.bOtherIncome} onChange={e => setL("bOtherIncome", fmtCurr(e.target.value))} onBlur={syncToParent} placeholder="$0.00" /></F>
+            <F label="Source"><input style={inp} value={local.bIncomeSource} onChange={e => setL("bIncomeSource", e.target.value)} onBlur={syncToParent} placeholder="e.g. Rental income" /></F>
             <F label="Frequency">
               <div style={{ display: "flex", gap: 8 }}>
                 <RadioPill name="bIncomeFreq" value="weekly" checked={data.bIncomeFreq === "weekly"} onChange={() => set("bIncomeFreq", "weekly")} label="Weekly" />
@@ -567,13 +583,13 @@ function CreditAppStep({ data, onChange, projectTotal }) {
           <div style={{ height: 1, background: "#f1f5f9", margin: "8px 0 14px" }} />
           <div style={{ fontSize: 11, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10 }}>Mortgage / Housing</div>
           <Row>
-            <F label="Mortgage Holder" flex={3}><input style={inp} value={data.bMortgageHolder} onChange={e => set("bMortgageHolder", e.target.value)} placeholder="Lender name" /></F>
-            <F label="Monthly Payment"><input style={inp} value={data.bMortgagePayment} onChange={e => set("bMortgagePayment", fmtCurr(e.target.value))} placeholder="$0.00" /></F>
+            <F label="Mortgage Holder" flex={3}><input style={inp} value={local.bMortgageHolder} onChange={e => setL("bMortgageHolder", e.target.value)} onBlur={syncToParent} placeholder="Lender name" /></F>
+            <F label="Monthly Payment"><input style={inp} value={local.bMortgagePayment} onChange={e => setL("bMortgagePayment", fmtCurr(e.target.value))} onBlur={syncToParent} placeholder="$0.00" /></F>
           </Row>
           <Row>
-            <F label="Current Balance"><input style={inp} value={data.bMortgageBalance} onChange={e => set("bMortgageBalance", fmtCurr(e.target.value))} placeholder="$0.00" /></F>
-            <F label="Purchase Price"><input style={inp} value={data.bPurchasePrice} onChange={e => set("bPurchasePrice", fmtCurr(e.target.value))} placeholder="$0.00" /></F>
-            <F label="Current Value"><input style={inp} value={data.bCurrentValue} onChange={e => set("bCurrentValue", fmtCurr(e.target.value))} placeholder="$0.00" /></F>
+            <F label="Current Balance"><input style={inp} value={local.bMortgageBalance} onChange={e => setL("bMortgageBalance", fmtCurr(e.target.value))} onBlur={syncToParent} placeholder="$0.00" /></F>
+            <F label="Purchase Price"><input style={inp} value={local.bPurchasePrice} onChange={e => setL("bPurchasePrice", fmtCurr(e.target.value))} onBlur={syncToParent} placeholder="$0.00" /></F>
+            <F label="Current Value"><input style={inp} value={local.bCurrentValue} onChange={e => setL("bCurrentValue", fmtCurr(e.target.value))} onBlur={syncToParent} placeholder="$0.00" /></F>
           </Row>
         </CardBody>
       </Card>
@@ -592,27 +608,27 @@ function CreditAppStep({ data, onChange, projectTotal }) {
             <>
               <div style={{ fontSize: 11, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10 }}>Personal</div>
               <Row>
-                <F label="Last Name" flex={2} required><input style={inp} value={data.cbLast} onChange={e => set("cbLast", e.target.value)} placeholder="Last name" /></F>
-                <F label="First Name" flex={2} required><input style={inp} value={data.cbFirst} onChange={e => set("cbFirst", e.target.value)} placeholder="First name" /></F>
-                <F label="M.I." flex={0} minWidth={60}><input style={inp} value={data.cbMI} onChange={e => set("cbMI", e.target.value)} placeholder="M" maxLength={2} /></F>
+                <F label="Last Name" flex={2} required><input style={inp} value={local.cbLast} onChange={e => setL("cbLast", e.target.value)} onBlur={syncToParent} placeholder="Last name" /></F>
+                <F label="First Name" flex={2} required><input style={inp} value={local.cbFirst} onChange={e => setL("cbFirst", e.target.value)} onBlur={syncToParent} placeholder="First name" /></F>
+                <F label="M.I." flex={0} minWidth={60}><input style={inp} value={local.cbMI} onChange={e => setL("cbMI", e.target.value)} onBlur={syncToParent} placeholder="M" maxLength={2} /></F>
               </Row>
               <Row>
-                <F label="Social Security Number" required><input style={inp} value={data.cbSSN} onChange={e => set("cbSSN", fmtSSN(e.target.value))} placeholder="XXX-XX-XXXX" /></F>
-                <F label="Date of Birth" required><input style={inp} type="date" value={data.cbDOB} onChange={e => set("cbDOB", e.target.value)} /></F>
+                <F label="Social Security Number" required><input style={inp} value={local.cbSSN} onChange={e => setL("cbSSN", fmtSSN(e.target.value))} onBlur={syncToParent} placeholder="XXX-XX-XXXX" /></F>
+                <F label="Date of Birth" required><input style={inp} type="date" value={local.cbDOB} onChange={e => setL("cbDOB", e.target.value)} onBlur={syncToParent} /></F>
               </Row>
               <div style={{ height: 1, background: "#f1f5f9", margin: "8px 0 14px" }} />
               <div style={{ fontSize: 11, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10 }}>Employment</div>
               <Row>
-                <F label="Employer Name" flex={3}><input style={inp} value={data.cbEmployer} onChange={e => set("cbEmployer", e.target.value)} placeholder="Employer name" /></F>
-                <F label="Time on Job"><input style={inp} value={data.cbJobTime} onChange={e => set("cbJobTime", e.target.value)} placeholder="e.g. 2 years" /></F>
+                <F label="Employer Name" flex={3}><input style={inp} value={local.cbEmployer} onChange={e => setL("cbEmployer", e.target.value)} onBlur={syncToParent} placeholder="Employer name" /></F>
+                <F label="Time on Job"><input style={inp} value={local.cbJobTime} onChange={e => setL("cbJobTime", e.target.value)} onBlur={syncToParent} placeholder="e.g. 2 years" /></F>
               </Row>
               <Row>
-                <F label="Employer Address" flex={3}><input style={inp} value={data.cbEmpAddr} onChange={e => set("cbEmpAddr", e.target.value)} placeholder="Street, City, State, Zip" /></F>
-                <F label="Employer Phone"><input style={inp} value={data.cbEmpPhone} onChange={e => set("cbEmpPhone", fmtPhone(e.target.value))} placeholder="(555) 000-0000" /></F>
+                <F label="Employer Address" flex={3}><input style={inp} value={local.cbEmpAddr} onChange={e => setL("cbEmpAddr", e.target.value)} onBlur={syncToParent} placeholder="Street, City, State, Zip" /></F>
+                <F label="Employer Phone"><input style={inp} value={local.cbEmpPhone} onChange={e => setL("cbEmpPhone", fmtPhone(e.target.value))} onBlur={syncToParent} placeholder="(555) 000-0000" /></F>
               </Row>
               <Row>
-                <F label="Current Position"><input style={inp} value={data.cbPosition} onChange={e => set("cbPosition", e.target.value)} placeholder="Job title" /></F>
-                <F label="Gross Salary"><input style={inp} value={data.cbSalary} onChange={e => set("cbSalary", fmtCurr(e.target.value))} placeholder="$0.00" /></F>
+                <F label="Current Position"><input style={inp} value={local.cbPosition} onChange={e => setL("cbPosition", e.target.value)} onBlur={syncToParent} placeholder="Job title" /></F>
+                <F label="Gross Salary"><input style={inp} value={local.cbSalary} onChange={e => setL("cbSalary", fmtCurr(e.target.value))} onBlur={syncToParent} placeholder="$0.00" /></F>
                 <F label="Frequency">
                   <div style={{ display: "flex", gap: 8 }}>
                     <RadioPill name="cbSalaryFreq" value="weekly" checked={data.cbSalaryFreq === "weekly"} onChange={() => set("cbSalaryFreq", "weekly")} label="Weekly" />
@@ -621,8 +637,8 @@ function CreditAppStep({ data, onChange, projectTotal }) {
                 </F>
               </Row>
               <Row>
-                <F label="Other Income"><input style={inp} value={data.cbOtherIncome} onChange={e => set("cbOtherIncome", fmtCurr(e.target.value))} placeholder="$0.00" /></F>
-                <F label="Source"><input style={inp} value={data.cbIncomeSource} onChange={e => set("cbIncomeSource", e.target.value)} placeholder="e.g. Rental income" /></F>
+                <F label="Other Income"><input style={inp} value={local.cbOtherIncome} onChange={e => setL("cbOtherIncome", fmtCurr(e.target.value))} onBlur={syncToParent} placeholder="$0.00" /></F>
+                <F label="Source"><input style={inp} value={local.cbIncomeSource} onChange={e => setL("cbIncomeSource", e.target.value)} onBlur={syncToParent} placeholder="e.g. Rental income" /></F>
                 <F label="Frequency">
                   <div style={{ display: "flex", gap: 8 }}>
                     <RadioPill name="cbIncomeFreq" value="weekly" checked={data.cbIncomeFreq === "weekly"} onChange={() => set("cbIncomeFreq", "weekly")} label="Weekly" />
@@ -675,15 +691,15 @@ function CreditAppStep({ data, onChange, projectTotal }) {
 
             <Row>
               <F label="Date" required>
-                <input style={inp} type="date" value={data.bSigDate} onChange={e => set("bSigDate", e.target.value)} />
+                <input style={inp} type="date" value={local.bSigDate} onChange={e => setL("bSigDate", e.target.value)} onBlur={syncToParent} />
               </F>
             </Row>
             <Row>
               <F label="Driver's License No. & State" flex={2} required>
-                <input style={inp} value={data.bDLNum} onChange={e => set("bDLNum", e.target.value)} placeholder="e.g. D123456789 — FL" />
+                <input style={inp} value={local.bDLNum} onChange={e => setL("bDLNum", e.target.value)} onBlur={syncToParent} placeholder="e.g. D123456789 — FL" />
               </F>
               <F label="DL Expiration Date" required>
-                <input style={inp} type="date" value={data.bDLExp} onChange={e => set("bDLExp", e.target.value)} />
+                <input style={inp} type="date" value={local.bDLExp} onChange={e => setL("bDLExp", e.target.value)} onBlur={syncToParent} />
               </F>
             </Row>
             <PhotoUpload photoKey="bDLPhoto" label="Driver's License Photo" />
@@ -707,15 +723,15 @@ function CreditAppStep({ data, onChange, projectTotal }) {
 
               <Row>
                 <F label="Date" required>
-                  <input style={inp} type="date" value={data.cbSigDate} onChange={e => set("cbSigDate", e.target.value)} />
+                  <input style={inp} type="date" value={local.cbSigDate} onChange={e => setL("cbSigDate", e.target.value)} onBlur={syncToParent} />
                 </F>
               </Row>
               <Row>
                 <F label="Driver's License No. & State" flex={2} required>
-                  <input style={inp} value={data.cbDLNum} onChange={e => set("cbDLNum", e.target.value)} placeholder="e.g. D123456789 — FL" />
+                  <input style={inp} value={local.cbDLNum} onChange={e => setL("cbDLNum", e.target.value)} onBlur={syncToParent} placeholder="e.g. D123456789 — FL" />
                 </F>
                 <F label="DL Expiration Date" required>
-                  <input style={inp} type="date" value={data.cbDLExp} onChange={e => set("cbDLExp", e.target.value)} />
+                  <input style={inp} type="date" value={local.cbDLExp} onChange={e => setL("cbDLExp", e.target.value)} onBlur={syncToParent} />
                 </F>
               </Row>
               <PhotoUpload photoKey="cbDLPhoto" label="Co-Borrower Driver's License Photo" />
@@ -729,12 +745,12 @@ function CreditAppStep({ data, onChange, projectTotal }) {
         onClick={() => {
           // Inject current signature data from refs before building PDF
           const dataWithSigs = {
-            ...data,
+            ...local,
             bSignature: bStrokes.length > 0 ? strokesToDataUrl(bStrokes) : null,
             cbSignature: cbStrokes.length > 0 ? strokesToDataUrl(cbStrokes) : null,
           };
           const creditHtml = buildCreditAppPDF(dataWithSigs, projectTotal);
-          const clientName = (data.bFirst + "_" + data.bLast).replace(/[^a-zA-Z0-9_]/g, "") || "Client";
+          const clientName = (local.bFirst + "_" + local.bLast).replace(/[^a-zA-Z0-9_]/g, "") || "Client";
           const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
           const newWin = window.open("", "_blank");
           if (newWin) {
@@ -757,7 +773,7 @@ function CreditAppStep({ data, onChange, projectTotal }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function buildCreditAppPDF(data, projectTotal) {
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-  const isJoint = data.appType === "joint";
+  const isJoint = local.appType === "joint";
 
   const css = `
     body{font-family:Arial,sans-serif;padding:28px;max-width:760px;margin:0 auto;color:#0f172a;font-size:11px}
