@@ -2246,7 +2246,10 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
       </button>
 
       {usingFinancing && (
-        <button onClick={() => setStep(steps.findIndex(s => s.key === "creditapp"))} style={{ background: "linear-gradient(135deg,#0f172a,#1e3a5f)", color: "white", border: "2px solid #0ea5e9", borderRadius: 10, padding: "14px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%" }}>
+        <button onClick={() => {
+          const idx = steps.findIndex(s => s.key === "creditapp");
+          setStep(idx >= 0 ? idx : steps.length - 1);
+        }} style={{ background: "linear-gradient(135deg,#0f172a,#1e3a5f)", color: "white", border: "2px solid #0ea5e9", borderRadius: 10, padding: "14px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%" }}>
           💳 Proceed to Credit Application
         </button>
       )}
@@ -2318,7 +2321,7 @@ function App() {
   const [showDeposit, setShowDeposit] = useState(false);
   const [depositOption, setDepositOption] = useState(null);
   const [customDepositText, setCustomDepositText] = useState("");
-  const [usingFinancing, setUsingFinancing] = useState(false);
+  const [usingFinancing, setUsingFinancing] = useState(state.isFinancing || false);
   const [financingPct, setFinancingPct] = useState(100);
   const [showPricingModal, setShowPricingModal] = useState(false);
 
