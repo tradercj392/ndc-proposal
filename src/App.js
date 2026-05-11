@@ -390,7 +390,7 @@ function CreditAppStep({ data, onChange, projectTotal }) {
         <label style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.6px", display: "block", marginBottom: 8 }}>{label}</label>
         {photo ? (
           <div style={{ position: "relative", display: "inline-block" }}>
-            <img src={photo} alt="DL" style={{ maxWidth: "100%", maxHeight: 180, borderRadius: 8, border: "2px solid #0ea5e9", display: "block" }} />
+            <img src={photo} alt="DL" style={{ maxWidth: "100%", maxHeight: 260, borderRadius: 8, border: "2px solid #0ea5e9", display: "block" }} />
             <button onClick={() => setF(photoKey, null)} style={{ position: "absolute", top: 6, right: 6, background: "rgba(15,23,42,0.7)", border: "none", borderRadius: "50%", color: "white", width: 26, height: 26, cursor: "pointer", fontSize: 13 }}>×</button>
           </div>
         ) : (
@@ -799,7 +799,7 @@ function buildCreditAppPDF(data, projectTotal) {
     .chip{padding:3px 10px;border:1px solid #e2e8f0;border-radius:12px;font-size:10px;color:#334155}
     .chip.on{background:#0f172a;color:white;border-color:#0f172a}
     .sig-box{border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;height:70px;margin-bottom:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-style:italic;color:#334155}
-    .dl-img{max-width:280px;max-height:160px;border:2px solid #0ea5e9;border-radius:6px;margin-top:8px}
+    .dl-img{max-width:480px;width:100%;max-height:280px;border:2px solid #0ea5e9;border-radius:6px;margin-top:8px;object-fit:contain}
     @media print{body{padding:12px}}
   `;
 
