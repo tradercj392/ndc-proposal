@@ -410,18 +410,22 @@ function CreditAppStep({ data, onChange, projectTotal }) {
     );
   };
 
-  const MonitoringBlock = ({ prefix, label }) => {
-    const [noFurnish, setNoFurnish] = useState(formRef.current[prefix + "NoFurnish"] || false);
-    const [ethnicity, setEthnicity] = useState(formRef.current[prefix + "Ethnicity"] || "");
-    const [race, setRace] = useState(formRef.current[prefix + "Race"] || []);
-    const [sex, setSex] = useState(formRef.current[prefix + "Sex"] || "");
+  // Monitoring state lifted up to avoid remount issue
+  const [bNoFurnish, setBNoFurnish] = useState(data.bNoFurnish || false);
+  const [bEthnicity, setBEthnicity] = useState(data.bEthnicity || "");
+  const [bRace, setBRace] = useState(data.bRace || []);
+  const [bSex, setBSex] = useState(data.bSex || "");
+  const [cbNoFurnish, setCBNoFurnish] = useState(data.cbNoFurnish || false);
+  const [cbEthnicity, setCBEthnicity] = useState(data.cbEthnicity || "");
+  const [cbRace, setCBRace] = useState(data.cbRace || []);
+  const [cbSex, setCBSex] = useState(data.cbSex || "");
 
+  const renderMonitoring = (label, noFurnish, setNoFurnish, ethnicity, setEthnicity, race, setRace, sex, setSex, prefix) => {
     const toggleRace = (val) => {
       const next = race.includes(val) ? race.filter(r => r !== val) : [...race, val];
       setRace(next);
       setF(prefix + "Race", next);
     };
-
     return (
       <div style={{ flex: 1, minWidth: 240 }}>
         <div style={{ fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 12, paddingBottom: 8, borderBottom: "1.5px solid #e2e8f0" }}>{label}</div>
@@ -657,8 +661,8 @@ function CreditAppStep({ data, onChange, projectTotal }) {
             The following information is requested by the federal government for certain types of loans related to a dwelling in order to monitor the lender's compliance with equal credit opportunity, fair housing and home mortgage disclosure laws. You are not required to furnish this information, but are encouraged to do so.
           </div>
           <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-            <MonitoringBlock prefix="b" label="Borrower" />
-            {isJoint && <MonitoringBlock prefix="cb" label="Co-Borrower" />}
+            {renderMonitoring("Borrower", bNoFurnish, setBNoFurnish, bEthnicity, setBEthnicity, bRace, setBRace, bSex, setBSex, "b")}
+            {isJoint && renderMonitoring("Co-Borrower", cbNoFurnish, setCBNoFurnish, cbEthnicity, setCBEthnicity, cbRace, setCBRace, cbSex, setCBSex, "cb")}
           </div>
         </CardBody>
       </Card>
