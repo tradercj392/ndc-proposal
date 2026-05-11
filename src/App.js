@@ -518,7 +518,7 @@ function CreditAppStep({ data, onChange, projectTotal }) {
           </Row>
           <Row>
             <F label="State" required><StateSelect defaultValue={formRef.current.bState} onChange={v => setF("bState", v)} /></F>
-            <F label="Zip Code" required><input style={inp} defaultValue={formRef.current.bZip} onChange={e => setF("bZip", e.target.value.replace(/\D/g,"").slice(0,5)})} placeholder="00000" /></F>
+            <F label="Zip Code" required><input style={inp} defaultValue={formRef.current.bZip} onChange={e => setF("bZip", e.target.value.replace(/\D/g,"").slice(0,5))} placeholder="00000" /></F>
           </Row>
 
           {/* Prior address */}
