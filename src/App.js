@@ -532,7 +532,7 @@ function CreditAppStep({ data, onChange, projectTotal }) {
               </Row>
               <Row>
                 <F label="State"><StateSelect defaultValue={formRef.current.bPriorState} onChange={v => setF("bPriorState", v)} /></F>
-                <F label="Zip"><input style={inp} defaultValue={formRef.current.bPriorZip} onChange={e => setF("bPriorZip", e.target.value.replace(/\D/g,"").slice(0,5)})} placeholder="00000" /></F>
+                <F label="Zip"><input style={inp} defaultValue={formRef.current.bPriorZip} onChange={e => setF("bPriorZip", e.target.value.replace(/\D/g,"").slice(0,5))} placeholder="00000" /></F>
               </Row>
             </>
           )}
@@ -550,7 +550,7 @@ function CreditAppStep({ data, onChange, projectTotal }) {
           </Row>
           <Row>
             <F label="State"><StateSelect defaultValue={formRef.current.bEmpState} onChange={v => setF("bEmpState", v)} /></F>
-            <F label="Zip"><input style={inp} defaultValue={formRef.current.bEmpZip} onChange={e => setF("bEmpZip", e.target.value.replace(/\D/g,"").slice(0,5)})} placeholder="00000" /></F>
+            <F label="Zip"><input style={inp} defaultValue={formRef.current.bEmpZip} onChange={e => setF("bEmpZip", e.target.value.replace(/\D/g,"").slice(0,5))} placeholder="00000" /></F>
             <F label="Employer Phone"><input style={inp} defaultValue={formRef.current.bEmpPhone} onChange={e => setF("bEmpPhone", fmtPhone(e.target.value))} placeholder="(555) 000-0000" /></F>
           </Row>
           <Row>
