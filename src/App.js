@@ -411,28 +411,29 @@ function CreditAppStep({ data, onChange, projectTotal }) {
   };
 
   const MonitoringBlock = ({ prefix, label }) => {
-    const noFurnish = formRef.current[prefix + "NoFurnish"] || false;
-    const ethnicity = formRef.current[prefix + "Ethnicity"] || "";
-    const race = formRef.current[prefix + "Race"] || [];
-    const sex = formRef.current[prefix + "Sex"] || "";
+    const [noFurnish, setNoFurnish] = useState(formRef.current[prefix + "NoFurnish"] || false);
+    const [ethnicity, setEthnicity] = useState(formRef.current[prefix + "Ethnicity"] || "");
+    const [race, setRace] = useState(formRef.current[prefix + "Race"] || []);
+    const [sex, setSex] = useState(formRef.current[prefix + "Sex"] || "");
 
     const toggleRace = (val) => {
-      const cur = formRef.current[prefix + "Race"] || [];
-      setF(prefix + "Race", cur.includes(val) ? cur.filter(r => r !== val) : [...cur, val]);
+      const next = race.includes(val) ? race.filter(r => r !== val) : [...race, val];
+      setRace(next);
+      setF(prefix + "Race", next);
     };
 
     return (
       <div style={{ flex: 1, minWidth: 240 }}>
         <div style={{ fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 12, paddingBottom: 8, borderBottom: "1.5px solid #e2e8f0" }}>{label}</div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginBottom: 14, userSelect: "none" }}>
-          <input type="checkbox" checked={noFurnish} onChange={e => setF(prefix + "NoFurnish", e.target.checked)} style={{ width: 16, height: 16, accentColor: "#0f172a" }} />
+          <input type="checkbox" checked={noFurnish} onChange={e => { setNoFurnish(e.target.checked); setF(prefix + "NoFurnish", e.target.checked); }} style={{ width: 16, height: 16, accentColor: "#0f172a" }} />
           <span style={{ fontSize: 12, color: "#334155" }}>I do not wish to furnish this information</span>
         </label>
         <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 8 }}>Ethnicity</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {["Hispanic or Latino", "Not Hispanic or Latino"].map(opt => (
-              <CheckChip key={opt} checked={ethnicity === opt} onChange={() => setF(prefix + "Ethnicity", ethnicity === opt ? "" : opt)} label={opt} />
+              <CheckChip key={opt} checked={ethnicity === opt} onChange={() => { const v = ethnicity === opt ? "" : opt; setEthnicity(v); setF(prefix + "Ethnicity", v); }} label={opt} />
             ))}
           </div>
         </div>
@@ -448,7 +449,7 @@ function CreditAppStep({ data, onChange, projectTotal }) {
           <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 8 }}>Sex</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {["Female", "Male"].map(opt => (
-              <CheckChip key={opt} checked={sex === opt} onChange={() => setF(prefix + "Sex", sex === opt ? "" : opt)} label={opt} />
+              <CheckChip key={opt} checked={sex === opt} onChange={() => { const v = sex === opt ? "" : opt; setSex(v); setF(prefix + "Sex", v); }} label={opt} />
             ))}
           </div>
         </div>
@@ -771,7 +772,7 @@ function CreditAppStep({ data, onChange, projectTotal }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function buildCreditAppPDF(data, projectTotal) {
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-  const isJoint = appType === "joint";
+  const isJoint = data.appType === "joint";
 
   const css = `
     body{font-family:Arial,sans-serif;padding:28px;max-width:760px;margin:0 auto;color:#0f172a;font-size:11px}
