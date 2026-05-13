@@ -1293,7 +1293,11 @@ function SidingStep({ data, onChange, onSidingTypeChange }) {
             <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>New OSB Sheathing Required?</label>
             <select style={{ ...S.input, fontSize: 13, padding: "6px 8px" }} value={wall.osbSheathing} onChange={(e) => updateWall(wall.id, "osbSheathing", e.target.value)}>
               <option value="">-- Select --</option>
-              <option>No - Existing Sheathing is Adequate</option><option>Yes - Full Wall OSB Replacement</option><option>Yes - Partial OSB Replacement</option><option>TBD - Inspect After Removal</option>
+              <option>No - Existing Sheathing is Adequate</option>
+              <option>No - No Sheathing Being Installed</option>
+              <option>Yes - Full Wall OSB Replacement</option>
+              <option>Yes - Partial OSB Replacement</option>
+              <option>TBD - Inspect After Removal</option>
             </select>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
@@ -1687,8 +1691,17 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
   const anyOSBFull        = sidingWallsForScope.some(w => w.osbSheathing && w.osbSheathing.includes("Full Wall"));
   const anyOSBPartial     = sidingWallsForScope.some(w => w.osbSheathing && w.osbSheathing.includes("Partial"));
   const anyOSBTBD         = sidingWallsForScope.some(w => w.osbSheathing && w.osbSheathing.includes("TBD"));
+  const anyOSBNone        = sidingWallsForScope.some(w => w.osbSheathing && w.osbSheathing.includes("No Sheathing"));
   const removalWalls      = sidingWallsForScope.filter(w => w.removalRequired && w.removalRequired.includes("Removal")).map(w => w.location || w.label).join(", ");
   const osbWallsList      = sidingWallsForScope.filter(w => w.osbSheathing && (w.osbSheathing.includes("Full") || w.osbSheathing.includes("Partial"))).map(w => w.location || w.label).join(", ");
+
+  // Determine products used across all walls
+  const prodNameMap = { lap: "HardiePlank Lap", panel: "HardiePanel", shake: "HardieShingle Shake", vinyl: "Vinyl Siding", lp: "LP SmartSide", wood: "Wood / Cedar", stucco: "Stucco", t111: "T1-11", other: "Other" };
+  const usedProducts = [...new Set(sidingWallsForScope.map(w => w.hardieProduct).filter(Boolean))];
+  const isHardieOnly = usedProducts.every(p => ["lap","panel","shake"].includes(p));
+  const hasHardie    = usedProducts.some(p => ["lap","panel","shake"].includes(p));
+  const productNames = usedProducts.map(p => prodNameMap[p] || p).join(", ") || "Siding";
+  const sidingLabel  = isHardieOnly ? "James Hardie " + productNames : productNames;
 
   const removalBullet = anyFullRemoval
     ? "Remove and dispose of all existing exterior siding" + (removalWalls ? " (" + removalWalls + ")" : "")
@@ -1704,20 +1717,22 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
     ? "Install new 7/16\" OSB wall sheathing — partial replacement" + (osbWallsList ? " (" + osbWallsList + ")" : "")
     : anyOSBTBD
     ? "OSB sheathing replacement to be determined after removal and inspection"
+    : anyOSBNone
+    ? "No new sheathing being installed — siding applied directly over existing substrate"
     : null;
 
   const scopeMap = {
-    siding: { label: "James Hardie " + (state.siding.sidingType || "Siding"), bullets: [
+    siding: { label: sidingLabel + " — Siding Installation", bullets: [
       removalBullet,
       "Inspect and prepare substrate — repair damaged areas as needed",
       osbBullet,
       "Install continuous weather-resistive barrier (WRB) and tape all seams",
       "Install metal flashing at all windows, doors, and roof lines",
-      "Install " + (state.siding.sidingType || "James Hardie siding") + " per manufacturer specifications",
-      "Install HardieTrim at all corners, windows, doors, and eaves",
-      "Final inspection per James Hardie installation requirements",
+      ...usedProducts.map(p => "Install " + (prodNameMap[p] || p) + " per manufacturer specifications"),
+      hasHardie ? "Install HardieTrim at all corners, windows, doors, and eaves" : "Install trim at all corners, windows, doors, and eaves",
+      hasHardie ? "Final inspection per James Hardie installation requirements" : "Final inspection per manufacturer installation requirements",
     ].filter(Boolean), detail: [...state.siding.walls.map(w => {
-      const prodName = w.hardieProduct === "lap" ? "HardiePlank Lap" : w.hardieProduct === "panel" ? "HardiePanel" : w.hardieProduct === "shake" ? "HardieShingle Shake" : w.hardieProduct === "vinyl" ? "Vinyl Siding" : w.hardieProduct === "lp" ? "LP SmartSide" : w.hardieProduct === "wood" ? "Wood / Cedar" : w.hardieProduct === "stucco" ? "Stucco" : w.hardieProduct === "t111" ? "T1-11" : w.hardieProduct === "other" ? "Other" : "Siding";
+      const prodName = prodNameMap[w.hardieProduct] || "Siding";
       return (w.location || w.label) + ": " + prodName + (w.sqft ? " — " + w.sqft + " sq ft" : "") + (w.notes ? " (" + w.notes + ")" : "");
     }), "Total: " + state.siding.walls.reduce((a, w) => a + parseFloat(w.sqft || 0), 0).toFixed(0) + " sq ft"] },
     soffit: { label: "Soffit Installation", bullets: ["Remove deteriorated soffit panels", "Install new vented soffit panels", "Install J-channel and F-channel", "Final inspection"], detail: state.soffit.items.map(i => (i.label || "Area") + ": " + (i.newMaterial || "Material TBD") + (i.linearFt ? " — " + i.linearFt + " linear ft" : "") + (i.notes ? " — " + i.notes : "")) },
@@ -1737,14 +1752,17 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
     body += `<div class='sec'><div class='lbl'>Property</div><img src='${state.customer.photo}' style='max-width:100%;max-height:220px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0'/></div>`;
   }
 
+  const SERVICE_ORDER = ["siding", "soffit", "fascia", "paint", "windows", "misc"];
+  const orderedServices = SERVICE_ORDER.filter(svc => state.services.includes(svc));
+
   body += `<div class='sec'><div class='lbl'>Project Overview</div>`;
-  state.services.forEach(svc => {
+  orderedServices.forEach(svc => {
     if (!scopeMap[svc]) return;
     body += `<div style='display:flex;align-items:center;padding:4px 0;border-bottom:1px solid #f8fafc;font-size:11px;color:#334155'><span class='check'>✓</span><span style='font-weight:700'>${scopeMap[svc].label}</span></div>`;
   });
   body += `</div>`;
 
-  state.services.forEach(svc => {
+  orderedServices.forEach(svc => {
     if (!scopeMap[svc]) return;
     const info = scopeMap[svc];
     body += `<div class='sec'><div class='lbl'>${info.label} — Scope of Work</div><div style='border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;margin-bottom:12px'>`;
