@@ -113,7 +113,7 @@ const makeInitialState = () => ({
   customer: { name: "", address: "", email: "", phone: "", photo: null },
   services: [],
   isFinancing: false,
-  siding: { walls: [{ id: uid(), label: "Wall 1", location: "", sqft: "", pricePerSqFt: "", currentSiding: "", removalRequired: "", osbSheathing: "", hardieProduct: "", hardieSize: "", hardieTexture: "", photo: null, notes: "" }], pricePerSqFt: "", sidingType: "HardiePlank Lap Siding" },
+  siding: { walls: [{ id: uid(), label: "Wall 1", location: "", sqft: "", pricePerSqFt: "", currentSiding: "", removalRequired: "", osbSheathing: "", hardieProduct: "", hardieSize: "", hardieTexture: "", photos: [], notes: "" }], pricePerSqFt: "", sidingType: "HardiePlank Lap Siding" },
   soffit: { items: [{ id: uid(), label: "Soffit Area 1", currentMaterial: "", newMaterial: "", linearFt: "", pricePerLnFt: "", notes: "" }] },
   fascia: { items: [{ id: uid(), label: "Fascia Area 1", currentMaterial: "", newMaterial: "", linearFt: "", pricePerLnFt: "", notes: "" }] },
   paint: { walls: [{ id: uid(), paintProduct: "", colorName: "", sqft: "", pricePerSqFt: "", notes: "" }], trim: [{ id: uid(), paintProduct: "", colorName: "", sqft: "", pricePerSqFt: "", notes: "" }], other: [{ id: uid(), paintProduct: "", colorName: "", sqft: "", pricePerSqFt: "", notes: "" }] },
@@ -1251,7 +1251,7 @@ function CustomerStep({ data, onChange }) {
 function SidingStep({ data, onChange, onSidingTypeChange }) {
   const addWall = () => {
     const last = data.walls[data.walls.length - 1];
-    onChange("walls", [...data.walls, { ...last, id: uid(), label: "Wall " + (data.walls.length + 1), photo: null }]);
+    onChange("walls", [...data.walls, { ...last, id: uid(), label: "Wall " + (data.walls.length + 1), photos: [] }]);
   };
   const removeWall = (id) => onChange("walls", data.walls.filter((w) => w.id !== id));
   const updateWall = (id, key, val) => onChange("walls", data.walls.map((w) => (w.id === id ? { ...w, [key]: val } : w)));
@@ -1350,21 +1350,30 @@ function SidingStep({ data, onChange, onSidingTypeChange }) {
             <textarea style={{ ...S.input, height: 70, resize: "vertical", fontSize: 13 }} value={wall.notes || ""} onChange={(e) => updateWall(wall.id, "notes", e.target.value)} placeholder="e.g. rotted sheathing on left side, extra flashing needed at roofline..." />
           </div>
           <div style={{ marginTop: 10 }}>
-            <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>WALL PHOTO</label>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", background: wall.photo ? "#f0f9ff" : "#f8fafc", border: "1.5px dashed " + (wall.photo ? "#0ea5e9" : "#cbd5e1"), borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#475569" }}>
-              <span style={{ fontSize: 20 }}>{wall.photo ? "🖼️" : "📷"}</span>
-              <span>{wall.photo ? "Photo attached — tap to replace" : "Tap to take photo or upload"}</span>
-              <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
-                const file = e.target.files[0]; if (!file) return;
-                compressImage(file, function(compressed) { updateWall(wall.id, "photo", compressed); });
-              }} />
-            </label>
-            {wall.photo && (
-              <div style={{ marginTop: 8, position: "relative", display: "inline-block" }}>
-                <img src={wall.photo} alt={wall.label} style={{ maxWidth: "100%", maxHeight: 180, borderRadius: 8, border: "1.5px solid #e2e8f0", display: "block" }} />
-                <button onClick={() => updateWall(wall.id, "photo", null)} style={{ position: "absolute", top: 6, right: 6, background: "#0f172a99", border: "none", borderRadius: "50%", color: "white", width: 24, height: 24, cursor: "pointer", fontSize: 12 }}>×</button>
+            <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>WALL PHOTOS</label>
+            {/* Photo grid */}
+            {(wall.photos && wall.photos.length > 0) && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                {wall.photos.map((photo, idx) => (
+                  <div key={idx} style={{ position: "relative", width: "calc(50% - 4px)" }}>
+                    <img src={photo} alt={wall.label + " " + (idx + 1)} style={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 8, border: "1.5px solid #e2e8f0", display: "block" }} />
+                    <button onClick={() => updateWall(wall.id, "photos", wall.photos.filter((_, i) => i !== idx))} style={{ position: "absolute", top: 4, right: 4, background: "#0f172a99", border: "none", borderRadius: "50%", color: "white", width: 22, height: 22, cursor: "pointer", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                  </div>
+                ))}
               </div>
             )}
+            {/* Add photo button */}
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", background: "#f8fafc", border: "1.5px dashed #cbd5e1", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#475569" }}>
+              <span style={{ fontSize: 20 }}>📷</span>
+              <span>{wall.photos && wall.photos.length > 0 ? "Add another photo (" + wall.photos.length + " added)" : "Tap to take photo or upload"}</span>
+              <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => {
+                const file = e.target.files[0]; if (!file) return;
+                compressImage(file, function(compressed) {
+                  updateWall(wall.id, "photos", [...(wall.photos || []), compressed]);
+                });
+                e.target.value = "";
+              }} />
+            </label>
           </div>
         </div>
       ))}
@@ -1771,6 +1780,22 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
     if (info.detail && info.detail.length > 0) {
       body += `<div style='font-size:9.5px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px'>Details</div>`;
       info.detail.forEach(d => { const isTotal = d.startsWith("Total:"); body += isTotal ? `<div style='font-size:11px;color:#0f172a;font-weight:800;line-height:1.8;padding:5px 0;border-top:1.5px solid #e2e8f0;margin-top:2px'>${d}</div>` : `<div style='font-size:10.5px;color:#334155;line-height:1.8;padding:3px 0;border-bottom:1px solid #f8fafc'>&bull; ${d}</div>`; });
+    }
+
+    // Wall photos — siding only
+    if (svc === "siding" && mode === "pdf") {
+      const wallsWithPhotos = state.siding.walls.filter(w => (w.photos && w.photos.length > 0) || w.photo);
+      if (wallsWithPhotos.length > 0) {
+        body += `<div style='font-size:9.5px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.8px;margin:12px 0 8px'>Wall Photos</div>`;
+        body += `<div style='display:flex;flex-wrap:wrap;gap:8px'>`;
+        wallsWithPhotos.forEach(w => {
+          const photos = w.photos && w.photos.length > 0 ? w.photos : (w.photo ? [w.photo] : []);
+          photos.forEach((photo, idx) => {
+            body += `<div style='flex:0 0 calc(50% - 4px)'><div style='font-size:9px;color:#64748b;margin-bottom:3px'>${w.location || w.label}${photos.length > 1 ? " (" + (idx + 1) + ")" : ""}</div><img src='${photo}' style='width:100%;height:140px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0'/></div>`;
+          });
+        });
+        body += `</div>`;
+      }
     }
 
     // ── Materials list — pdf only ──
