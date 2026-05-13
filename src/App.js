@@ -1804,29 +1804,50 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
       const totalSoffitLf = state.soffit.items.reduce((a, i) => a + parseFloat(i.linearFt || 0), 0);
       const totalPaintSqFt = parseFloat(state.paint.combinedSqft || 0);
       const totalWinQty = state.windows.reduce((a, w) => a + parseFloat(w.qty || 0), 0);
-      const prod = state.siding.walls[0] && state.siding.walls[0].hardieProduct;
-      const panelName = prod === "panel" ? "HardiePanel" : prod === "shake" ? "HardieShingle Shake" : "HardiePlank Lap";
+
+      // Siding product info
+      const sidingProdMap = { lap: "HardiePlank Lap", panel: "HardiePanel", shake: "HardieShingle Shake", vinyl: "Vinyl Siding", lp: "LP SmartSide", wood: "Wood / Cedar", stucco: "Stucco", t111: "T1-11", other: "Siding" };
+      const usedSidingProds = [...new Set(state.siding.walls.map(w => w.hardieProduct).filter(Boolean))];
+      const isHardie = usedSidingProds.every(p => ["lap","panel","shake"].includes(p));
+      const hasHardieProd = usedSidingProds.some(p => ["lap","panel","shake"].includes(p));
       const osbWalls = state.siding.walls.filter(w => w.osbSheathing && w.osbSheathing.includes("Yes"));
       const osbSqft = osbWalls.reduce((a, w) => a + parseFloat(w.sqft || 0), 0);
 
       let mats = [];
       if (svc === "siding" && totalSqFt > 0) {
         const sqftWaste = Math.ceil(totalSqFt * 1.10);
-        mats = [
-          [panelName + " panels",                    sqftWaste + " sq ft",                      "Total " + totalSqFt.toFixed(0) + " sq ft + 10% waste"],
-          ["House Wrap / WRB",                       Math.ceil(totalSqFt * 1.15) + " sq ft",    "Full wall coverage + 15% seam overlap"],
-          ["WRB Seam Tape",                          Math.ceil(totalSqFt / 1000) + " roll(s)",   "All seams and penetrations"],
-          ["HardieTrim — Corners",                   "Measure on site",                          "All exterior corners"],
-          ["HardieTrim — Windows & Doors",           "Measure on site",                          "All opening surrounds"],
-          ["HardieTrim — Eave Termination",          "Measure on site",                          "Eave line"],
-          ["Metal Drip Cap / Head Flashing",         "Measure on site",                          "Above all windows and doors"],
-          ["Step Flashing",                          "Measure on site",                          "All roof-wall intersections"],
-          ["Metal Starter Strip",                    "Measure on site",                          "Base of each wall"],
-          ["Hot-Dipped Galvanized Nails 6d/8d",      Math.ceil(totalSqFt / 100) + " lb(s)",      "Corrosion-resistant — per Hardie fastener spec"],
-          ["Paintable Elastomeric Caulk",            Math.ceil(totalSqFt / 150) + " tube(s)",    "All trim joints, penetrations, transitions"],
-          ["Exterior Primer",                        Math.ceil(totalSqFt / 350) + " gal",        "Applied to all cut ends and bare surfaces"],
-          ["Exterior Paint",                         Math.ceil(totalSqFt / 350) * 2 + " gal",   "Four-directional spray method"],
-        ];
+        // Siding panels — one row per unique product
+        usedSidingProds.forEach(p => {
+          const wallsWithProd = state.siding.walls.filter(w => w.hardieProduct === p);
+          const prodSqFt = wallsWithProd.reduce((a, w) => a + parseFloat(w.sqft || 0), 0);
+          const prodSqFtWaste = Math.ceil(prodSqFt * 1.10);
+          mats.push([(sidingProdMap[p] || "Siding") + " panels", prodSqFtWaste + " sq ft", prodSqFt.toFixed(0) + " sq ft + 10% waste"]);
+        });
+        // WRB — all siding types need it
+        mats.push(["House Wrap / WRB", Math.ceil(totalSqFt * 1.15) + " sq ft", "Full wall coverage + 15% seam overlap"]);
+        mats.push(["WRB Seam Tape", Math.ceil(totalSqFt / 1000) + " roll(s)", "All seams and penetrations"]);
+        // Trim — Hardie-specific vs generic
+        if (hasHardieProd) {
+          mats.push(["HardieTrim — Corners", "Measure on site", "All exterior corners"]);
+          mats.push(["HardieTrim — Windows & Doors", "Measure on site", "All opening surrounds"]);
+          mats.push(["HardieTrim — Eave Termination", "Measure on site", "Eave line"]);
+        } else {
+          mats.push(["Corner Trim", "Measure on site", "All exterior corners"]);
+          mats.push(["Window & Door Trim", "Measure on site", "All opening surrounds"]);
+          mats.push(["Eave Trim", "Measure on site", "Eave line"]);
+        }
+        mats.push(["Metal Drip Cap / Head Flashing", "Measure on site", "Above all windows and doors"]);
+        mats.push(["Step Flashing", "Measure on site", "All roof-wall intersections"]);
+        mats.push(["Metal Starter Strip", "Measure on site", "Base of each wall"]);
+        // Fasteners — Hardie vs generic
+        if (hasHardieProd) {
+          mats.push(["Hot-Dipped Galvanized Nails 6d/8d", Math.ceil(totalSqFt / 100) + " lb(s)", "Corrosion-resistant — per Hardie fastener spec"]);
+        } else {
+          mats.push(["Corrosion-Resistant Fasteners", Math.ceil(totalSqFt / 100) + " lb(s)", "Per manufacturer specification"]);
+        }
+        mats.push(["Paintable Elastomeric Caulk", Math.ceil(totalSqFt / 150) + " tube(s)", "All trim joints, penetrations, transitions"]);
+        mats.push(["Exterior Primer", Math.ceil(totalSqFt / 350) + " gal", "Applied to all cut ends and bare surfaces"]);
+        mats.push(["Exterior Paint", Math.ceil(totalSqFt / 350) * 2 + " gal", "Four-directional spray method"]);
         if (osbWalls.length > 0) {
           mats.push(["OSB Sheathing 7/16\"", Math.ceil((osbSqft * 1.05) / 32) + " sheet(s)", osbSqft.toFixed(0) + " sq ft replacement area"]);
           mats.push(["Sheathing Fasteners", "1 box", "Code-compliant per replaced sheathing area"]);
@@ -1883,7 +1904,7 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
         body += `<table><thead><tr><th>Material</th><th>Quantity</th><th>Specification</th></tr></thead><tbody>`;
         mats.forEach(m => { body += `<tr><td style='font-weight:600'>${m[0]}</td><td style='color:#0369a1;font-weight:700;white-space:nowrap'>${m[1]}</td><td style='color:#64748b'>${m[2]}</td></tr>`; });
         body += `</tbody></table>`;
-        if (svc === "siding") body += `<p class='note'>* All James Hardie products installed per HardieZone requirements. Quantities include standard waste factors and are subject to field verification.</p>`;
+        if (svc === "siding") body += `<p class='note'>* ${hasHardieProd ? "All James Hardie products installed per HardieZone requirements. " : ""}Quantities include standard waste factors and are subject to field verification.</p>`;
         if (svc === "windows") body += `<p class='note'>* Low-expansion foam ONLY. High-pressure or latex foam is NOT permitted per manufacturer installation requirements.</p>`;
       }
     }
