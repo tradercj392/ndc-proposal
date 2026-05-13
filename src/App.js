@@ -1260,15 +1260,6 @@ function SidingStep({ data, onChange, onSidingTypeChange }) {
     <div style={S.stepWrap}>
       <h2 style={S.stepTitle}>Siding Measurements</h2>
       <p style={S.stepSub}>Measure each wall and document materials. Pricing is entered separately.</p>
-      <div style={S.field}>
-        <label style={S.label}>Siding Product Type</label>
-        <select style={S.input} value={data.sidingType} onChange={(e) => onSidingTypeChange(e.target.value)}>
-          <option>HardiePlank Lap Siding</option>
-          <option>Board &amp; Batten</option>
-          <option>HardieShingle</option>
-          <option>Mix (specify in notes)</option>
-        </select>
-      </div>
       {data.walls.map((wall) => (
         <div key={wall.id} style={S.card}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -1307,10 +1298,22 @@ function SidingStep({ data, onChange, onSidingTypeChange }) {
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
             <div style={{ flex: 1, minWidth: 160 }}>
-              <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>Hardie Product</label>
+              <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>New Siding Product</label>
               <select style={{ ...S.input, fontSize: 13, padding: "6px 8px" }} value={wall.hardieProduct} onChange={(e) => updateWall(wall.id, "hardieProduct", e.target.value)}>
                 <option value="">-- Select Product --</option>
-                <option value="lap">HardiePlank Lap</option><option value="panel">HardiePanel</option><option value="shake">HardieShingle Shake</option>
+                <optgroup label="James Hardie">
+                  <option value="lap">HardiePlank Lap</option>
+                  <option value="panel">HardiePanel</option>
+                  <option value="shake">HardieShingle Shake</option>
+                </optgroup>
+                <optgroup label="Other Products">
+                  <option value="vinyl">Vinyl Siding</option>
+                  <option value="lp">LP SmartSide</option>
+                  <option value="wood">Wood / Cedar</option>
+                  <option value="stucco">Stucco</option>
+                  <option value="t111">T1-11</option>
+                  <option value="other">Other</option>
+                </optgroup>
               </select>
             </div>
           </div>
@@ -1713,7 +1716,10 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
       "Install " + (state.siding.sidingType || "James Hardie siding") + " per manufacturer specifications",
       "Install HardieTrim at all corners, windows, doors, and eaves",
       "Final inspection per James Hardie installation requirements",
-    ].filter(Boolean), detail: [...state.siding.walls.map(w => (w.location || w.label) + ": " + (w.hardieProduct === "lap" ? "HardiePlank Lap" : w.hardieProduct === "panel" ? "HardiePanel" : "Hardie") + (w.sqft ? " — " + w.sqft + " sq ft" : "") + (w.notes ? " (" + w.notes + ")" : "")), "Total: " + state.siding.walls.reduce((a, w) => a + parseFloat(w.sqft || 0), 0).toFixed(0) + " sq ft"] },
+    ].filter(Boolean), detail: [...state.siding.walls.map(w => {
+      const prodName = w.hardieProduct === "lap" ? "HardiePlank Lap" : w.hardieProduct === "panel" ? "HardiePanel" : w.hardieProduct === "shake" ? "HardieShingle Shake" : w.hardieProduct === "vinyl" ? "Vinyl Siding" : w.hardieProduct === "lp" ? "LP SmartSide" : w.hardieProduct === "wood" ? "Wood / Cedar" : w.hardieProduct === "stucco" ? "Stucco" : w.hardieProduct === "t111" ? "T1-11" : w.hardieProduct === "other" ? "Other" : "Siding";
+      return (w.location || w.label) + ": " + prodName + (w.sqft ? " — " + w.sqft + " sq ft" : "") + (w.notes ? " (" + w.notes + ")" : "");
+    }), "Total: " + state.siding.walls.reduce((a, w) => a + parseFloat(w.sqft || 0), 0).toFixed(0) + " sq ft"] },
     soffit: { label: "Soffit Installation", bullets: ["Remove deteriorated soffit panels", "Install new vented soffit panels", "Install J-channel and F-channel", "Final inspection"], detail: state.soffit.items.map(i => (i.label || "Area") + ": " + (i.newMaterial || "Material TBD") + (i.linearFt ? " — " + i.linearFt + " linear ft" : "") + (i.notes ? " — " + i.notes : "")) },
     fascia: { label: "Fascia Installation", bullets: ["Remove deteriorated fascia boards", "Install new fascia material", "Caulk all joints and end caps"], detail: state.fascia.items.map(i => (i.label || "Area") + ": " + (i.newMaterial || "Material TBD") + (i.linearFt ? " — " + i.linearFt + " linear ft" : "") + (i.notes ? " — " + i.notes : "")) },
     paint: { label: "Exterior Paint" + (state.paint.paintScope ? " — " + state.paint.paintScope : ""), bullets: ["Pressure wash all exterior surfaces", "Fill all cracks and gaps with elastomeric caulk", "Apply paint using four-directional spray method", "Hand-paint all trim and detail areas", "Final walk-through to confirm coverage"].filter(Boolean), detail: [
