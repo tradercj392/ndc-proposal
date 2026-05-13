@@ -400,7 +400,7 @@ function CreditAppStep({ data, onChange, projectTotal }) {
               <div style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>Take photo or upload</div>
               <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>Front of Driver's License</div>
             </div>
-            <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={e => {
+            <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
               const file = e.target.files[0]; if (!file) return;
               compressImage(file, img => setF(photoKey, img));
             }} />
@@ -1366,7 +1366,7 @@ function SidingStep({ data, onChange, onSidingTypeChange }) {
             <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", background: "#f8fafc", border: "1.5px dashed #cbd5e1", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#475569" }}>
               <span style={{ fontSize: 20 }}>📷</span>
               <span>{wall.photos && wall.photos.length > 0 ? "Add another photo (" + wall.photos.length + " added)" : "Tap to take photo or upload"}</span>
-              <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => {
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
                 const file = e.target.files[0]; if (!file) return;
                 compressImage(file, function(compressed) {
                   updateWall(wall.id, "photos", [...(wall.photos || []), compressed]);
