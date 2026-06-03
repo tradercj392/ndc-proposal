@@ -2610,7 +2610,6 @@ function ContractStep({ state, selectedOption, selectedPayment, setStep, steps }
 
   const schedule = getPaymentSchedule();
   const pricingLabel = selectedOption === "standard" ? "Standard Pricing" : selectedOption === "clearance" ? "Administrative Clearance" : "Direct-Commitment Savings";
-  const chosenTotal = selectedOption === "standard" ? standard : priority;
 
   return (
     <div style={S.stepWrap}>
