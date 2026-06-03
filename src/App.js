@@ -2227,10 +2227,15 @@ function PreviewStep({ state, setState, setStep, steps, selectedOption, setSelec
                   <div style={{ background: "white", borderRadius: 8, border: "1px solid #bae6fd", overflow: "hidden" }}>
                     {(() => {
                       const chosenTotal = selectedOption === "standard" ? (calcGrandTotal(state).standardTotal || calcGrandTotal(state).total) : calcGrandTotal(state).total;
+                      const adminMonthly = state.pricing && state.pricing.monthlyPayment ? parseFloat(state.pricing.monthlyPayment) : null;
+                      const stdAdd = state.pricing && state.pricing.standardFinancingAdd ? parseFloat(state.pricing.standardFinancingAdd) : 0;
+                      const applicableMonthly = selectedOption === "standard" && adminMonthly ? adminMonthly + stdAdd : adminMonthly;
                       return <>
                         <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", borderBottom: "1px solid #f0f9ff" }}><span style={{ fontSize: 11, color: "#475569" }}>Total job cost</span><span style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>{fmt(chosenTotal)}</span></div>
                         <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", borderBottom: "1px solid #f0f9ff", background: "#f0f9ff" }}><span style={{ fontSize: 11, color: "#0369a1", fontWeight: 600 }}>Financed ({financingPct}%)</span><span style={{ fontSize: 13, fontWeight: 800, color: "#0369a1" }}>{fmt(chosenTotal * financingPct / 100)}</span></div>
-                        <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px" }}><span style={{ fontSize: 11, color: "#475569" }}>Due out of pocket ({100 - financingPct}%)</span><span style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>{fmt(chosenTotal * (100 - financingPct) / 100)}</span></div>
+                        <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", borderBottom: applicableMonthly ? "1px solid #f0f9ff" : "none" }}><span style={{ fontSize: 11, color: "#475569" }}>Due out of pocket ({100 - financingPct}%)</span><span style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>{fmt(chosenTotal * (100 - financingPct) / 100)}</span></div>
+                        {applicableMonthly ? <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "#ecfdf5", borderTop: "1px solid #bbf7d0" }}><span style={{ fontSize: 11, color: "#166534", fontWeight: 700 }}>Est. Monthly Payment</span><span style={{ fontSize: 18, fontWeight: 800, color: "#166534" }}>${applicableMonthly.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<span style={{ fontSize: 11, fontWeight: 600, color: "#6ee7b7" }}>/mo*</span></span></div> : null}
+                        {applicableMonthly ? <div style={{ fontSize: 10, color: "#94a3b8", fontStyle: "italic", padding: "4px 12px 8px" }}>* Approx. — based on credit &amp; DTI</div> : null}
                       </>;
                     })()}
                   </div>
