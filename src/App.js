@@ -1766,7 +1766,10 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
   html += "</div>";
   html += "<div style='font-size:14px;font-weight:800;color:#0f172a'>Direct-Commitment Savings — Ability to Finalize the Project Today</div></div>";
   if (!priSelected) {
-    html += "<div style='font-size:11px;color:#16a34a;font-weight:600'>Tap to see your Direct-Commitment price</div>";
+    html += "<div style='display:flex;align-items:center;gap:10px;margin-top:4px'>";
+    html += "<div style='background:#dcfce7;color:#166534;font-size:12px;font-weight:800;padding:4px 12px;border-radius:20px;border:1px solid #86efac'>Save " + fmt(savings) + "</div>";
+    html += "</div>";
+    html += "<div style='font-size:11px;color:#166534;font-weight:600;margin-top:10px;line-height:1.6'>An opportunity to lower the investment for clients with the ability to finalize today</div>";
   }
   if (priSelected) {
   html += "<div style='display:flex;align-items:baseline;gap:12px;margin-bottom:4px'>";
