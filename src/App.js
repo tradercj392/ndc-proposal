@@ -1291,6 +1291,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
   // BOTTOM HALF - Single pricing box
   // BOTTOM HALF - Pricing reveal
   var savings = standard - priority;
+  if (showPrices) {
   html += "<div class='standard-only' style='border:2px solid #e2e8f0;border-radius:12px;padding:24px;background:white;flex:1'>";
 
   // Standard price - big first
@@ -1327,6 +1328,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
   html += "</div>"; // end pricing box
   html += "</div>"; // end bottom half
   html += "</div>"; // end page
+  } // end showPrices
 
 
   // PAGE 2+ - SERVICE SECTIONS
