@@ -1400,7 +1400,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
     html += "<div class='page'>";
     html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
     html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>James Hardie " + (state.siding.sidingType||"Siding") + "</div>";
-    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + (showPrices ? fmt(s_sid) : '') + "</div></div>";
+    html += "</div></div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:4px'>Per James Hardie Installation Manual - All work performed to manufacturer specifications</div>";
     html += "<div style='font-size:13px;font-weight:800;color:#0f172a;margin-bottom:16px'>Total: " + totalSidingSqFt.toFixed(0) + " sq ft</div>";
 
@@ -1486,7 +1486,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
     html += "<div class='page'>";
     html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
     html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>Soffit Installation</div>";
-    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + (showPrices ? fmt(s_sof) : '') + "</div></div>";
+    html += "</div></div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:4px'>Vented soffit panels and accessories</div>";
     html += "<div style='font-size:13px;font-weight:800;color:#0f172a;margin-bottom:16px'>Total: " + totalSoffitLnFt2.toFixed(0) + " linear ft</div>";
 
@@ -1534,7 +1534,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
     html += "<div class='page'>";
     html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
     html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>Fascia Installation</div>";
-    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + (showPrices ? fmt(s_fas) : '') + "</div></div>";
+    html += "</div></div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:4px'>Fascia boards and trim</div>";
     html += "<div style='font-size:13px;font-weight:800;color:#0f172a;margin-bottom:16px'>Total: " + totalFasciaLnFt2.toFixed(0) + " linear ft</div>";
 
@@ -1595,7 +1595,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
     html += "<div class='page'>";
     html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
     html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>Exterior Paint</div>";
-    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + (showPrices ? fmt(s_pnt) : '') + "</div></div>";
+    html += "</div></div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:4px'>Full exterior paint application using directional spray technique</div>";
     html += "<div style='font-size:13px;font-weight:800;color:#0f172a;margin-bottom:16px'>Total: " + (combinedSqft > 0 ? combinedSqft.toFixed(0) + " sq ft" : "See details below") + "</div>";
 
@@ -1667,7 +1667,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
     html += "<div class='page'>";
     html += "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:12px;border-bottom:2px solid #0f172a'>";
     html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>Window Installation</div>";
-    html += "<div style='font-size:16px;font-weight:800;color:#0ea5e9'>" + (showPrices ? fmt(s_win) : '') + "</div></div>";
+    html += "</div></div>";
     html += "<div style='font-size:10px;color:#64748b;margin-bottom:16px'>" + totalWinQty + " unit(s) - per manufacturer installation specifications</div>";
 
     html += "<div style='font-size:10px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px'>Scope of Work</div>";
@@ -1732,6 +1732,19 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
   var stdMonthly = monthlyPayment ? monthlyPayment + 47 : null;
 
   // Standard pricing box (clickable)
+  // Itemized breakdown above cards
+  if (showPrices) {
+    html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;margin-bottom:16px'>";
+    html += "<div style='font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px'>Investment Breakdown</div>";
+    if (state.services.includes('siding'))  html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155'>James Hardie Siding</span><span style='font-weight:700;color:#0f172a'>" + fmt(s_sid) + "</span></div>";
+    if (state.services.includes('soffit'))  html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155'>Soffit Installation</span><span style='font-weight:700;color:#0f172a'>" + fmt(s_sof) + "</span></div>";
+    if (state.services.includes('fascia'))  html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155'>Fascia Installation</span><span style='font-weight:700;color:#0f172a'>" + fmt(s_fas) + "</span></div>";
+    if (state.services.includes('paint'))   html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155'>Exterior Paint</span><span style='font-weight:700;color:#0f172a'>" + fmt(s_pnt) + "</span></div>";
+    if (state.services.includes('windows')) html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155'>Window Installation</span><span style='font-weight:700;color:#0f172a'>" + fmt(s_win) + "</span></div>";
+    if (state.services.includes('misc'))    html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155'>Miscellaneous</span><span style='font-weight:700;color:#0f172a'>" + fmt(s_msc) + "</span></div>";
+    html += "<div style='display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px'><span style='font-weight:800;color:#0f172a'>Standard Total</span><span style='font-weight:800;color:#0f172a'>" + fmt(standard) + "</span></div>";
+    html += "</div>";
+  }
   html += "<div " + oc_std + " class='standard-only' style='border:2px solid " + (stdSelected ? '#475569' : '#e2e8f0') + ";border-radius:10px;padding:18px;margin-bottom:16px;cursor:pointer;background:" + (stdSelected ? '#f8fafc' : 'white') + "'>";
   html += "<div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px'>";
   html += "<div style='display:flex;align-items:center;gap:10px'>";
