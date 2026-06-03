@@ -1287,48 +1287,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
   });
   html += "</div></div>";
 
-  // BOTTOM HALF - Pricing side by side
-  // BOTTOM HALF - Single pricing box
-  // BOTTOM HALF - Pricing reveal
-  var savings = standard - priority;
-  if (showPrices) {
-  html += "<div class='standard-only' style='border:2px solid #e2e8f0;border-radius:12px;padding:24px;background:white;flex:1'>";
-
-  // Standard price - big first
-  html += "<div style='margin-bottom:18px;padding-bottom:18px;border-bottom:2px solid #f1f5f9'>";
-  html += "<div style='font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px'>Standard Pricing</div>";
-  html += "<div style='font-size:32px;font-weight:800;color:#0f172a;margin-bottom:4px'>" + fmt(standard) + "</div>";
-  if (standardMonthly) {
-    html += "<div style='font-size:12px;color:#475569;font-weight:600;margin-top:4px'>Financing Available: <span style='color:#0f172a;font-weight:800'>$" + standardMonthly.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "/mo</span> &nbsp;—&nbsp; Subject to credit approval</div>";
-  }
-  html += "<div style='font-size:10px;color:#94a3b8;margin-top:4px'>Full project investment based on current scope of work</div>";
-  html += "</div>";
-
-  // Scope of work
-  html += "<div style='margin-bottom:18px;padding-bottom:18px;border-bottom:2px solid #f1f5f9'>";
-  html += "<div style='font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Scope of Work</div>";
-  html += "<div style='columns:2;column-gap:16px'>";
-  overviewItems.forEach(function(item) {
-    html += "<div style='font-size:10px;color:#334155;line-height:1.8;break-inside:avoid;margin-bottom:2px'>- " + item + "</div>";
-  });
-  html += "</div></div>";
-
-  // Service breakdown
-  html += "<div style='margin-bottom:18px;padding-bottom:18px;border-bottom:2px solid #f1f5f9'>";
-  html += "<div style='font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px'>Service Breakdown</div>";
-  if (state.services.includes('siding'))  html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>James Hardie Siding</span><span style='color:#0f172a;font-weight:800'>" + fmt(s_sid) + "</span></div>";
-  if (state.services.includes('soffit'))  html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Soffit Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(s_sof) + "</span></div>";
-  if (state.services.includes('fascia'))  html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Fascia Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(s_fas) + "</span></div>";
-  if (state.services.includes('paint'))   html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Exterior Paint</span><span style='color:#0f172a;font-weight:800'>" + fmt(s_pnt) + "</span></div>";
-  if (state.services.includes('windows')) html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Window Installation</span><span style='color:#0f172a;font-weight:800'>" + fmt(s_win) + "</span></div>";
-  if (state.services.includes('misc'))    html += "<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:11px'><span style='color:#334155;font-weight:600'>Miscellaneous</span><span style='color:#0f172a;font-weight:800'>" + fmt(s_msc) + "</span></div>";
-  html += "<div style='display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px'><span style='color:#0f172a;font-weight:800'>Total</span><span style='color:#0f172a;font-weight:800'>" + fmt(standard) + "</span></div>";
-  html += "</div>";
-
-  html += "</div>"; // end pricing box
-  html += "</div>"; // end bottom half
-  html += "</div>"; // end page
-  } // end showPrices
+  // PAGE 2+ - SERVICE SECTIONS
 
 
   // PAGE 2+ - SERVICE SECTIONS
@@ -1765,6 +1724,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
   html += "<div class='page admin-only'>";
 
   // Clickable option boxes
+  var savings = standard - priority;
   var oc_std = "onclick='selectOption(\"standard\")'";
   var oc_pri = "onclick='selectOption(\"priority\")'";
   var stdSelected = selectedOption === 'standard';
