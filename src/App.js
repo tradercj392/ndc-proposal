@@ -125,7 +125,7 @@ const makeInitialState = () => ({
   misc: { items: [{ id: uid(), description: "", qty: "", unitPrice: "", notes: "" }] },
   notes: "",
   financing: { monthlyPayment: "", customPayment: "" },
-  pricing: { sidingPerSqFt: "", sidingStandardMarkupPct: "", soffitPerLinFt: "", soffitStandardMarkupPct: "", fasciaPerLinFt: "", fasciaStandardMarkupPct: "", paintPerSqFt: "", paintStandardMarkupPct: "", windowPerUnit: "", windowStandardMarkupPct: "", miscMarkup: "", adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", clearanceBeatPct: "10", standardFinancingAdd: "", daysToBegin: "", daysToComplete: "" },
+  pricing: { sidingPerSqFt: "", sidingStandardMarkupPct: "", soffitPerLinFt: "", soffitStandardMarkupPct: "", fasciaPerLinFt: "", fasciaStandardMarkupPct: "", paintPerSqFt: "", paintStandardMarkupPct: "", windowPerUnit: "", windowStandardMarkupPct: "", miscMarkup: "", adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", clearanceBeatPct: "10", standardFinancingAdd: "", daysToBegin: "", daysToComplete: "", showClearance: false },
   priceRevealed: false,
   creditApp: makeCreditApp(),
 });
@@ -1145,19 +1145,35 @@ function PricingStep({ state, onChange, onWindowsChange }) {
         "Standard financing displays as: $" + (parseFloat(p.monthlyPayment) + parseFloat(p.standardFinancingAdd||0)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo"
       ) : null
     ),
-    React.createElement("div", { style: { ...cardStyle, borderColor: "#fde68a", background: "#fffbeb" } },
-      React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#92400e", marginBottom: 4 } }, "Administrative Clearance Option"),
-      React.createElement("div", { style: { fontSize: 11, color: "#a16207", marginBottom: 10, lineHeight: 1.5 } }, "Set the shopping period and the percentage we will beat any matching quote by."),
-      React.createElement("div", { style: { display: "flex", gap: 10 } },
-        React.createElement("div", { style: { flex: 1 } },
-          React.createElement("label", { style: labelStyle }, "Shopping Period (days)"),
-          React.createElement("input", { style: inputStyle, type: "number", value: p.clearanceDays||"14", onChange: function(e){ set("clearanceDays", e.target.value); }, placeholder: "e.g. 14" })
+    React.createElement("div", { style: { ...cardStyle, borderColor: p.showClearance ? "#f59e0b" : "#e2e8f0", background: p.showClearance ? "#fffbeb" : "#f8fafc" } },
+      React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: p.showClearance ? 10 : 0 } },
+        React.createElement("div", null,
+          React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: p.showClearance ? "#92400e" : "#64748b" } }, "Administrative Clearance Option"),
+          React.createElement("div", { style: { fontSize: 10, color: p.showClearance ? "#a16207" : "#94a3b8", marginTop: 2 } }, p.showClearance ? "Visible to client — last resort option" : "Hidden from client")
         ),
-        React.createElement("div", { style: { flex: 1 } },
-          React.createElement("label", { style: labelStyle }, "Beat competing quote by (%)"),
-          React.createElement("input", { style: inputStyle, type: "number", value: p.clearanceBeatPct||"10", onChange: function(e){ set("clearanceBeatPct", e.target.value); }, placeholder: "e.g. 10" })
+        React.createElement("label", { style: { display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" } },
+          React.createElement("div", { style: { fontSize: 10, fontWeight: 700, color: p.showClearance ? "#a16207" : "#94a3b8" } }, p.showClearance ? "ON" : "OFF"),
+          React.createElement("div", {
+            onClick: function() { set("showClearance", !p.showClearance); },
+            style: { position: "relative", width: 42, height: 24, borderRadius: 12, background: p.showClearance ? "#f59e0b" : "#cbd5e1", cursor: "pointer", transition: "background 0.2s", flexShrink: 0 }
+          },
+            React.createElement("div", { style: { position: "absolute", top: 3, left: p.showClearance ? 21 : 3, width: 18, height: 18, borderRadius: "50%", background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" } })
+          )
         )
-      )
+      ),
+      p.showClearance ? React.createElement("div", null,
+        React.createElement("div", { style: { fontSize: 11, color: "#a16207", marginBottom: 10, lineHeight: 1.5 } }, "Set the shopping period and the percentage we will beat any matching quote by."),
+        React.createElement("div", { style: { display: "flex", gap: 10 } },
+          React.createElement("div", { style: { flex: 1 } },
+            React.createElement("label", { style: labelStyle }, "Shopping Period (days)"),
+            React.createElement("input", { style: inputStyle, type: "number", value: p.clearanceDays||"14", onChange: function(e){ set("clearanceDays", e.target.value); }, placeholder: "e.g. 14" })
+          ),
+          React.createElement("div", { style: { flex: 1 } },
+            React.createElement("label", { style: labelStyle }, "Beat competing quote by (%)"),
+            React.createElement("input", { style: inputStyle, type: "number", value: p.clearanceBeatPct||"10", onChange: function(e){ set("clearanceBeatPct", e.target.value); }, placeholder: "e.g. 10" })
+          )
+        )
+      ) : null
     ),
     React.createElement("div", { style: { ...cardStyle, borderColor: "#c7d2fe", background: "#eef2ff" } },
       React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#3730a3", marginBottom: 4 } }, "Project Timeline"),
@@ -1702,7 +1718,7 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
     paint:    { walls: [], trim: [], other: [], combinedSqft: "", ...(state.paint || {}) },
     windows:  state.windows || [],
     misc:     { items: [], ...(state.misc || {}) },
-    pricing:  { adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", clearanceBeatPct: "10", standardFinancingAdd: "", daysToBegin: "", daysToComplete: "", sidingStandardMarkupPct: "", soffitStandardMarkupPct: "", fasciaStandardMarkupPct: "", paintStandardMarkupPct: "", windowStandardMarkupPct: "", ...(state.pricing || {}) },
+    pricing:  { adminSavingsDiscount: "8.35", monthlyPayment: "", clearanceDays: "14", clearanceBeatPct: "10", standardFinancingAdd: "", daysToBegin: "", daysToComplete: "", sidingStandardMarkupPct: "", soffitStandardMarkupPct: "", fasciaStandardMarkupPct: "", paintStandardMarkupPct: "", windowStandardMarkupPct: "", showClearance: false, ...(state.pricing || {}) },
     financing: { monthlyPayment: "", ...(state.financing || {}) },
     customer:  { name: "", address: "", phone: "", email: "", photo: "", ...(state.customer || {}) },
     company:   { name: "", address: "", phone: "", license: "", ...(state.company || {}) },
@@ -1960,7 +1976,9 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
       body += `<div class='opt ${selectedOption === "standard" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'standard'},'*')"><div style='display:flex;justify-content:space-between;align-items:center'><div style='display:flex;align-items:center'><div class='radio ${selectedOption === "standard" ? "on" : ""}'>${selectedOption === "standard" ? "<div class='dot'></div>" : ""}</div><div><div style='font-weight:800;font-size:14px;color:#0f172a'>Standard Pricing</div><div style='font-size:10px;color:#64748b;font-weight:600;margin-top:2px'>Email proposal — no contract today</div></div></div><div style='text-align:right'><div style='font-size:24px;font-weight:800;color:#334155'>${fmt(standard)}</div>${standardMonthly ? "<div style='font-size:12px;color:#64748b;font-weight:600;margin-top:2px'>Financing: $" + standardMonthly.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo</div>" : ""}</div></div><div style='font-size:12px;font-weight:800;color:#0f172a;line-height:1.7;margin-top:10px;padding-top:10px;border-top:1px solid #f1f5f9'>Standard pricing includes built-in allowances for follow-up visits, site re-assessments, and extended coordination overhead.</div></div>`;
       const savings = standard - priority;
       body += `<div class='opt' onclick="window.parent.postMessage({type:'selectOption',option:'priority'},'*')" style='background:#f0fdf4;border:2px solid ${selectedOption === "priority" ? "#16a34a" : "#86efac"};cursor:pointer'><div style='display:flex;align-items:center;gap:10px;margin-bottom:8px'><div style='width:22px;height:22px;border-radius:50%;border:2px solid ${selectedOption === "priority" ? "#16a34a" : "#86efac"};background:${selectedOption === "priority" ? "#16a34a" : "white"};display:flex;align-items:center;justify-content:center;flex-shrink:0'>${selectedOption === "priority" ? "<div style='width:8px;height:8px;border-radius:50%;background:white'></div>" : ""}</div><div style='font-weight:800;font-size:14px;color:#0f172a'>Direct-Commitment Savings — Ability to Finalize the Project Today</div></div>${selectedOption === "priority" ? "<div style='display:flex;align-items:baseline;gap:12px;margin-bottom:4px'><div style='font-size:30px;font-weight:800;color:#16a34a'>" + fmt(priority) + "</div><div style='background:#dcfce7;color:#166534;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;border:1px solid #86efac'>You save " + fmt(savings) + "</div></div>" + (standardMonthly ? "<div style='font-size:11px;color:#166534;font-weight:600;margin-top:4px'>Financing Available: $" + monthlyPayment.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/mo</div>" : "") : "<div style='display:flex;justify-content:space-between;align-items:center;margin-top:4px'><div style='font-size:11px;color:#166534;font-weight:600;line-height:1.6;max-width:60%'>An opportunity to lower the investment for clients with the ability to finalize today</div><div style='background:#dcfce7;color:#166534;font-size:13px;font-weight:800;padding:6px 14px;border-radius:20px;border:1px solid #86efac;white-space:nowrap'>Save " + fmt(savings) + "</div></div>"}</div>`;
-      body += `<div class='opt ${selectedOption === "clearance" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'clearance'},'*')" style='border-color:${selectedOption === "clearance" ? "#f59e0b" : "#e2e8f0"};background:${selectedOption === "clearance" ? "#fffbeb" : "white"}'><div style='display:flex;align-items:center;gap:10px'><div class='radio' style='border-color:${selectedOption === "clearance" ? "#f59e0b" : "#cbd5e1"};background:${selectedOption === "clearance" ? "#f59e0b" : "white"};flex-shrink:0'>${selectedOption === "clearance" ? "<div class='dot'></div>" : ""}</div><div style='font-weight:800;font-size:14px;color:#0f172a'>Administrative Clearance</div></div>${selectedOption === "clearance" ? "<div style='margin-top:8px;font-size:11px;color:#92400e;font-weight:700;text-align:center'>Administrative Clearance Selected</div>" : ""}</div>`;
+      if (state.pricing && state.pricing.showClearance) {
+        body += `<div class='opt ${selectedOption === "clearance" ? "sel" : ""}' onclick="window.parent.postMessage({type:'selectOption',option:'clearance'},'*')" style='border-color:${selectedOption === "clearance" ? "#f59e0b" : "#e2e8f0"};background:${selectedOption === "clearance" ? "#fffbeb" : "white"}'><div style='display:flex;align-items:center;gap:10px'><div class='radio' style='border-color:${selectedOption === "clearance" ? "#f59e0b" : "#cbd5e1"};background:${selectedOption === "clearance" ? "#f59e0b" : "white"};flex-shrink:0'>${selectedOption === "clearance" ? "<div class='dot'></div>" : ""}</div><div style='font-weight:800;font-size:14px;color:#0f172a'>Administrative Clearance</div></div>${selectedOption === "clearance" ? "<div style='margin-top:8px;font-size:11px;color:#92400e;font-weight:700;text-align:center'>Administrative Clearance Selected</div>" : ""}</div>`;
+      }
     } else {
       if (selectedOption === "priority") {
         body += `<div class='row' style='font-size:13px'><span style='font-weight:700;color:#0369a1'>Direct-Commitment Savings</span><span style='font-weight:800;color:#0ea5e9'>${fmt(priority)}</span></div><div style='background:#dcfce7;color:#166534;border-radius:8px;padding:8px 14px;margin-top:6px;font-size:11px;font-weight:700'>You save ${fmt(standard - priority)}</div>`;
