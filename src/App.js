@@ -2463,7 +2463,7 @@ ${dlPhotoData ? `<div style="margin-bottom:16px"><div class="label">Applicant Dr
             <F label="Job Title" value={form.coJobTitle} onChange={v => set("coJobTitle", v)}/>
             <F label="Time Employed" value={form.coTimeEmployed} onChange={v => set("coTimeEmployed", v)}/>
           </div>
-        {form.hasCoApp && (
+          {form.hasCoApp && (
           <div style={{ marginTop: 12 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 10 }}>Co-Applicant Driver's License</div>
             {coDlPhoto ? (
@@ -2480,7 +2480,6 @@ ${dlPhotoData ? `<div style="margin-bottom:16px"><div class="label">Applicant Dr
               </label>
             )}
           </div>
-        )}
         )}
       </div>
 
