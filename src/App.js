@@ -1755,7 +1755,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
   html += "<div style='text-align:right'><div style='font-size:22px;font-weight:800;color:#334155'>" + fmt(standard) + "</div>";
   if (stdMonthly) html += "<div style='font-size:11px;color:#64748b;font-weight:600'>Financing: $" + stdMonthly.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "/mo</div>";
   html += "</div></div>";
-  html += "<div style='font-size:10px;color:#64748b;line-height:1.7;margin-top:10px;padding-top:10px;border-top:1px solid #f1f5f9'>Standard pricing includes built-in allowances for follow-up visits, site re-assessments, and extended coordination overhead.</div>";
+  html += "<div style='font-size:12px;color:#0f172a;line-height:1.7;margin-top:10px;padding-top:10px;border-top:1px solid #f1f5f9'>Standard pricing includes built-in allowances for follow-up visits, site re-assessments, and extended coordination overhead.</div>";
   html += "</div>";
 
   // ADMIN SAVINGS CREDIT REVEAL (clickable)
@@ -1764,7 +1764,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
   html += "<div style='width:22px;height:22px;border-radius:50%;border:2px solid " + (priSelected ? '#0ea5e9' : '#cbd5e1') + ";background:" + (priSelected ? '#0ea5e9' : 'white') + ";display:flex;align-items:center;justify-content:center;flex-shrink:0'>";
   html += priSelected ? "<div style='width:8px;height:8px;border-radius:50%;background:white'></div>" : "";
   html += "</div>";
-  html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px'>Direct-Commitment Savings — Sign Contract Today</div></div>";
+  html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px'>Direct-Commitment Savings — Ability to Finalize the Project Today</div></div>";
   if (!priSelected) {
     html += "<div style='font-size:11px;color:#0369a1;font-weight:600'>Tap to see your Direct-Commitment price</div>";
   }
@@ -1805,17 +1805,8 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
   html += clrSelected ? "<div style='width:8px;height:8px;border-radius:50%;background:white'></div>" : "";
   html += "</div>";
   html += "<div style='font-size:10px;font-weight:800;color:" + (clrSelected ? '#92400e' : '#64748b') + ";text-transform:uppercase;letter-spacing:1px'>Administrative Clearance</div></div>";
-  html += "<div style='font-size:11px;color:#475569;line-height:1.8;background:" + (clrSelected ? '#fef3c7' : '#f8fafc') + ";border-radius:8px;padding:14px;border:1px solid " + (clrSelected ? '#fde68a' : '#f1f5f9') + "'>";
-  html += "<strong>Administrative permission has been granted</strong> to allow the client to shop and obtain additional quotes for a period of <strong>14 days</strong> from the date of this proposal.<br><br>";
-  html += "All competing quotes must be:<br>";
-  html += "&bull; Submitted in writing on the competing company&apos;s official letterhead<br>";
-  html += "&bull; A complete scope match — covering exactly the same materials, specifications, and scope of work as outlined in this New Direction Construction proposal<br>";
-  html += "&bull; Presented to your New Direction Construction representative within the 14-day window<br><br>";
-  html += "If a qualifying quote is presented that is lower in price and matches the scope completely, <strong>New Direction Construction will not only match that price — the final signed contract price will be set at 10% below the presented quote.</strong><br><br>";
-  html += "<em>This clearance is a reflection of our confidence in our pricing, quality, and commitment to earning your business.</em>";
-  html += "</div>";
   if (clrSelected) {
-    html += "<div style='margin-top:12px;font-size:10px;color:#92400e;font-weight:700;text-align:center'>Administrative Clearance Selected — No Contract Required Today</div>";
+    html += "<div style='margin-top:8px;font-size:11px;color:#92400e;font-weight:700;text-align:center'>Administrative Clearance Selected</div>";
   }
   html += "</div>";
 
