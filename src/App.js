@@ -1759,18 +1759,18 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
   html += "</div>";
 
   // ADMIN SAVINGS CREDIT REVEAL (clickable)
-  html += "<div " + oc_pri + " style='background:" + (priSelected ? '#f0f9ff' : 'white') + ";border:2px solid " + (priSelected ? '#0ea5e9' : '#e2e8f0') + ";border-radius:10px;padding:18px;cursor:pointer'>";
-  html += "<div style='display:flex;align-items:center;gap:10px;margin-bottom:12px'>";
-  html += "<div style='width:22px;height:22px;border-radius:50%;border:2px solid " + (priSelected ? '#0ea5e9' : '#cbd5e1') + ";background:" + (priSelected ? '#0ea5e9' : 'white') + ";display:flex;align-items:center;justify-content:center;flex-shrink:0'>";
+  html += "<div " + oc_pri + " style='background:" + (priSelected ? '#f0fdf4' : '#f0fdf4') + ";border:2px solid " + (priSelected ? '#16a34a' : '#86efac') + ";border-radius:10px;padding:18px;cursor:pointer'>";
+  html += "<div style='display:flex;align-items:center;gap:10px;margin-bottom:8px'>";
+  html += "<div style='width:22px;height:22px;border-radius:50%;border:2px solid " + (priSelected ? '#16a34a' : '#86efac') + ";background:" + (priSelected ? '#16a34a' : 'white') + ";display:flex;align-items:center;justify-content:center;flex-shrink:0'>";
   html += priSelected ? "<div style='width:8px;height:8px;border-radius:50%;background:white'></div>" : "";
   html += "</div>";
   html += "<div style='font-size:14px;font-weight:800;color:#0f172a'>Direct-Commitment Savings — Ability to Finalize the Project Today</div></div>";
   if (!priSelected) {
-    html += "<div style='font-size:11px;color:#0369a1;font-weight:600'>Tap to see your Direct-Commitment price</div>";
+    html += "<div style='font-size:11px;color:#16a34a;font-weight:600'>Tap to see your Direct-Commitment price</div>";
   }
   if (priSelected) {
   html += "<div style='display:flex;align-items:baseline;gap:12px;margin-bottom:4px'>";
-  html += "<div style='font-size:30px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div>";
+  html += "<div style='font-size:30px;font-weight:800;color:#16a34a'>" + fmt(priority) + "</div>";
   html += "<div style='background:#dcfce7;color:#166534;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px'>You save " + fmt(savings) + "</div></div>";
   html += "<div style='font-size:10px;color:#475569;margin-bottom:12px;font-style:italic'>When projects move forward during the initial consultation, it allows us to pass these savings directly to you:</div>";
   var creditBullets = [
