@@ -1764,7 +1764,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
   html += "<div style='width:22px;height:22px;border-radius:50%;border:2px solid " + (priSelected ? '#0ea5e9' : '#cbd5e1') + ";background:" + (priSelected ? '#0ea5e9' : 'white') + ";display:flex;align-items:center;justify-content:center;flex-shrink:0'>";
   html += priSelected ? "<div style='width:8px;height:8px;border-radius:50%;background:white'></div>" : "";
   html += "</div>";
-  html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px'>Direct-Commitment Savings — Ability to Finalize the Project Today</div></div>";
+  html += "<div style='font-size:14px;font-weight:800;color:#0f172a'>Direct-Commitment Savings — Ability to Finalize the Project Today</div></div>";
   if (!priSelected) {
     html += "<div style='font-size:11px;color:#0369a1;font-weight:600'>Tap to see your Direct-Commitment price</div>";
   }
@@ -1804,7 +1804,7 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
   html += "<div style='width:22px;height:22px;border-radius:50%;border:2px solid " + (clrSelected ? '#f59e0b' : '#cbd5e1') + ";background:" + (clrSelected ? '#f59e0b' : 'white') + ";display:flex;align-items:center;justify-content:center;flex-shrink:0'>";
   html += clrSelected ? "<div style='width:8px;height:8px;border-radius:50%;background:white'></div>" : "";
   html += "</div>";
-  html += "<div style='font-size:10px;font-weight:800;color:" + (clrSelected ? '#92400e' : '#64748b') + ";text-transform:uppercase;letter-spacing:1px'>Administrative Clearance</div></div>";
+  html += "<div style='font-size:14px;font-weight:800;color:#0f172a'>Administrative Clearance</div></div>";
   if (clrSelected) {
     html += "<div style='margin-top:8px;font-size:11px;color:#92400e;font-weight:700;text-align:center'>Administrative Clearance Selected</div>";
   }
