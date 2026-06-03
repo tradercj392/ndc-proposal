@@ -1752,6 +1752,10 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
   html += priSelected ? "<div style='width:8px;height:8px;border-radius:50%;background:white'></div>" : "";
   html += "</div>";
   html += "<div style='font-size:10px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:1px'>Direct-Commitment Savings — Sign Contract Today</div></div>";
+  if (!priSelected) {
+    html += "<div style='font-size:11px;color:#0369a1;font-weight:600'>Tap to see your Direct-Commitment price</div>";
+  }
+  if (priSelected) {
   html += "<div style='display:flex;align-items:baseline;gap:12px;margin-bottom:4px'>";
   html += "<div style='font-size:30px;font-weight:800;color:#0ea5e9'>" + fmt(priority) + "</div>";
   html += "<div style='background:#dcfce7;color:#166534;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px'>You save " + fmt(savings) + "</div></div>";
@@ -1776,7 +1780,8 @@ function buildProposalHTML(state, selectedOption, signature, selectedPayment, sh
     html += "<div style='font-size:18px;font-weight:800;color:#0f172a'>$" + monthlyPayment.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + "<span style='font-size:10px;color:#64748b'>/mo</span></div>";
     html += "<div style='font-size:9px;color:#94a3b8'>Subject to credit approval</div></div>";
   }
-  html += "</div>";
+  } // end priSelected
+  html += "</div>"; // end Direct-Commitment card
 
   // Administrative Clearance option (always visible, third option)
   var oc_clr = "onclick='selectOption(\"clearance\")'";
