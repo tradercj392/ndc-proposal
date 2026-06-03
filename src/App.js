@@ -180,8 +180,15 @@ function calcGrandTotal(state) {
   const pntAdmin = services.includes("paint") ? (p.paintPerSqFt ? paintSqFt * parseFloat(p.paintPerSqFt) : calcPaint(paintData)) : 0;
   const pntStandard = applyMarkup(pntAdmin, "paintStandardMarkupPct");
   const totalWindows = windows.reduce((a,w)=>a+parseFloat(w.qty||1),0);
-  const win = services.includes("windows") ? (p.windowPerUnit ? totalWindows * parseFloat(p.windowPerUnit) : calcWindows(windows).reduce((a,w)=>a+parseFloat(w.total||0),0)) : 0;
-  const winStd = applyMarkup(win, "windowStandardMarkupPct");
+  const win = services.includes("windows") ? windows.reduce((a,w) => {
+    const adminPrice = parseFloat(w.adminPrice || w.priceInstalled || p.windowPerUnit || 0);
+    return a + adminPrice * parseFloat(w.qty || 1);
+  }, 0) : 0;
+  const winStd = services.includes("windows") ? windows.reduce((a,w) => {
+    const adminPrice = parseFloat(w.adminPrice || w.priceInstalled || p.windowPerUnit || 0);
+    const markupPct = parseFloat(w.standardMarkupPct || p.windowStandardMarkupPct || 0) / 100;
+    return a + adminPrice * parseFloat(w.qty || 1) * (1 + markupPct);
+  }, 0) : 0;
   const msc = services.includes("misc") ? miscItems.reduce((a,i)=>a+parseFloat(i.qty||0)*parseFloat(i.unitPrice||0),0) : 0;
   const total = sid + sof + fas + pntAdmin + win + msc;
   const standardTotal = sidStd + sofStd + fasStd + pntStandard + winStd + msc;
@@ -1011,10 +1018,16 @@ function PriceGateStep({ onConfirm, services }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // PRICING STEP (Rep-only)
 // ─────────────────────────────────────────────────────────────────────────────
-function PricingStep({ state, onChange }) {
+function PricingStep({ state, onChange, onWindowsChange }) {
   var p = state.pricing || {};
   var services = state.services || [];
   function set(k, v) { onChange(Object.assign({}, p, { [k]: v })); }
+
+  // Wire up per-window price editing via global callback
+  window.__ndcSetWindowPrice = function(idx, k, v) {
+    var updated = (state.windows || []).map(function(w, i){ return i === idx ? Object.assign({}, w, { [k]: v }) : w; });
+    if (onWindowsChange) onWindowsChange(updated);
+  };
 
   var sidingArea  = ((state.siding && state.siding.walls) || []).reduce(function(a,w){ return a + parseFloat(w.sqft||0); }, 0);
   var soffitLinFt = ((state.soffit && state.soffit.items) || []).reduce(function(a,i){ return a + parseFloat(i.linearFt||0); }, 0);
@@ -1031,8 +1044,8 @@ function PricingStep({ state, onChange }) {
   var fasStdTotal = fasTotal * (1 + parseFloat(p.fasciaStandardMarkupPct||0) / 100);
   var pntTotal = services.includes("paint") ? paintSqFt * parseFloat(p.paintPerSqFt||0) : 0;
   var pntStandardTotal = pntTotal * (1 + parseFloat(p.paintStandardMarkupPct||0) / 100);
-  var winTotal = services.includes("windows") ? totalWindows * parseFloat(p.windowPerUnit||0) : 0;
-  var winStdTotal = winTotal * (1 + parseFloat(p.windowStandardMarkupPct||0) / 100);
+  var winTotal = services.includes("windows") ? state.windows.reduce(function(a,w){ return a + parseFloat(w.adminPrice||0) * parseFloat(w.qty||1); }, 0) : 0;
+  var winStdTotal = services.includes("windows") ? state.windows.reduce(function(a,w){ var ap = parseFloat(w.adminPrice||0); var mp = parseFloat(w.standardMarkupPct||0)/100; return a + ap * parseFloat(w.qty||1) * (1+mp); }, 0) : 0;
   var grandAdminTotal = sidTotal + sofTotal + fasTotal + pntTotal + winTotal + miscTotal;
   var grandStandardTotal = sidStdTotal + sofStdTotal + fasStdTotal + pntStandardTotal + winStdTotal + miscTotal;
 
@@ -1082,22 +1095,36 @@ function PricingStep({ state, onChange }) {
     services.includes("paint")   ? ServicePricingCard("Exterior Paint", paintSqFt.toFixed(0), "sq ft", "paintPerSqFt", "paintStandardMarkupPct", pntTotal, "e.g. 2.50") : null,
     services.includes("windows") ? React.createElement("div", { style: cardStyle },
       React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 4 } }, "Window Installation"),
-      React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginBottom: 10 } }, "Total: ", React.createElement("strong", null, totalWindows + " units")),
-      React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-end" } },
-        React.createElement("div", { style: { flex: 1 } },
-          React.createElement("label", { style: { ...labelStyle, color: "#0369a1" } }, "Admin Savings price (per unit)"),
-          React.createElement("div", { style: { fontSize: 10, color: "#64748b", marginBottom: 4 } }, "Admin Savings Incentive price"),
-          React.createElement("input", { style: inputStyle, type: "number", value: p.windowPerUnit||"", onChange: function(e){ set("windowPerUnit", e.target.value); }, placeholder: "e.g. 450.00" })
-        ),
-        PriceBox("ADMIN TOTAL", winTotal)
-      ),
-      React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-end" } },
-        React.createElement("div", { style: { flex: 1 } },
-          React.createElement("label", { style: { ...labelStyle, color: "#475569" } }, "Standard pricing markup (%)"),
-          React.createElement("div", { style: { fontSize: 10, color: "#64748b", marginBottom: 4 } }, "Standard = Admin price + this % on top"),
-          React.createElement("input", { style: inputStyle, type: "number", value: p.windowStandardMarkupPct||"", onChange: function(e){ set("windowStandardMarkupPct", e.target.value); }, placeholder: "e.g. 15" })
-        ),
-        PriceBox("STANDARD TOTAL", p.windowStandardMarkupPct ? winTotal * (1 + parseFloat(p.windowStandardMarkupPct) / 100) : winTotal)
+      React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginBottom: 10 } }, "Enter the Direct-Commitment price and standard markup % for each window size"),
+      state.windows.map(function(w, idx) {
+        var adminPrice = parseFloat(w.adminPrice||0);
+        var markupPct = parseFloat(w.standardMarkupPct||0);
+        var lineAdminTotal = adminPrice * parseFloat(w.qty||1);
+        var lineStdTotal = lineAdminTotal * (1 + markupPct/100);
+        var _idx = idx;
+        var label = w.label || ("Window " + (idx+1));
+        var desc = [w.manufacturer === "Other" ? w.manufacturerOther : w.manufacturer, w.style, w.width && w.height ? w.width+"×"+w.height : ""].filter(Boolean).join(" ");
+        return React.createElement("div", { key: w.id, style: { borderTop: idx > 0 ? "1px solid #f1f5f9" : "none", paddingTop: idx > 0 ? 12 : 0, marginBottom: 12 } },
+          React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#0f172a", marginBottom: 2 } }, label + (desc ? " — " + desc : "") + " (qty: " + (w.qty||1) + ")"),
+          React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "flex-end" } },
+            React.createElement("div", { style: { flex: 1 } },
+              React.createElement("label", { style: { ...labelStyle, color: "#0369a1" } }, "Direct-Commitment price ($/unit)"),
+              React.createElement("input", { style: inputStyle, type: "number", value: w.adminPrice||"", onChange: function(e){ var val = e.target.value; if (typeof window.__ndcSetWindowPrice === "function") window.__ndcSetWindowPrice(_idx, "adminPrice", val); }, placeholder: "e.g. 450.00" })
+            ),
+            React.createElement("div", { style: { flex: 1 } },
+              React.createElement("label", { style: { ...labelStyle, color: "#475569" } }, "Standard markup (%)"),
+              React.createElement("input", { style: inputStyle, type: "number", value: w.standardMarkupPct||"", onChange: function(e){ var val = e.target.value; if (typeof window.__ndcSetWindowPrice === "function") window.__ndcSetWindowPrice(_idx, "standardMarkupPct", val); }, placeholder: "e.g. 15" })
+            ),
+            React.createElement("div", { style: { display: "flex", gap: 6 } },
+              PriceBox("ADMIN", lineAdminTotal),
+              PriceBox("STD", lineStdTotal)
+            )
+          )
+        );
+      }),
+      React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, borderTop: "2px solid #e2e8f0", paddingTop: 10, marginTop: 4 } },
+        PriceBox("ADMIN TOTAL", winTotal),
+        PriceBox("STANDARD TOTAL", winStdTotal)
       )
     ) : null,
     services.includes("misc") && miscTotal > 0 ? React.createElement("div", { style: cardStyle },
@@ -2463,7 +2490,7 @@ function App() {
               <button onClick={() => setShowPricingModal(false)} style={{ background: "none", border: "none", fontSize: 22, cursor: "pointer", color: "#64748b" }}>×</button>
             </div>
             <div style={{ padding: "0 4px 16px" }}>
-              <PricingStep state={state} onChange={(v) => setState(s => ({ ...s, pricing: v, financing: { ...s.financing, monthlyPayment: v.monthlyPayment || "" } }))} />
+              <PricingStep state={state} onChange={(v) => setState(s => ({ ...s, pricing: v, financing: { ...s.financing, monthlyPayment: v.monthlyPayment || "" } }))} onWindowsChange={(v) => setState(s => ({ ...s, windows: v }))} />
             </div>
             <div style={{ padding: "0 20px 20px" }}>
               <button onClick={() => setShowPricingModal(false)} style={{ background: "linear-gradient(135deg,#0ea5e9,#0369a1)", color: "white", border: "none", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 14, cursor: "pointer", width: "100%" }}>Done — Save Pricing</button>
