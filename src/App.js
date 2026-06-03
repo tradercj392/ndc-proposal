@@ -2440,6 +2440,7 @@ ${dlPhotoData ? `<div style="margin-bottom:16px"><div class="label">Applicant Dr
           </button>
         </div>
         {form.hasCoApp && (
+          <div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <F label="Full Legal Name" value={form.coFullName} onChange={v => set("coFullName", v)}/>
             <F label="Date of Birth" value={form.coDob} onChange={v => set("coDob", v)} type="date"/>
@@ -2463,22 +2464,22 @@ ${dlPhotoData ? `<div style="margin-bottom:16px"><div class="label">Applicant Dr
             <F label="Job Title" value={form.coJobTitle} onChange={v => set("coJobTitle", v)}/>
             <F label="Time Employed" value={form.coTimeEmployed} onChange={v => set("coTimeEmployed", v)}/>
           </div>
-          {form.hasCoApp && (
           <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 10 }}>Co-Applicant Driver's License</div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "#0f172a", marginBottom: 10 }}>Co-Applicant Driver&#39;s License</div>
             {coDlPhoto ? (
               <div style={{ position: "relative" }}>
                 <img src={coDlPhoto} alt="Co-DL" style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: 8, border: "1px solid #e2e8f0" }} />
                 <button onClick={() => setCoDlPhoto(null)} style={{ position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,0.5)", color: "white", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", fontSize: 16 }}>×</button>
-                <div style={{ fontSize: 11, color: "#22c55e", fontWeight: 700, marginTop: 6 }}>✓ Co-Applicant Driver's License Uploaded</div>
+                <div style={{ fontSize: 11, color: "#22c55e", fontWeight: 700, marginTop: 6 }}>✓ Co-Applicant Driver&#39;s License Uploaded</div>
               </div>
             ) : (
               <label style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, cursor: "pointer", background: "#f8fafc", border: "1.5px dashed #cbd5e1", borderRadius: 8, padding: "20px 14px", textAlign: "center" }}>
                 <div style={{ fontSize: 28 }}>🪪</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#475569" }}>Take Photo or Upload Co-Applicant Driver's License</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#475569" }}>Take Photo or Upload Co-Applicant Driver&#39;s License</div>
                 <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files[0]; if (f) compressImage(f, (img) => setCoDlPhoto(img)); }} />
               </label>
             )}
+          </div>
           </div>
         )}
       </div>
