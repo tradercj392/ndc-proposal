@@ -1103,7 +1103,7 @@ function PricingStep({ state, onChange, onWindowsChange }) {
         var lineStdTotal = lineAdminTotal * (1 + markupPct/100);
         var _idx = idx;
         var label = w.label || ("Window " + (idx+1));
-        var desc = [w.manufacturer === "Other" ? w.manufacturerOther : w.manufacturer, w.style, w.width && w.height ? w.width+"×"+w.height : ""].filter(Boolean).join(" ");
+        var desc = [w.manufacturer === "Other" ? w.manufacturerOther : w.manufacturer, w.manufacturer === "CWS (Custom Window Systems)" && w.cwsSeries ? w.cwsSeries : null, w.style, w.width && w.height ? w.width+"×"+w.height : ""].filter(Boolean).join(" — ");
         return React.createElement("div", { key: w.id, style: { borderTop: idx > 0 ? "1px solid #f1f5f9" : "none", paddingTop: idx > 0 ? 12 : 0, marginBottom: 12 } },
           React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#0f172a", marginBottom: 2 } }, label + (desc ? " — " + desc : "") + " (qty: " + (w.qty||1) + ")"),
           React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "flex-end" } },
@@ -1556,7 +1556,8 @@ function PaintStep({ data, onChange }) {
 }
 
 const WIN_OPTS = {
-  manufacturers: ["PGT Innovations", "CGI Windows & Doors", "Impact Resistant Solutions (IRS)", "Andersen Windows", "Pella Windows", "Simonton Windows", "Alside Mezzo", "Jeld-Wen", "MI Windows", "Ply Gem / Atrium", "Thermoseal Windows", "Other"],
+  manufacturers: ["CWS (Custom Window Systems)", "PGT Innovations", "CGI Windows & Doors", "Impact Resistant Solutions (IRS)", "Andersen Windows", "Pella Windows", "Simonton Windows", "Alside Mezzo", "Jeld-Wen", "MI Windows", "Ply Gem / Atrium", "Thermoseal Windows", "Other"],
+  cwsSeries: ["StormStrong (Vinyl Impact)", "WindPact (Vinyl Impact)", "WindPact Plus (Vinyl Impact - Energy Star)", "Hurricane Guard (Vinyl Impact)", "ComfortShield (Vinyl Non-Impact)", "Fortify (Vinyl Non-Impact)", "ICON Series (Aluminum Impact)", "Aria (Aluminum Impact)", "Zephyr (Aluminum Impact)", "Epic (Vinyl)"],
   frameTypes: ["Vinyl", "Aluminum", "Fiberglass", "Wood-Clad", "Composite"],
   frameColors: ["White", "Bronze", "Black", "Tan / Beige", "Gray", "Cream", "Custom Color"],
   styles: ["Single Hung", "Double Hung", "Sliding / Gliding", "Casement", "Awning", "Fixed / Picture", "Hopper", "Bay / Bow", "Garden"],
@@ -1594,6 +1595,15 @@ function WindowsStep({ windows, onChange }) {
             <div style={{ marginBottom: 10 }}>
               <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 4 }}>MANUFACTURER NAME</label>
               <input style={{ ...S.input, fontSize: 13 }} value={win.manufacturerOther || ""} onChange={(e) => update(win.id, "manufacturerOther", e.target.value)} placeholder="Enter manufacturer name..." />
+            </div>
+          )}
+          {win.manufacturer === "CWS (Custom Window Systems)" && (
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 11, color: "#0369a1", fontWeight: 700, display: "block", marginBottom: 4 }}>CWS SERIES</label>
+              <select style={{ ...S.input, fontSize: 13, padding: "6px 8px", borderColor: "#bae6fd" }} value={win.cwsSeries || ""} onChange={(e) => update(win.id, "cwsSeries", e.target.value)}>
+                <option value="">-- Select Series --</option>
+                {WIN_OPTS.cwsSeries.map(s => <option key={s}>{s}</option>)}
+              </select>
             </div>
           )}
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -1795,7 +1805,7 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
       ...(state.paint.other || []).filter(a => a.paintProduct || a.colorName || a.notes).map(a => "Other: " + [a.paintProduct, a.colorName, a.notes].filter(Boolean).join(" — ")),
       "Total: " + (parseFloat(state.paint.combinedSqft||0) > 0 ? parseFloat(state.paint.combinedSqft||0).toFixed(0) + " sq ft" : "See details above"),
     ] },
-    windows: { label: "Window Installation", bullets: ["Verify rough opening dimensions", "Remove existing windows", "Install new unit plumb, level, and square", "Air seal gaps with low-expansion foam", "Install exterior casing, caulk all seams", "Final inspection"], detail: state.windows.map(w => (w.label || "Window") + ": " + (w.manufacturer === "Other" ? w.manufacturerOther || "Other" : w.manufacturer || "") + (w.style ? " " + w.style : "") + " — qty " + (w.qty || 1) + (w.notes ? " — " + w.notes : "")) },
+    windows: { label: "Window Installation", bullets: ["Verify rough opening dimensions", "Remove existing windows", "Install new unit plumb, level, and square", "Air seal gaps with low-expansion foam", "Install exterior casing, caulk all seams", "Final inspection"], detail: state.windows.map(w => (w.label || "Window") + ": " + (w.manufacturer === "Other" ? w.manufacturerOther || "Other" : w.manufacturer || "") + (w.manufacturer === "CWS (Custom Window Systems)" && w.cwsSeries ? " — " + w.cwsSeries : "") + (w.style ? " " + w.style : "") + " — qty " + (w.qty || 1) + (w.notes ? " — " + w.notes : "")) },
     misc: { label: "Additional Items", bullets: state.misc.items.filter(i => i.description).map(i => i.description + (i.notes ? " — " + i.notes : "")), detail: [] },
   };
 
@@ -2110,6 +2120,9 @@ function PreviewStep({ state, setState, setStep, steps, selectedOption, setSelec
   const [emailOverride, setEmailOverride] = useState(state.customer.email);
   const [bccEmail, setBccEmail] = useState("");
   const [pricingRevealed, setPricingRevealed] = useState(false);
+  const [loanMonths, setLoanMonths] = useState("");
+  const [loanRate, setLoanRate] = useState("10.99");
+  const [showCalc, setShowCalc] = useState(false);
 
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const t = calcGrandTotal(state);
@@ -2241,6 +2254,67 @@ function PreviewStep({ state, setState, setStep, steps, selectedOption, setSelec
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Loan Calculator */}
+            <div style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 16, marginBottom: 12 }}>
+              <div onClick={() => setShowCalc(c => !c)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ fontSize: 20 }}>🧮</div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>Financing Calculator</div>
+                    <div style={{ fontSize: 11, color: "#64748b" }}>Estimate monthly payment for client</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 18, color: "#94a3b8", fontWeight: 700 }}>{showCalc ? "▲" : "▼"}</div>
+              </div>
+              {showCalc && (() => {
+                const calcBase = selectedOption === "standard" ? t.standardTotal : t.total;
+                const loanAmt = calcBase > 0 ? calcBase : 0;
+                const months = parseInt(loanMonths) || 0;
+                const rate = parseFloat(loanRate) || 0;
+                const monthlyRate = rate / 100 / 12;
+                const monthly = months > 0 && monthlyRate > 0
+                  ? loanAmt * monthlyRate * Math.pow(1 + monthlyRate, months) / (Math.pow(1 + monthlyRate, months) - 1)
+                  : months > 0 ? loanAmt / months : 0;
+                const totalPaid = monthly * months;
+                const totalInterest = totalPaid - loanAmt;
+                return (
+                  <div style={{ marginTop: 14 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 14 }}>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>Loan Amount</div>
+                        <div style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 13, fontWeight: 800, color: "#0f172a" }}>{fmt(loanAmt)}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>Duration (Months)</div>
+                        <input type="number" value={loanMonths} onChange={e => setLoanMonths(e.target.value)} placeholder="e.g. 120" style={{ width: "100%", boxSizing: "border-box", background: "white", border: "1.5px solid #bae6fd", borderRadius: 8, padding: "10px 12px", fontSize: 13, fontWeight: 700, color: "#0f172a", outline: "none" }} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>Interest Rate (%)</div>
+                        <input type="number" step="0.01" value={loanRate} onChange={e => setLoanRate(e.target.value)} placeholder="10.99" style={{ width: "100%", boxSizing: "border-box", background: "white", border: "1.5px solid #bae6fd", borderRadius: 8, padding: "10px 12px", fontSize: 13, fontWeight: 700, color: "#0f172a", outline: "none" }} />
+                      </div>
+                    </div>
+                    {monthly > 0 && (
+                      <div style={{ background: "#f0fdf4", border: "2px solid #86efac", borderRadius: 10, padding: 14 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "#166534" }}>Est. Monthly Payment</div>
+                          <div style={{ fontSize: 28, fontWeight: 800, color: "#16a34a" }}>${monthly.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<span style={{ fontSize: 13, color: "#6ee7b7", fontWeight: 600 }}>/mo</span></div>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: "1px solid #bbf7d0" }}>
+                          <span style={{ fontSize: 11, color: "#166534" }}>Total paid over {months} months</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "#166534" }}>{fmt(totalPaid)}</span>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0" }}>
+                          <span style={{ fontSize: 11, color: "#166534" }}>Total interest</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "#166534" }}>{fmt(totalInterest)}</span>
+                        </div>
+                        <div style={{ fontSize: 10, color: "#6ee7b7", fontStyle: "italic", marginTop: 4 }}>* Estimate only — subject to credit approval and lender terms</div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Deposit toggle */}
