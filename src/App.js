@@ -2923,6 +2923,7 @@ function buildSteps(services, isFinancing) {
   if (services.includes("fascia"))  steps.push({ key: "fascia",   label: "Fascia"   });
   if (services.includes("paint"))   steps.push({ key: "paint",    label: "Paint"    });
   if (services.includes("windows")) steps.push({ key: "windows",  label: "Windows"  });
+  if (services.includes("doors"))   steps.push({ key: "doors",    label: "Doors"    });
   if (services.includes("misc"))    steps.push({ key: "misc",     label: "Misc"     });
   steps.push({ key: "preview",   label: "Preview"  });
   steps.push({ key: "contract",  label: "Contract" });
