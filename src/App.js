@@ -1849,7 +1849,7 @@ function WindowsStep({ windows, onChange }) {
               </div>
               {win.manufacturer && win.style && (
                 <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4 }}>
-                  {(() => { const l = getWinSizeLimits(win.manufacturer, win.style); return "Size range for " + (win.manufacturer || "this manufacturer") + " " + win.style + ": W " + l.minW + "\"–" + l.maxW + "\" × H " + l.minH + "\"–" + l.maxH + "\""; })()}
+                  {(() => { const l = getWinSizeLimits(win.manufacturer, win.style); return "Size range: W " + l.minW + "in\u2013" + l.maxW + "in \u00d7 H " + l.minH + "in\u2013" + l.maxH + "in"; })()}
                 </div>
               )}
             </div>
@@ -2039,7 +2039,7 @@ function DoorsStep({ doors, onChange }) {
                   : React.createElement("div", { style: { background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 8, padding: "6px 10px", fontSize: 11, color: "#dc2626", fontWeight: 700 } }, "⚠ " + sizeCheck.errors.join(" | "))
               )
             ),
-            limits && React.createElement("div", { style: { fontSize: 10, color: "#94a3b8", marginTop: 4 } }, "Size range: W " + limits.minW + "\"–" + limits.maxW + "\" × H " + limits.minH + "\"–" + limits.maxH + "\"")
+            limits && React.createElement("div", { style: { fontSize: 10, color: "#94a3b8", marginTop: 4 } }, "Size range: W " + limits.minW + "in\u2013" + limits.maxW + "in \u00d7 H " + limits.minH + "in\u2013" + limits.maxH + "in")
           ),
 
           // Sidelights
