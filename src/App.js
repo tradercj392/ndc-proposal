@@ -1148,7 +1148,7 @@ function PricingStep({ state, onChange, onWindowsChange, onDoorsChange }) {
         var lineStdTotal = adminPrice * (1 + markupPct/100);
         var _idx = idx;
         var label = d.label || ("Door " + (idx+1));
-        var desc = [d.doorType, d.manufacturer === "Other" ? d.manufacturerOther : d.manufacturer, d.width && d.height ? d.width+"\"×"+d.height+"\"" : ""].filter(Boolean).join(" — ");
+        var desc = [d.doorType, d.manufacturer === "Other" ? d.manufacturerOther : d.manufacturer, d.width && d.height ? d.width+"x"+d.height : ""].filter(Boolean).join(" — ");
         return React.createElement("div", { key: d.id, style: { borderTop: idx > 0 ? "1px solid #f1f5f9" : "none", paddingTop: idx > 0 ? 12 : 0, marginBottom: 12 } },
           React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#0f172a", marginBottom: 6 } }, label + (desc ? " — " + desc : "")),
           React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "flex-end" } },
@@ -1172,6 +1172,7 @@ function PricingStep({ state, onChange, onWindowsChange, onDoorsChange }) {
         PriceBox("STANDARD TOTAL", doorStdTotal)
       )
     ) : null,
+    services.includes("misc") && miscTotal > 0 ? React.createElement("div", { style: cardStyle },
       React.createElement("div", { style: { display: "flex", justifyContent: "space-between" } },
         React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#0f172a" } }, "Miscellaneous"),
         React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: "#0ea5e9" } }, fmt(miscTotal))
@@ -2065,112 +2066,6 @@ function DoorsStep({ doors, onChange }) {
   );
 }
 
-function DoorsStep({ doors, onChange }) {
-  const add = () => { onChange([...doors, { id: uid(), label: "Door " + (doors.length + 1), doorType: "", manufacturer: "", manufacturerOther: "", glassOption: "", impactOption: "", color: "", hardwareFinish: "", clientSupplyHardware: false, swingDirection: "", width: "", height: "", hasSidelights: false, sidelightPosition: "", jambMaterial: "", thresholdFinish: "", notes: "", adminPrice: "", standardMarkupPct: "" }]); };
-  const remove = (id) => onChange(doors.filter(d => d.id !== id));
-  const update = (id, key, val) => onChange(doors.map(d => d.id === id ? { ...d, [key]: val } : d));
-  const Sel = ({ label, field, door, options, color }) => (
-    React.createElement("div", { style: { marginBottom: 10 } },
-      React.createElement("label", { style: { fontSize: 11, color: color || "#64748b", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" } }, label),
-      React.createElement("select", { style: { ...S.input, fontSize: 13, padding: "6px 8px" }, value: door[field] || "", onChange: e => update(door.id, field, e.target.value) },
-        React.createElement("option", { value: "" }, "-- Select --"),
-        options.map(o => React.createElement("option", { key: o }, o))
-      )
-    )
-  );
-  const hasSidelightOption = (d) => ["Front Door", "Single French Door", "Double French Door"].includes(d.doorType);
-  return (
-    React.createElement("div", { style: S.stepWrap },
-      React.createElement("h2", { style: S.stepTitle }, "Door Installation"),
-      React.createElement("p", { style: S.stepSub }, "Add entry doors, sliding glass doors, and French doors with full specifications."),
-      doors.map((door, idx) =>
-        React.createElement("div", { key: door.id, style: { ...S.card, marginBottom: 16 } },
-          React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 } },
-            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
-              React.createElement("div", { style: { fontSize: 20 } }, "🚪"),
-              React.createElement("input", { style: { ...S.input, fontWeight: 800, fontSize: 14, width: 160 }, value: door.label, onChange: e => update(door.id, "label", e.target.value) })
-            ),
-            doors.length > 1 && React.createElement("button", { onClick: () => remove(door.id), style: { background: "none", border: "none", color: "#ef4444", fontSize: 18, cursor: "pointer" } }, "✕")
-          ),
-
-          // Door Type
-          React.createElement("div", { style: { marginBottom: 10 } },
-            React.createElement("label", { style: { fontSize: 11, color: "#0369a1", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" } }, "DOOR TYPE"),
-            React.createElement("select", { style: { ...S.input, fontSize: 13, padding: "6px 8px", borderColor: "#bae6fd" }, value: door.doorType || "", onChange: e => update(door.id, "doorType", e.target.value) },
-              React.createElement("option", { value: "" }, "-- Select Door Type --"),
-              DOOR_OPTS.doorTypes.map(o => React.createElement("option", { key: o }, o))
-            )
-          ),
-
-          // Manufacturer — conditional on door type
-          door.doorType && React.createElement("div", { style: { marginBottom: 10 } },
-            React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" } }, "MANUFACTURER"),
-            React.createElement("select", { style: { ...S.input, fontSize: 13, padding: "6px 8px" }, value: door.manufacturer || "", onChange: e => update(door.id, "manufacturer", e.target.value) },
-              React.createElement("option", { value: "" }, "-- Select --"),
-              (DOOR_OPTS.manufacturersByType[door.doorType] || ["Other"]).map(o => React.createElement("option", { key: o }, o))
-            )
-          ),
-          door.manufacturer === "Other" && React.createElement("div", { style: { marginBottom: 10 } },
-            React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase" } }, "MANUFACTURER NAME"),
-            React.createElement("input", { style: { ...S.input, fontSize: 13 }, value: door.manufacturerOther || "", onChange: e => update(door.id, "manufacturerOther", e.target.value), placeholder: "Enter manufacturer..." })
-          ),
-
-          // Glass, Color, Swing in grid
-          React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } },
-            React.createElement(Sel, { label: "GLASS OPTION", field: "glassOption", door, options: DOOR_OPTS.glassOptions }),
-            React.createElement(Sel, { label: "IMPACT / NON-IMPACT", field: "impactOption", door, options: DOOR_OPTS.impactOptions, color: "#0369a1" }),
-            React.createElement(Sel, { label: "COLOR", field: "color", door, options: DOOR_OPTS.colors }),
-            React.createElement(Sel, { label: "SWING DIRECTION", field: "swingDirection", door, options: DOOR_OPTS.swingDirections }),
-            React.createElement(Sel, { label: "JAMB MATERIAL", field: "jambMaterial", door, options: DOOR_OPTS.jambMaterials }),
-            React.createElement(Sel, { label: "THRESHOLD FINISH", field: "thresholdFinish", door, options: DOOR_OPTS.thresholdFinishes }),
-          ),
-
-          // Hardware
-          React.createElement("div", { style: { marginBottom: 10 } },
-            React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" } }, "HARDWARE FINISH"),
-            React.createElement("select", { style: { ...S.input, fontSize: 13, padding: "6px 8px" }, value: door.hardwareFinish || "", onChange: e => update(door.id, "hardwareFinish", e.target.value) },
-              React.createElement("option", { value: "" }, "-- Select --"),
-              DOOR_OPTS.hardwareFinishes.map(o => React.createElement("option", { key: o }, o))
-            )
-          ),
-
-          // Measurements
-          React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 10 } },
-            React.createElement("div", { style: { flex: 1 } },
-              React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase" } }, "WIDTH (inches)"),
-              React.createElement("input", { style: { ...S.input, fontSize: 13 }, type: "number", value: door.width || "", onChange: e => update(door.id, "width", e.target.value), placeholder: "e.g. 36" })
-            ),
-            React.createElement("div", { style: { flex: 1 } },
-              React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase" } }, "HEIGHT (inches)"),
-              React.createElement("input", { style: { ...S.input, fontSize: 13 }, type: "number", value: door.height || "", onChange: e => update(door.id, "height", e.target.value), placeholder: "e.g. 80" })
-            ),
-          ),
-
-          // Sidelights — only for Front Door and French Doors
-          hasSidelightOption(door) && React.createElement("div", { style: { marginBottom: 10 } },
-            React.createElement("label", { style: { display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginBottom: door.hasSidelights ? 8 : 0 } },
-              React.createElement("div", {
-                onClick: () => update(door.id, "hasSidelights", !door.hasSidelights),
-                style: { position: "relative", width: 38, height: 22, borderRadius: 11, background: door.hasSidelights ? "#0ea5e9" : "#cbd5e1", cursor: "pointer", flexShrink: 0 }
-              },
-                React.createElement("div", { style: { position: "absolute", top: 2, left: door.hasSidelights ? 18 : 2, width: 18, height: 18, borderRadius: "50%", background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" } })
-              ),
-              React.createElement("span", { style: { fontSize: 12, fontWeight: 700, color: door.hasSidelights ? "#0369a1" : "#64748b" } }, "Includes Sidelights")
-            ),
-            door.hasSidelights && React.createElement(Sel, { label: "SIDELIGHT POSITION", field: "sidelightPosition", door, options: DOOR_OPTS.sidelightPositions })
-          ),
-
-          // Notes
-          React.createElement("div", { style: { marginTop: 6 } },
-            React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase" } }, "NOTES"),
-            React.createElement("textarea", { style: { ...S.input, height: 60, resize: "vertical", fontSize: 13 }, value: door.notes || "", onChange: e => update(door.id, "notes", e.target.value), placeholder: "e.g. remove and dispose existing door, special framing needed..." })
-          )
-        )
-      ),
-      React.createElement("button", { style: S.addBtn, onClick: add }, "+ Add Door")
-    )
-  );
-}
 
 function MiscStep({ data, onChange }) {
   const add = () => { const last = data.items[data.items.length - 1]; onChange({ ...data, items: [...data.items, { ...last, id: uid(), description: "", qty: "", unitPrice: "", notes: "" }] }); };
