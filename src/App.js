@@ -1699,10 +1699,10 @@ function validateWinSize(manufacturer, style, width, height) {
   const w = parseFloat(width);
   const h = parseFloat(height);
   const errors = [];
-  if (width && w < limits.minW) errors.push("Width " + w + "\" is below minimum " + limits.minW + "\"");
-  if (width && w > limits.maxW) errors.push("Width " + w + "\" exceeds maximum " + limits.maxW + "\"");
-  if (height && h < limits.minH) errors.push("Height " + h + "\" is below minimum " + limits.minH + "\"");
-  if (height && h > limits.maxH) errors.push("Height " + h + "\" exceeds maximum " + limits.maxH + "\"");
+  if (width && w < limits.minW) errors.push("Width " + w + "in is below minimum " + limits.minW + "in");
+  if (width && w > limits.maxW) errors.push("Width " + w + "in exceeds maximum " + limits.maxW + "in");
+  if (height && h < limits.minH) errors.push("Height " + h + "in is below minimum " + limits.minH + "in");
+  if (height && h > limits.maxH) errors.push("Height " + h + "in exceeds maximum " + limits.maxH + "in");
   if (errors.length === 0 && width && height) return { valid: true };
   return errors.length > 0 ? { valid: false, errors } : null;
 }
@@ -1941,10 +1941,10 @@ function validateDoorSize(doorType, manufacturer, width, height) {
   const w = parseFloat(width);
   const h = parseFloat(height);
   const errors = [];
-  if (width && w < limits.minW) errors.push("Width " + w + "\" is below minimum " + limits.minW + "\"");
-  if (width && w > limits.maxW) errors.push("Width " + w + "\" exceeds maximum " + limits.maxW + "\"");
-  if (height && h < limits.minH) errors.push("Height " + h + "\" is below minimum " + limits.minH + "\"");
-  if (height && h > limits.maxH) errors.push("Height " + h + "\" exceeds maximum " + limits.maxH + "\"");
+  if (width && w < limits.minW) errors.push("Width " + w + "in is below minimum " + limits.minW + "in");
+  if (width && w > limits.maxW) errors.push("Width " + w + "in exceeds maximum " + limits.maxW + "in");
+  if (height && h < limits.minH) errors.push("Height " + h + "in is below minimum " + limits.minH + "in");
+  if (height && h > limits.maxH) errors.push("Height " + h + "in exceeds maximum " + limits.maxH + "in");
   if (errors.length === 0 && width && height) return { valid: true };
   return errors.length > 0 ? { valid: false, errors } : null;
 }
