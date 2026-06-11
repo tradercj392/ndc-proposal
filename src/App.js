@@ -119,7 +119,7 @@ const makeInitialState = () => ({
   fascia: { items: [{ id: uid(), label: "Fascia Area 1", currentMaterial: "", newMaterial: "", linearFt: "", pricePerLnFt: "", notes: "" }] },
   paint: { walls: [{ id: uid(), paintProduct: "", colorName: "", sqft: "", pricePerSqFt: "", notes: "" }], trim: [{ id: uid(), paintProduct: "", colorName: "", sqft: "", pricePerSqFt: "", notes: "" }], other: [{ id: uid(), paintProduct: "", colorName: "", sqft: "", pricePerSqFt: "", notes: "" }] },
   windows: [{ id: uid(), label: "Window 1", location: "", manufacturer: "", manufacturerOther: "", frameType: "", frameColor: "", style: "", glassType: "", glassPack: "", grids: "", width: "", height: "", qty: "1", priceInstalled: "" }],
-  doors: [{ id: uid(), label: "Door 1", doorType: "", manufacturer: "", manufacturerOther: "", glassOption: "", impactOption: "", color: "", hardwareFinish: "", clientSupplyHardware: false, swingDirection: "", width: "", height: "", hasSidelights: false, sidelightPosition: "", jambMaterial: "", thresholdFinish: "", notes: "", adminPrice: "", standardMarkupPct: "" }],
+  doors: [{ id: uid(), label: "Door 1", doorType: "", manufacturer: "", manufacturerOther: "", series: "", cwsConfig: "", material: "", glassOption: "", impactOption: "", color: "", hardwareFinish: "", swingDirection: "", width: "", height: "", hasSidelights: false, sidelightPosition: "", jambMaterial: "", thresholdFinish: "", notes: "", adminPrice: "", standardMarkupPct: "" }],
   sidingMaterials: defaultSidingMaterials("HardiePlank Lap Siding"),
   soffitMaterials: defaultSoffitMaterials(),
   paintMaterials: defaultPaintMaterials(),
@@ -1871,31 +1871,33 @@ function WindowsStep({ windows, onChange }) {
 const DOOR_OPTS = {
   doorTypes: ["Sliding Glass Door", "Front Door", "Single French Door", "Double French Door"],
   manufacturersByType: {
-    "Sliding Glass Door": ["Pella", "Simonton", "CWS (Custom Window Systems)", "PGT WinGuard", "Other"],
+    "Sliding Glass Door": ["CWS (Custom Window Systems)", "Pella", "Simonton", "PGT WinGuard", "Other"],
     "Front Door": ["Therma-Tru", "ProVia", "Other"],
-    "Single French Door": ["Jeld-Wen", "ProVia", "Therma-Tru", "Other"],
-    "Double French Door": ["Jeld-Wen", "ProVia", "Therma-Tru", "Other"],
+    "Single French Door": ["CWS (Custom Window Systems)", "Jeld-Wen", "ProVia", "Therma-Tru", "Other"],
+    "Double French Door": ["CWS (Custom Window Systems)", "Jeld-Wen", "ProVia", "Therma-Tru", "Other"],
   },
   seriesByManufacturer: {
+    "CWS (Custom Window Systems)": ["WindPact Plus (Vinyl Impact - Sliding)", "ComfortShield (Vinyl Non-Impact - Sliding)", "StormStrong (Vinyl Impact - Sliding)", "WindPact Plus (Vinyl Impact - French)", "ComfortShield (Vinyl Non-Impact - French)", "ICON Series (Aluminum Impact - French)", "Aria (Aluminum Impact - French)"],
     "Therma-Tru": ["Smooth-Star (Fiberglass)", "Fiber-Classic (Fiberglass)", "Classic-Craft (Premium Fiberglass)", "Veris (Modern Aluminum/Fiberglass)", "Smooth-Star Steel"],
     "ProVia": ["Heritage (Fiberglass)", "Signet (Premium Fiberglass)", "Legacy (Steel)", "Embarq (Premium)"],
     "Jeld-Wen": ["Smooth-Pro (Fiberglass)", "W-2500 (Wood)", "Aurora (Steel)", "V-2500 (Vinyl)"],
     "Pella": ["250 Series (Vinyl)", "350 Series", "Impervia (Fiberglass)", "Reserve (Clad-Wood)", "Lifestyle Series"],
     "Simonton": ["PassageLine", "Reflections 5500", "StormBreaker Plus (Impact)", "Contemporary"],
-    "CWS (Custom Window Systems)": ["StormStrong (Vinyl Impact)", "WindPact (Vinyl Impact)", "Hurricane Guard (Vinyl Impact)", "ICON Series (Aluminum Impact)"],
     "PGT WinGuard": ["WinGuard Aluminum (Impact)", "WinGuard Vinyl (Impact)", "WinDoor (Premium Impact)"],
   },
+  cwsSlidingConfigs: ["XO (2-panel)", "OX (2-panel)", "OXO (3-panel)", "OXXO (4-panel)", "OOX (3-panel)", "XOO (3-panel)", "OOXXOO (6-panel)"],
   materialsByManufacturer: {
+    "CWS (Custom Window Systems)": ["Vinyl", "Aluminum"],
     "Therma-Tru": ["Fiberglass", "Steel"],
     "ProVia": ["Fiberglass", "Steel"],
     "Jeld-Wen": ["Fiberglass", "Steel", "Wood-Clad", "Vinyl"],
     "Pella": ["Vinyl", "Fiberglass", "Wood-Clad"],
     "Simonton": ["Vinyl"],
-    "CWS (Custom Window Systems)": ["Vinyl", "Aluminum"],
     "PGT WinGuard": ["Aluminum", "Vinyl"],
     "default": ["Fiberglass", "Steel", "Vinyl", "Wood-Clad"],
   },
   colorsByManufacturer: {
+    "CWS (Custom Window Systems)": ["White", "Bronze", "Black", "Tan", "Custom Color"],
     "Therma-Tru": ["White", "Black", "Fiesta Red", "Coastal Blue", "Cypress", "Wicker", "Custom Paint (Any Color)"],
     "ProVia": ["White", "Black (Coal Black)", "Coffee Bean", "Sea Green", "Snow Mist White", "American Cherry Stain", "Custom Color"],
     "Jeld-Wen": ["White", "Black", "Earl Grey", "Warm Toffee", "Primed (Paintable)", "Natural Wood Stain", "Custom Color"],
@@ -1951,7 +1953,7 @@ function validateDoorSize(doorType, manufacturer, width, height) {
 }
 
 function DoorsStep({ doors, onChange }) {
-  const add = () => { onChange([...doors, { id: uid(), label: "Door " + (doors.length + 1), doorType: "", manufacturer: "", manufacturerOther: "", series: "", material: "", glassOption: "", impactOption: "", color: "", hardwareFinish: "", swingDirection: "", width: "", height: "", hasSidelights: false, sidelightPosition: "", jambMaterial: "", thresholdFinish: "", notes: "", adminPrice: "", standardMarkupPct: "" }]); };
+  const add = () => { onChange([...doors, { id: uid(), label: "Door " + (doors.length + 1), doorType: "", manufacturer: "", manufacturerOther: "", series: "", cwsConfig: "", material: "", glassOption: "", impactOption: "", color: "", hardwareFinish: "", swingDirection: "", width: "", height: "", hasSidelights: false, sidelightPosition: "", jambMaterial: "", thresholdFinish: "", notes: "", adminPrice: "", standardMarkupPct: "" }]); };
   const remove = (id) => onChange(doors.filter(d => d.id !== id));
   const update = (id, key, val) => onChange(doors.map(d => d.id === id ? { ...d, [key]: val } : d));
 
@@ -2000,6 +2002,15 @@ function DoorsStep({ doors, onChange }) {
 
           // Series
           series && React.createElement(Sel, { label: "SERIES / PRODUCT LINE", field: "series", door, options: series, highlight: true }),
+
+          // CWS Sliding Configuration
+          door.manufacturer === "CWS (Custom Window Systems)" && door.doorType === "Sliding Glass Door" && React.createElement("div", { style: { marginBottom: 10 } },
+            React.createElement("label", { style: { fontSize: 11, color: "#0369a1", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" } }, "PANEL CONFIGURATION"),
+            React.createElement("select", { style: { ...S.input, fontSize: 13, padding: "6px 8px", borderColor: "#bae6fd" }, value: door.cwsConfig || "", onChange: e => update(door.id, "cwsConfig", e.target.value) },
+              React.createElement("option", { value: "" }, "-- Select Configuration --"),
+              DOOR_OPTS.cwsSlidingConfigs.map(o => React.createElement("option", { key: o }, o))
+            )
+          ),
 
           // Material
           React.createElement(Sel, { label: "DOOR MATERIAL", field: "material", door, options: materials }),
@@ -2231,7 +2242,7 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
       "Total: " + (parseFloat(state.paint.combinedSqft||0) > 0 ? parseFloat(state.paint.combinedSqft||0).toFixed(0) + " sq ft" : "See details above"),
     ] },
     windows: { label: "Window Installation", bullets: ["Verify rough opening dimensions", "Remove existing windows", "Install new unit plumb, level, and square", "Air seal gaps with low-expansion foam", "Install exterior casing, caulk all seams", "Final inspection"], detail: state.windows.map(w => (w.label || "Window") + ": " + [w.manufacturer === "Other" ? w.manufacturerOther || "Other" : w.manufacturer, w.series, w.impactOption, w.style, w.glassPack, w.glassTint && w.glassTint !== "Clear" ? w.glassTint : null, w.frameColor, w.width && w.height ? w.width+"\"×"+w.height+"\"" : null, "qty " + (w.qty || 1), w.notes].filter(Boolean).join(" — ")) },
-    doors: { label: "Door Installation", bullets: ["Remove and dispose of existing door unit", "Prepare rough opening — shim and level", "Install new door unit per manufacturer specifications", "Install weather stripping and threshold", "Caulk and seal all exterior gaps", "Install hardware and adjust for proper operation", "Final inspection"], detail: (state.doors||[]).map(d => (d.label||"Door") + ": " + [d.doorType, d.manufacturer==="Other"?d.manufacturerOther:d.manufacturer, d.series, d.material, d.impactOption, d.glassOption, d.swingDirection, d.width&&d.height?d.width+"\"×"+d.height+"\"":null, d.hasSidelights?"Sidelights: "+d.sidelightPosition:null, d.hardwareFinish==="Client Supplying Own Hardware"?"Client Supplying Hardware":d.hardwareFinish, d.jambMaterial?"Jamb: "+d.jambMaterial:null, d.notes].filter(Boolean).join(" — ")) },
+    doors: { label: "Door Installation", bullets: ["Remove and dispose of existing door unit", "Prepare rough opening — shim and level", "Install new door unit per manufacturer specifications", "Install weather stripping and threshold", "Caulk and seal all exterior gaps", "Install hardware and adjust for proper operation", "Final inspection"], detail: (state.doors||[]).map(d => (d.label||"Door") + ": " + [d.doorType, d.manufacturer==="Other"?d.manufacturerOther:d.manufacturer, d.series, d.cwsConfig?"Config: "+d.cwsConfig:null, d.material, d.impactOption, d.glassOption, d.swingDirection, d.width&&d.height?d.width+"x"+d.height:null, d.hasSidelights?"Sidelights: "+d.sidelightPosition:null, d.hardwareFinish==="Client Supplying Own Hardware"?"Client Supplying Hardware":d.hardwareFinish, d.jambMaterial?"Jamb: "+d.jambMaterial:null, d.notes].filter(Boolean).join(" — ")) },
     misc: { label: "Additional Items", bullets: state.misc.items.filter(i => i.description).map(i => i.description + (i.notes ? " — " + i.notes : "")), detail: [] },
   };
 
