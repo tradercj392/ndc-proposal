@@ -2252,7 +2252,7 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
     body += `<div class='sec'><div class='lbl'>Property</div><img src='${state.customer.photo}' style='max-width:100%;max-height:220px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0'/></div>`;
   }
 
-  const SERVICE_ORDER = ["siding", "soffit", "fascia", "paint", "windows", "misc"];
+  const SERVICE_ORDER = ["siding", "soffit", "fascia", "paint", "windows", "doors", "misc"];
   const orderedServices = SERVICE_ORDER.filter(svc => state.services.includes(svc));
 
   body += `<div class='sec'><div class='lbl'>Project Overview</div>`;
@@ -2597,6 +2597,7 @@ function PreviewStep({ state, setState, setStep, steps, selectedOption, setSelec
           {state.services.includes("siding")   && <button onClick={() => setStep(steps.findIndex(s => s.key === "siding"))}   style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Siding</button>}
           {state.services.includes("paint")    && <button onClick={() => setStep(steps.findIndex(s => s.key === "paint"))}    style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Paint</button>}
           {state.services.includes("windows")  && <button onClick={() => setStep(steps.findIndex(s => s.key === "windows"))}  style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Windows</button>}
+          {state.services.includes("doors")    && <button onClick={() => setStep(steps.findIndex(s => s.key === "doors"))}    style={{ background: "white", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#475569", cursor: "pointer" }}>Edit Doors</button>}
           <button onClick={() => setStep(0)} style={{ background: "#fef2f2", border: "1.5px solid #fecaca", borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#dc2626", cursor: "pointer" }}>Edit Services</button>
         </div>
       </div>
