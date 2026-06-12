@@ -2265,31 +2265,104 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
     ? "No new sheathing being installed — siding applied directly over existing substrate"
     : null;
 
+  // Labeled scope items: type "fbc" = Florida Minimum Building Code, "warranty" = Hardie Warranty Requirement
+  const FBC = "fbc";
+  const WAR = "warranty";
   const scopeMap = {
     siding: { label: sidingLabel + " — Siding Installation", bullets: [
-      removalBullet,
-      "Inspect and prepare substrate — repair damaged areas as needed",
-      osbBullet,
-      "Install continuous weather-resistive barrier (WRB) and tape all seams",
-      "Install metal flashing at all windows, doors, and roof lines",
-      ...usedProducts.map(p => "Install " + (prodNameMap[p] || p) + " per manufacturer specifications"),
-      hasHardie ? "Install HardieTrim at all corners, windows, doors, and eaves" : "Install trim at all corners, windows, doors, and eaves",
-      hasHardie ? "Final inspection per James Hardie installation requirements" : "Final inspection per manufacturer installation requirements",
-    ].filter(Boolean), detail: [...state.siding.walls.map(w => {
+      { type: FBC, text: removalBullet },
+      { type: FBC, text: "Inspect and prepare substrate — repair damaged areas as needed" },
+      { type: FBC, text: osbBullet },
+      { type: FBC, text: "Install continuous weather-resistive barrier (WRB) over entire wall surface" },
+      { type: WAR, text: "Tape all WRB seams and penetrations — junction flashing at all openings" },
+      { type: FBC, text: "Install metal flashing at all windows, doors, and roof lines" },
+      { type: FBC, text: "Install starter strip at base of wall — level and secure" },
+      ...usedProducts.map(p => ({ type: FBC, text: "Install " + (prodNameMap[p] || p) + " per manufacturer specifications" })),
+      { type: WAR, text: "Stainless steel fasteners — required for coastal regions (Jacksonville)" },
+      { type: WAR, text: "Blind nail all siding — no over-driving, no angling, no countersinking" },
+      { type: WAR, text: "Install 6-inch color-matched Z-flashing behind every butt joint — no caulk substitution" },
+      { type: WAR, text: "All butt joints land on stud — minimum 2-bay stagger between adjacent courses" },
+      { type: WAR, text: "Seal all non-factory cut edges with primer immediately after cutting" },
+      { type: WAR, text: "HZ10 product verified for Florida climate zone — wrong zone voids 30-year warranty" },
+      { type: WAR, text: "Low-expansion foam insulation ONLY at penetrations — no high-pressure or latex foam" },
+      { type: WAR, text: "Primed product must be painted within 180 days — 100% acrylic topcoat required" },
+      hasHardie ? { type: FBC, text: "Install HardieTrim at all corners, windows, doors, and eaves" } : { type: FBC, text: "Install trim at all corners, windows, doors, and eaves" },
+      hasHardie ? { type: FBC, text: "Final inspection per James Hardie installation requirements" } : { type: FBC, text: "Final inspection per manufacturer installation requirements" },
+    ].filter(b => b && b.text), detail: [...state.siding.walls.map(w => {
       const prodName = prodNameMap[w.hardieProduct] || "Siding";
       return (w.location || w.label) + ": " + prodName + (w.sqft ? " — " + w.sqft + " sq ft" : "") + (w.notes ? " (" + w.notes + ")" : "");
     }), "Total: " + state.siding.walls.reduce((a, w) => a + parseFloat(w.sqft || 0), 0).toFixed(0) + " sq ft"] },
-    soffit: { label: "Soffit Installation", bullets: ["Remove deteriorated soffit panels", "Install new vented soffit panels", "Install J-channel and F-channel", "Final inspection"], detail: [...state.soffit.items.map(i => (i.label || "Area") + ": " + (i.newMaterial || "Material TBD") + (i.linearFt ? " — " + i.linearFt + " linear ft" : "") + (i.notes ? " — " + i.notes : "")), "Total: " + state.soffit.items.reduce((a,i) => a + parseFloat(i.linearFt||0), 0).toFixed(0) + " linear ft"] },
-    fascia: { label: "Fascia Installation", bullets: ["Remove deteriorated fascia boards", "Install new fascia material", "Caulk all joints and end caps"], detail: [...state.fascia.items.map(i => (i.label || "Area") + ": " + (i.newMaterial || "Material TBD") + (i.linearFt ? " — " + i.linearFt + " linear ft" : "") + (i.notes ? " — " + i.notes : "")), "Total: " + state.fascia.items.reduce((a,i) => a + parseFloat(i.linearFt||0), 0).toFixed(0) + " linear ft"] },
-    paint: { label: "Exterior Paint" + (state.paint.paintScope ? " — " + state.paint.paintScope : ""), bullets: ["Pressure wash all exterior surfaces", "Fill all cracks and gaps with elastomeric caulk", "Apply paint using four-directional spray method", "Hand-paint all trim and detail areas", "Final walk-through to confirm coverage"].filter(Boolean), detail: [
+
+    soffit: { label: "Soffit Installation", bullets: [
+      { type: FBC, text: "Remove deteriorated soffit panels" },
+      { type: WAR, text: "Inspect and repair any damaged framing or substrate before installation" },
+      { type: FBC, text: "Install new vented soffit panels" },
+      { type: FBC, text: "Install J-channel and F-channel" },
+      { type: WAR, text: "Fasteners at both wall and subfascia per FBC R704.2.1" },
+      { type: WAR, text: "Intermediate nailer strips installed if soffit span exceeds 12 inches" },
+      { type: WAR, text: "Stainless steel fasteners — coastal region requirement" },
+      { type: WAR, text: "Seal all cut edges with primer immediately after cutting" },
+      { type: WAR, text: "Paint within 180 days — 100% acrylic topcoat required" },
+      { type: FBC, text: "Final inspection" },
+    ], detail: [...state.soffit.items.map(i => (i.label || "Area") + ": " + (i.newMaterial || "Material TBD") + (i.linearFt ? " — " + i.linearFt + " linear ft" : "") + (i.notes ? " — " + i.notes : "")), "Total: " + state.soffit.items.reduce((a,i) => a + parseFloat(i.linearFt||0), 0).toFixed(0) + " linear ft"] },
+
+    fascia: { label: "Fascia Installation", bullets: [
+      { type: FBC, text: "Remove deteriorated fascia boards" },
+      { type: WAR, text: "Inspect rafter tails — replace any rotted wood before installation" },
+      { type: FBC, text: "Install new fascia material" },
+      { type: WAR, text: "Stainless steel finish nails — minimum 2-inch 16-gauge" },
+      { type: WAR, text: "Fasteners no closer than ½ inch from edges, 1 inch from ends, max 16 inches o.c." },
+      { type: FBC, text: "Caulk all joints and end caps" },
+      { type: WAR, text: "Seal all cut edges with primer immediately after cutting" },
+      { type: WAR, text: "Paint within 180 days — 100% acrylic topcoat required" },
+      { type: FBC, text: "Final inspection" },
+    ], detail: [...state.fascia.items.map(i => (i.label || "Area") + ": " + (i.newMaterial || "Material TBD") + (i.linearFt ? " — " + i.linearFt + " linear ft" : "") + (i.notes ? " — " + i.notes : "")), "Total: " + state.fascia.items.reduce((a,i) => a + parseFloat(i.linearFt||0), 0).toFixed(0) + " linear ft"] },
+
+    paint: { label: "Exterior Paint" + (state.paint.paintScope ? " — " + state.paint.paintScope : ""), bullets: [
+      { type: FBC, text: "Pressure wash all exterior surfaces" },
+      { type: FBC, text: "Fill all cracks and gaps with elastomeric caulk" },
+      { type: FBC, text: "Apply paint using four-directional spray method" },
+      { type: FBC, text: "Hand-paint all trim and detail areas" },
+      { type: FBC, text: "Final walk-through to confirm coverage" },
+    ].filter(Boolean), detail: [
       ...state.paint.walls.filter(a => a.paintProduct || a.colorName || a.notes).map(a => "Walls: " + [a.paintProduct, a.colorName, a.notes].filter(Boolean).join(" — ")),
       ...state.paint.trim.filter(a => a.paintProduct || a.colorName || a.notes).map(a => "Trim: " + [a.paintProduct, a.colorName, a.notes].filter(Boolean).join(" — ")),
       ...(state.paint.other || []).filter(a => a.paintProduct || a.colorName || a.notes).map(a => "Other: " + [a.paintProduct, a.colorName, a.notes].filter(Boolean).join(" — ")),
       "Total: " + (parseFloat(state.paint.combinedSqft||0) > 0 ? parseFloat(state.paint.combinedSqft||0).toFixed(0) + " sq ft" : "See details above"),
     ] },
-    windows: { label: "Window Installation", bullets: ["Verify rough opening dimensions", "Remove existing windows", "Install new unit plumb, level, and square", "Air seal gaps with low-expansion foam", "Install exterior casing, caulk all seams", "Final inspection"], detail: state.windows.map(w => (w.label || "Window") + ": " + [w.manufacturer === "Other" ? w.manufacturerOther || "Other" : w.manufacturer, w.series, w.impactOption, w.style, w.glassPack, w.glassTint && w.glassTint !== "Clear" ? w.glassTint : null, w.frameColor, w.width && w.height ? w.width+"\"×"+w.height+"\"" : null, "qty " + (w.qty || 1), w.notes].filter(Boolean).join(" — ")) },
-    doors: { label: "Door Installation", bullets: ["Remove and dispose of existing door unit", "Prepare rough opening — shim and level", "Install new door unit per manufacturer specifications", "Install weather stripping and threshold", "Caulk and seal all exterior gaps", "Install hardware and adjust for proper operation", "Final inspection"], detail: (state.doors||[]).map(d => (d.label||"Door") + ": " + [d.doorType, d.manufacturer==="Other"?d.manufacturerOther:d.manufacturer, d.series, d.cwsConfig?"Config: "+d.cwsConfig:null, d.material, d.impactOption, d.glassOption, d.swingDirection, d.width&&d.height?d.width+"x"+d.height:null, d.hasSidelights?"Sidelights: "+d.sidelightPosition:null, d.hardwareFinish==="Client Supplying Own Hardware"?"Client Supplying Hardware":d.hardwareFinish, d.jambMaterial?"Jamb: "+d.jambMaterial:null, d.notes].filter(Boolean).join(" — ")) },
-    misc: { label: "Additional Items", bullets: state.misc.items.filter(i => i.description).map(i => i.description + (i.notes ? " — " + i.notes : "")), detail: [] },
+
+    windows: { label: "Window Installation", bullets: [
+      { type: FBC, text: "Pull permit — Florida Product Approval (FL#) verified for each product" },
+      { type: FBC, text: "Remove existing window unit" },
+      { type: FBC, text: "Prepare rough opening — inspect framing, repair as needed" },
+      { type: WAR, text: "Dry fit window — verify level, plumb, and square before anchoring" },
+      { type: WAR, text: "Shim at every anchor point — maximum ¼-inch shim gap" },
+      { type: FBC, text: "Install new unit per product-specific NOA requirements" },
+      { type: WAR, text: "Anchor spacing and embedment depth per NOA — not field judgment" },
+      { type: FBC, text: "Air seal gaps with low-expansion foam only — never high-pressure foam" },
+      { type: WAR, text: "Continuous perimeter sealant — no gaps, per AAMA 800 / ASTM C920" },
+      { type: WAR, text: "Genuine manufacturer-approved accessories only — third-party parts void warranty" },
+      { type: FBC, text: "Install exterior casing and trim" },
+      { type: FBC, text: "Final inspection — permit closed" },
+      { type: WAR, text: "Wind mitigation documentation provided — qualifies for insurance discount" },
+    ], detail: state.windows.map(w => (w.label || "Window") + ": " + [w.manufacturer === "Other" ? w.manufacturerOther || "Other" : w.manufacturer, w.series, w.impactOption, w.style, w.glassPack, w.glassTint && w.glassTint !== "Clear" ? w.glassTint : null, w.frameColor, w.width && w.height ? w.width + "x" + w.height : null, "qty " + (w.qty || 1), w.notes].filter(Boolean).join(" — ")) },
+
+    doors: { label: "Door Installation", bullets: [
+      { type: FBC, text: "Pull permit — Florida Product Approval (FL#) verified" },
+      { type: FBC, text: "Remove and dispose of existing door unit" },
+      { type: FBC, text: "Prepare rough opening — shim and level" },
+      { type: WAR, text: "Inspect and repair rough opening framing before installation" },
+      { type: FBC, text: "Install new door unit per manufacturer specifications" },
+      { type: WAR, text: "Anchor spacing per product NOA — shim at all anchor points" },
+      { type: WAR, text: "Continuous perimeter sealant — no gaps, per AAMA 800 / ASTM C920" },
+      { type: FBC, text: "Install weather stripping and threshold" },
+      { type: FBC, text: "Caulk and seal all exterior gaps" },
+      { type: WAR, text: "Low-expansion foam only at gaps — never high-pressure foam" },
+      { type: FBC, text: "Install hardware and adjust for proper operation" },
+      { type: FBC, text: "Final inspection" },
+    ], detail: (state.doors||[]).map(d => (d.label||"Door") + ": " + [d.doorType, d.manufacturer==="Other"?d.manufacturerOther:d.manufacturer, d.series, d.cwsConfig?"Config: "+d.cwsConfig:null, d.material, d.impactOption, d.glassOption, d.swingDirection, d.width&&d.height?d.width+"x"+d.height:null, d.hasSidelights?"Sidelights: "+d.sidelightPosition:null, d.hardwareFinish==="Client Supplying Own Hardware"?"Client Supplying Hardware":d.hardwareFinish, d.jambMaterial?"Jamb: "+d.jambMaterial:null, d.notes].filter(Boolean).join(" — ")) },
+
+    misc: { label: "Additional Items", bullets: state.misc.items.filter(i => i.description).map(i => ({ type: FBC, text: i.description + (i.notes ? " — " + i.notes : "") })), detail: [] },
   };
 
   let body = `<div class='hdr'><div><div style='font-size:20px;font-weight:800;line-height:1.2'>${state.company.name}</div><div style='color:#64748b;font-size:11px;margin-top:4px'>${state.company.address}</div><div style='color:#64748b;font-size:11px'>${state.company.phone} · Lic# ${state.company.license}</div></div><div style='text-align:right'><div style='font-size:9.5px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px'>Prepared For</div><div style='font-size:18px;font-weight:800'>${state.customer.name || "—"}</div><div style='color:#64748b;font-size:11px;margin-top:4px'>${state.customer.address || ""}</div><div style='color:#64748b;font-size:11px'>${state.customer.phone || ""}</div><div style='color:#94a3b8;font-size:10px;margin-top:6px'>${today}</div></div></div>`;
@@ -2311,8 +2384,20 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
   orderedServices.forEach(svc => {
     if (!scopeMap[svc]) return;
     const info = scopeMap[svc];
-    body += `<div class='sec'><div class='lbl'>${info.label} — Scope of Work</div><div style='border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;margin-bottom:12px'>`;
-    info.bullets.forEach((b, i) => { body += `<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:${i % 2 === 0 ? "white" : "#f8fafc"};border-bottom:1px solid #f1f5f9'>${b}</div>`; });
+    body += `<div class='sec'><div class='lbl'>${info.label} — Scope of Work</div>`;
+    body += `<div style='display:flex;gap:12px;margin-bottom:8px;flex-wrap:wrap'>`;
+    body += `<div style='display:flex;align-items:center;gap:4px;font-size:9px;font-weight:700;color:#0369a1'><span style='background:#dbeafe;border:1px solid #93c5fd;border-radius:10px;padding:2px 7px;color:#1d4ed8'>🏛️ Florida Minimum Building Code</span></div>`;
+    body += `<div style='display:flex;align-items:center;gap:4px;font-size:9px;font-weight:700'><span style='background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:2px 7px;color:#92400e'>⭐ Hardie Warranty Requirement</span></div>`;
+    body += `</div>`;
+    body += `<div style='border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;margin-bottom:12px'>`;
+    info.bullets.forEach((b, i) => {
+      const isFbc = !b.type || b.type === "fbc";
+      const text = b.text || b;
+      const badge = isFbc
+        ? `<span style='display:inline-block;background:#dbeafe;border:1px solid #93c5fd;border-radius:10px;padding:1px 7px;font-size:8px;font-weight:800;color:#1d4ed8;white-space:nowrap;margin-right:6px;flex-shrink:0'>🏛️ FL Min</span>`
+        : `<span style='display:inline-block;background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:1px 7px;font-size:8px;font-weight:800;color:#92400e;white-space:nowrap;margin-right:6px;flex-shrink:0'>⭐ Warranty</span>`;
+      body += `<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:${i % 2 === 0 ? "white" : "#f8fafc"};border-bottom:1px solid #f1f5f9;display:flex;align-items:flex-start'>${badge}<span>${text}</span></div>`;
+    });
     body += `</div>`;
     if (info.detail && info.detail.length > 0) {
       body += `<div style='font-size:9.5px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px'>Details</div>`;
@@ -3107,9 +3192,6 @@ function App() {
             <div style={S.headerTitle}>ProposalBuilder</div>
             <div style={S.headerSub}>New Direction Construction · On-Site Estimator</div>
           </div>
-          <button onClick={() => window.open('/InstallationStandards.html', '_blank')} style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, color: "white", padding: "6px 10px", cursor: "pointer", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
-            📋 Hardie Compliance
-          </button>
           <button onClick={() => setShowPricingModal(true)} title="Rep Pricing Tool" style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, color: "white", padding: "6px 10px", cursor: "pointer", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
             🔧 Rep Pricing
           </button>
