@@ -111,7 +111,7 @@ const makeCreditApp = () => ({
 
 const makeInitialState = () => ({
   company: { name: "New Direction Construction", address: "820 Worth Rd, Jacksonville, FL 32259", phone: "(904) 891-9980", email: "", license: "CBC059304", logo: NDC_LOGO },
-  customer: { name: "", address: "", email: "", phone: "", photo: null },
+  customer: { name: "", address: "", email: "", phone: "", photo: null, county: "" },
   services: [],
   isFinancing: false,
   siding: { walls: [{ id: uid(), label: "Wall 1", location: "", sqft: "", pricePerSqFt: "", currentSiding: "", removalRequired: "", osbSheathing: "", hardieProduct: "", hardieSize: "", hardieTexture: "", photos: [], notes: "" }], pricePerSqFt: "", sidingType: "HardiePlank Lap Siding" },
@@ -1307,12 +1307,58 @@ function ServiceSelectStep({ selected, onChange, isFinancing, onFinancingChange 
 }
 
 function CustomerStep({ data, onChange }) {
+  const [countyLoading, setCountyLoading] = React.useState(false);
+
+  const detectCounty = React.useCallback(async (address) => {
+    if (!address || address.length < 10) return;
+    setCountyLoading(true);
+    try {
+      const url = "https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=" + encodeURIComponent(address + ", Florida");
+      const res = await fetch(url, { headers: { "Accept-Language": "en" } });
+      const data = await res.json();
+      if (data && data[0] && data[0].address) {
+        const county = data[0].address.county || data[0].address.state_district || "";
+        if (county) onChange("county", county);
+      }
+    } catch(e) {}
+    setCountyLoading(false);
+  }, [onChange]);
+
   return (
     <div style={S.stepWrap}>
       <h2 style={S.stepTitle}>Customer Info</h2>
       <p style={S.stepSub}>Who are you sending this proposal to?</p>
       <Field label="Customer Name" value={data.name} onChange={(v) => onChange("name", v)} placeholder="John Smith" />
-      <Field label="Job Address" value={data.address} onChange={(v) => onChange("address", v)} placeholder="123 Main St, City, ST 12345" />
+      <div style={S.field}>
+        <label style={S.label}>Job Address</label>
+        <input style={S.input} value={data.address || ""} placeholder="123 Main St, City, ST 12345"
+          onChange={(e) => onChange("address", e.target.value)}
+          onBlur={(e) => detectCounty(e.target.value)}
+        />
+        {(countyLoading || data.county) && (
+          <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 6 }}>
+            {countyLoading
+              ? <div style={{ fontSize: 11, color: "#64748b", fontStyle: "italic" }}>🔍 Detecting county...</div>
+              : <div style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>📍 {data.county}</div>
+            }
+            <button onClick={() => onChange("county", "")} style={{ fontSize: 10, color: "#94a3b8", background: "none", border: "none", cursor: "pointer", padding: 0 }}>✕ clear</button>
+          </div>
+        )}
+        {!countyLoading && !data.county && data.address && data.address.length > 10 && (
+          <div style={{ marginTop: 4 }}>
+            <select style={{ ...S.input, fontSize: 12, padding: "6px 10px", marginTop: 2 }} value="" onChange={(e) => { if (e.target.value) onChange("county", e.target.value); }}>
+              <option value="">County not detected — select manually</option>
+              <option>Duval County</option>
+              <option>Clay County</option>
+              <option>St. Johns County</option>
+              <option>Nassau County</option>
+              <option>Flagler County</option>
+              <option>Putnam County</option>
+              <option>Other Florida County</option>
+            </select>
+          </div>
+        )}
+      </div>
       <Field label="Customer Email" value={data.email} onChange={(v) => onChange("email", v)} placeholder="customer@email.com" type="email" />
       <Field label="Customer Phone" value={data.phone} onChange={(v) => onChange("phone", v)} placeholder="(555) 000-0000" />
       <div style={S.field}>
@@ -2536,6 +2582,44 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
       { n: 19, title: "Direct Contract Mandatory Provisions (F.S. 713)", body: "According to Florida's Construction Lien Law (Florida Statutes 713.001-713.37), those who work on your property or provide materials and have not been paid in full have a right to enforce their claim for payment against your property. This claim is known as a construction lien. Florida's Construction Lien Law is complex and it is recommended you consult an attorney whenever a specific problem arises." },
       { n: 20, title: "Scope Inclusions", body: "This contract includes all necessary permits, labor, and materials required to complete the agreed scope of work. This also includes all finish work as needed to deliver a complete and professional final result." },
     ];
+    body += `<div class='sec' style='border:2px solid #0f172a;border-radius:10px;padding:0;overflow:hidden;margin-bottom:16px'>`;
+    body += `<div style='background:#0f172a;padding:12px 16px;display:flex;align-items:center;gap:10px'>`;
+    body += `<div style='font-size:18px'>🏛️</div>`;
+    body += `<div style='color:white;font-size:13px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase'>Permit &amp; Code Compliance</div>`;
+    body += `</div>`;
+    body += `<div style='padding:16px;background:white'>`;
+    body += `<div style='display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px'>`;
+
+    const complianceBadges = [
+      { icon: "✅", title: "Permit Pulled by NDC", desc: "New Direction Construction pulls all required permits. Clients are never responsible for permitting." },
+      { icon: "📋", title: "Florida Building Code 8th Edition", desc: "All work performed in full compliance with the 2023 FBC 8th Edition, effective December 31, 2023." },
+      { icon: "🔍", title: "Florida Product Approval", desc: "All products carry valid Florida Product Approval numbers. Documentation provided upon request." },
+      { icon: "🏗️", title: "Final Inspection Coordinated by NDC", desc: "NDC schedules and coordinates all required post-installation inspections with the local building department." },
+      { icon: "🌊", title: "Water-Resistive Barrier (WRB)", desc: "All siding installations include a properly installed WRB with penetration and junction flashing per FBC requirements." },
+      { icon: "💨", title: "Wind Load Compliance", desc: "All fenestration products meet or exceed Design Pressure ratings for the project location per ASCE 7-22 wind load criteria." },
+    ];
+
+    complianceBadges.forEach(b => {
+      body += `<div style='border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;background:#f8fafc'>`;
+      body += `<div style='display:flex;align-items:center;gap:6px;margin-bottom:4px'>`;
+      body += `<span style='font-size:14px'>${b.icon}</span>`;
+      body += `<span style='font-size:10.5px;font-weight:800;color:#0f172a'>${b.title}</span>`;
+      body += `</div>`;
+      body += `<div style='font-size:9.5px;color:#475569;line-height:1.6'>${b.desc}</div>`;
+      body += `</div>`;
+    });
+
+    body += `</div>`;
+    body += `<div style='background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;font-size:9.5px;color:#0369a1;line-height:1.7'>`;
+    body += `<strong>Jurisdiction Notice:</strong> This project falls under the jurisdiction of `;
+
+    const county = (state.customer && state.customer.county) ? state.customer.county : "the applicable Florida county";
+    body += `${county} Building Department. All work is subject to local building department review, approval, and inspection. `;
+    body += `Permit fees, where applicable, are included in the project investment. `;
+    body += `<strong>Note:</strong> The Florida Building Code 9th Edition takes effect December 31, 2026. Projects permitted after that date will comply with the updated edition.`;
+    body += `</div>`;
+    body += `</div></div>`;
+
     body += `<div class='sec'><div class='lbl'>Terms and Conditions</div>`;
     tcItems.forEach((tc, i) => {
       body += `<div style='margin-bottom:9px;padding-bottom:9px;${i < tcItems.length - 1 ? "border-bottom:1px solid #f8fafc" : ""}'>`;
@@ -3023,6 +3107,9 @@ function App() {
             <div style={S.headerTitle}>ProposalBuilder</div>
             <div style={S.headerSub}>New Direction Construction · On-Site Estimator</div>
           </div>
+          <button onClick={() => window.open('/InstallationStandards.html', '_blank')} style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, color: "white", padding: "6px 10px", cursor: "pointer", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+            📋 Hardie Compliance
+          </button>
           <button onClick={() => setShowPricingModal(true)} title="Rep Pricing Tool" style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, color: "white", padding: "6px 10px", cursor: "pointer", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
             🔧 Rep Pricing
           </button>
