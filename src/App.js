@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 
 function uid() { return Math.random().toString(36).slice(2); }
+const GOOGLE_REVIEW_URL = "https://g.page/r/CeWCvoI8IFUHEAE/review";
+const GOOGLE_REVIEW_QR = "https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=" + encodeURIComponent("https://g.page/r/CeWCvoI8IFUHEAE/review");
 const NDC_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABdwAAAXcCAYAAAA4NUxkAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAlghSURBVHja7N0JgBxlmf//73er+qq+7mT3vggBwuYRFDzeqKicoIKiIOCuoKKyC6hcIoqAiICCy4KyCniAoiKooIDHb9VFUQ9cvFBBkEVyd9/dVd31e14zgRASmJDkycz38yTde2Z2Zna3du93nuf5Pq+UxhgBAAAAAAAAAADHj6cEAAAAAAAAAADHjsAdAAAAAAAAAIBjQOAOAAAAAAAAAMAxIHAHAAAAAAAAAOAYELgDAAAAAAAAAHAMCNwBAAAAAAAAADgGBO4AAAAAAAAAABwDAncAAAAAAAAAAI4BgTsAAAAAAAAAAMeAwB0AAAAAAAAAgGNA4A4AAAAAAAAAwDEgcAcAAAAAAAAA4BgQuAMAAAAAAAAAcAwI3AEAAAAAAAAAOAYEHgSAO1mUqZABhgAAAABJRU5ErkJggg==";
 
 const fmt = (n) => Number(n).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -112,6 +114,7 @@ const makeCreditApp = () => ({
 const makeInitialState = () => ({
   company: { name: "New Direction Construction", address: "820 Worth Rd, Jacksonville, FL 32259", phone: "(904) 891-9980", email: "", license: "CBC059304", logo: NDC_LOGO },
   customer: { name: "", address: "", email: "", phone: "", photo: null, county: "" },
+  proposalVersion: 1,
   services: [],
   isFinancing: false,
   siding: { walls: [{ id: uid(), label: "Wall 1", location: "", sqft: "", pricePerSqFt: "", currentSiding: "", removalRequired: "", osbSheathing: "", hardieProduct: "", hardieSize: "", hardieTexture: "", photos: [], notes: "" }], pricePerSqFt: "", sidingType: "HardiePlank Lap Siding" },
@@ -2365,7 +2368,8 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
     misc: { label: "Additional Items", bullets: state.misc.items.filter(i => i.description).map(i => ({ type: FBC, text: i.description + (i.notes ? " — " + i.notes : "") })), detail: [] },
   };
 
-  let body = `<div class='hdr'><div><div style='font-size:20px;font-weight:800;line-height:1.2'>${state.company.name}</div><div style='color:#64748b;font-size:11px;margin-top:4px'>${state.company.address}</div><div style='color:#64748b;font-size:11px'>${state.company.phone} · Lic# ${state.company.license}</div></div><div style='text-align:right'><div style='font-size:9.5px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px'>Prepared For</div><div style='font-size:18px;font-weight:800'>${state.customer.name || "—"}</div><div style='color:#64748b;font-size:11px;margin-top:4px'>${state.customer.address || ""}</div><div style='color:#64748b;font-size:11px'>${state.customer.phone || ""}</div><div style='color:#94a3b8;font-size:10px;margin-top:6px'>${today}</div></div></div>`;
+  const proposalVer = state.proposalVersion || 1;
+  let body = `<div class='hdr'><div><div style='font-size:20px;font-weight:800;line-height:1.2'>${state.company.name}</div><div style='color:#64748b;font-size:11px;margin-top:4px'>${state.company.address}</div><div style='color:#64748b;font-size:11px'>${state.company.phone} · Lic# ${state.company.license}</div></div><div style='text-align:right'><div style='font-size:9.5px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px'>Prepared For</div><div style='font-size:18px;font-weight:800'>${state.customer.name || "—"}</div><div style='color:#64748b;font-size:11px;margin-top:4px'>${state.customer.address || ""}</div><div style='color:#64748b;font-size:11px'>${state.customer.phone || ""}</div><div style='color:#94a3b8;font-size:10px;margin-top:4px'>${today} &nbsp;·&nbsp; Valid 30 Days</div><div style='display:inline-block;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:2px 8px;font-size:9px;font-weight:800;color:#0369a1;margin-top:4px'>Version ${proposalVer}</div></div></div>`;
 
   if (state.customer.photo) {
     body += `<div class='sec'><div class='lbl'>Property</div><img src='${state.customer.photo}' style='max-width:100%;max-height:220px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0'/></div>`;
@@ -2705,6 +2709,17 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
     body += `</div>`;
     body += `</div></div>`;
 
+    body += `<div class='sec' style='border:1.5px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:20px;background:#f8fafc'>`;
+    body += `<div style='flex-shrink:0;text-align:center'>`;
+    body += `<img src='https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(GOOGLE_REVIEW_URL)}' style='width:90px;height:90px;border-radius:6px;border:1px solid #e2e8f0;display:block;margin:0 auto 4px'/>`;
+    body += `<div style='font-size:8px;color:#64748b;font-weight:600'>Scan to Review</div>`;
+    body += `</div>`;
+    body += `<div style='flex:1'>`;
+    body += `<div style='font-size:13px;font-weight:800;color:#0f172a;margin-bottom:4px'>Enjoyed Working With NDC?</div>`;
+    body += `<div style='font-size:11px;color:#475569;line-height:1.7;margin-bottom:6px'>We'd love to hear about your experience. Your review helps other homeowners in Jacksonville make confident decisions about their home improvement projects.</div>`;
+    body += `<div style='font-size:10px;color:#0369a1;font-weight:700'>&#11088; Scan the QR code or visit: new-direction-construction.com</div>`;
+    body += `</div></div>`;
+
     body += `<div class='sec'><div class='lbl'>Terms and Conditions</div>`;
     tcItems.forEach((tc, i) => {
       body += `<div style='margin-bottom:9px;padding-bottom:9px;${i < tcItems.length - 1 ? "border-bottom:1px solid #f8fafc" : ""}'>`;
@@ -2983,10 +2998,12 @@ function PreviewStep({ state, setState, setStep, steps, selectedOption, setSelec
               <button style={{ background: "white", color: "#0f172a", border: "1.5px solid #0f172a", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 15, cursor: "pointer", width: "100%" }} onClick={() => {
                 const clientName = state.customer.name ? state.customer.name.replace(/[^a-zA-Z0-9 ]/g, "").trim().replace(/ /g, "_") : "Client";
                 const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
+                const ver = state.proposalVersion || 1;
                 const newWin = window.open("", "_blank");
-                if (newWin) { newWin.document.write(pdfHtml); newWin.document.close(); newWin.document.title = "NDC_Proposal_" + clientName + "_" + dateStr; setTimeout(() => { newWin.focus(); newWin.print(); }, 800); }
+                if (newWin) { newWin.document.write(pdfHtml); newWin.document.close(); newWin.document.title = "NDC_Proposal_" + clientName + "_" + dateStr + "_v" + ver; setTimeout(() => { newWin.focus(); newWin.print(); }, 800); }
+                setState(s => ({ ...s, proposalVersion: (s.proposalVersion || 1) + 1 }));
               }}>
-                Save / Print PDF
+                Save / Print PDF {state.proposalVersion > 1 ? "(v" + state.proposalVersion + ")" : ""}
               </button>
             </div>
           </>
@@ -3008,6 +3025,7 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
   const [repName, setRepName] = useState("CJ Shires");
   const [sending, setSending] = useState(false);
   const [emailOverride, setEmailOverride] = useState((state.customer && state.customer.email) || "");
+  const [showReviewPopup, setShowReviewPopup] = useState(false);
 
   const t = calcGrandTotal(state);
   const priority = t.total;
@@ -3067,13 +3085,36 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
           const clientName = (state.customer.name || "Client").replace(/[^a-zA-Z0-9 ]/g, "").trim().replace(/ /g, "_");
           const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
           const sigBlock = `<div style='padding:20px;border-top:2px solid #0f172a;margin-top:8px'><div style='font-size:9.5px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Client Signature</div>${sigDataUrl ? `<img src='${sigDataUrl}' style='width:100%;max-width:420px;height:90px;object-fit:contain;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;display:block;margin-bottom:8px'/>` : `<div style='border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;height:90px;margin-bottom:8px'></div>`}<div style='display:flex;justify-content:space-between;font-size:10px;color:#64748b;border-top:1.5px solid #0f172a;padding-top:6px'><span>${state.customer.name || "Client"} &nbsp;&nbsp; Date: ${today}</span><span>NDC Rep: ${repName} &nbsp;&nbsp; Date: ${today}</span></div></div>`;
-          const pdfWithSig = contractPdfHtml.replace("</body>", sigBlock + "</body>");
+          const reviewBlock = `<div style='margin-top:20px;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:16px;background:#f8fafc'><div style='flex-shrink:0;text-align:center'><img src='https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(GOOGLE_REVIEW_URL)}' style='width:80px;height:80px;border-radius:6px;border:1px solid #e2e8f0;display:block;margin:0 auto 3px'/><div style='font-size:8px;color:#64748b;font-weight:600'>Scan to Review</div></div><div style='flex:1'><div style='font-size:12px;font-weight:800;color:#0f172a;margin-bottom:3px'>Thank You for Choosing NDC!</div><div style='font-size:10px;color:#475569;line-height:1.6'>We'd love to hear about your experience. Your Google review helps other Jacksonville homeowners make confident decisions.</div></div></div>`;
+          const pdfWithSig = contractPdfHtml.replace("</body>", sigBlock + reviewBlock + "</body>");
           const newWin = window.open("", "_blank");
           if (newWin) { newWin.document.write(pdfWithSig); newWin.document.close(); newWin.document.title = "NDC_Contract_" + clientName + "_" + dateStr; setTimeout(() => { newWin.focus(); newWin.print(); }, 800); }
+          setTimeout(() => setShowReviewPopup(true), 1200);
         }}>
           🖨️ Save / Print Contract PDF
         </button>
       </div>
+
+      {/* Google Review Popup */}
+      {showReviewPopup && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: "white", borderRadius: 16, padding: 28, maxWidth: 360, width: "100%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>⭐</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", marginBottom: 8 }}>Thank You, {state.customer.name ? state.customer.name.split(" ")[0] : ""}!</div>
+            <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.7, marginBottom: 20 }}>We truly appreciate your business. Would you take 60 seconds to share your experience on Google? It means the world to us.</div>
+            <img src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(GOOGLE_REVIEW_URL)}`} style={{ width: 140, height: 140, borderRadius: 10, border: "1px solid #e2e8f0", display: "block", margin: "0 auto 16px" }} alt="Review QR" />
+            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 20 }}>Scan with your phone camera to leave a review</div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => { window.open(GOOGLE_REVIEW_URL, "_blank"); setShowReviewPopup(false); }} style={{ flex: 1, background: "#F07B21", color: "white", border: "none", borderRadius: 10, padding: "12px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                Leave a Review ⭐
+              </button>
+              <button onClick={() => setShowReviewPopup(false)} style={{ flex: 1, background: "white", color: "#64748b", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "12px 16px", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                Maybe Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <button onClick={() => setStep(steps.findIndex(s => s.key === "preview"))} style={{ background: "white", color: "#475569", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "12px 24px", fontWeight: 600, fontSize: 14, cursor: "pointer", width: "100%", marginBottom: usingFinancing ? 10 : 0 }}>
         ← Back to Proposal
