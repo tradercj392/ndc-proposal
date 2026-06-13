@@ -2341,15 +2341,17 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
       { type: FBC, text: "Pull permit — Florida Product Approval (FL#) verified for each product" },
       { type: FBC, text: "Remove existing window unit" },
       { type: FBC, text: "Prepare rough opening — inspect framing, repair as needed" },
+      { type: FBC, text: "Flash head, jambs, and sill per FBC R703.4 — integrated with WRB" },
       { type: WAR, text: "Dry fit window — verify level, plumb, and square before anchoring" },
-      { type: WAR, text: "Shim at every anchor point — maximum ¼-inch shim gap" },
-      { type: FBC, text: "Install new unit per product-specific NOA requirements" },
+      { type: WAR, text: "Shim at every anchor point — maximum 1/4-inch shim gap" },
+      { type: FBC, text: "Install new unit per product-specific NOA anchor pattern" },
       { type: WAR, text: "Anchor spacing and embedment depth per NOA — not field judgment" },
       { type: FBC, text: "Air seal gaps with low-expansion foam only — never high-pressure foam" },
-      { type: WAR, text: "Continuous perimeter sealant — no gaps, per AAMA 800 / ASTM C920" },
+      { type: FBC, text: "Perimeter sealant per AAMA 800 / ASTM C920 — all joints sealed" },
+      { type: WAR, text: "Manufacturer warranty label left on glass until final inspection" },
       { type: WAR, text: "Genuine manufacturer-approved accessories only — third-party parts void warranty" },
       { type: FBC, text: "Install exterior casing and trim" },
-      { type: FBC, text: "Final inspection — permit closed" },
+      { type: FBC, text: "Final inspection — product approval verified, operation and egress confirmed, permit closed" },
       { type: WAR, text: "Wind mitigation documentation provided — qualifies for insurance discount" },
     ], detail: state.windows.map(w => (w.label || "Window") + ": " + [w.manufacturer === "Other" ? w.manufacturerOther || "Other" : w.manufacturer, w.series, w.impactOption, w.style, w.glassPack, w.glassTint && w.glassTint !== "Clear" ? w.glassTint : null, w.frameColor, w.width && w.height ? w.width + "x" + w.height : null, "qty " + (w.qty || 1), w.notes].filter(Boolean).join(" — ")) },
 
@@ -2392,17 +2394,19 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
     if (!scopeMap[svc]) return;
     const info = scopeMap[svc];
     body += `<div class='sec'><div class='lbl'>${info.label} — Scope of Work</div>`;
+    const warrantyLabel = ["windows", "doors"].includes(svc) ? "⭐ Manufacturer Warranty Requirement" : "⭐ Hardie Warranty Requirement";
     body += `<div style='display:flex;gap:12px;margin-bottom:8px;flex-wrap:wrap'>`;
     body += `<div style='display:flex;align-items:center;gap:4px;font-size:9px;font-weight:700;color:#0369a1'><span style='background:#dbeafe;border:1px solid #93c5fd;border-radius:10px;padding:2px 7px;color:#1d4ed8'>🏛️ Florida Minimum Building Code</span></div>`;
-    body += `<div style='display:flex;align-items:center;gap:4px;font-size:9px;font-weight:700'><span style='background:#dcfce7;border:1px solid #86efac;border-radius:10px;padding:2px 7px;color:#166534'>⭐ Hardie Warranty Requirement</span></div>`;
+    body += `<div style='display:flex;align-items:center;gap:4px;font-size:9px;font-weight:700'><span style='background:#dcfce7;border:1px solid #86efac;border-radius:10px;padding:2px 7px;color:#166534'>${warrantyLabel}</span></div>`;
     body += `</div>`;
     body += `<div style='border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;margin-bottom:12px'>`;
     info.bullets.forEach((b, i) => {
       const isFbc = !b.type || b.type === "fbc";
       const text = b.text || b;
+      const warrantBadgeLabel = ["windows", "doors"].includes(svc) ? "⭐ Mfr. Warranty" : "⭐ Warranty";
       const badge = isFbc
         ? `<span style='display:inline-block;background:#dbeafe;border:1px solid #93c5fd;border-radius:10px;padding:1px 7px;font-size:8px;font-weight:800;color:#1d4ed8;white-space:nowrap;margin-right:6px;flex-shrink:0'>🏛️ FL Min</span>`
-        : `<span style='display:inline-block;background:#dcfce7;border:1px solid #86efac;border-radius:10px;padding:1px 7px;font-size:8px;font-weight:800;color:#166534;white-space:nowrap;margin-right:6px;flex-shrink:0'>⭐ Warranty</span>`;
+        : `<span style='display:inline-block;background:#dcfce7;border:1px solid #86efac;border-radius:10px;padding:1px 7px;font-size:8px;font-weight:800;color:#166534;white-space:nowrap;margin-right:6px;flex-shrink:0'>${warrantBadgeLabel}</span>`;
       body += `<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:${i % 2 === 0 ? "white" : "#f8fafc"};border-bottom:1px solid #f1f5f9;display:flex;align-items:flex-start'>${badge}<span>${text}</span></div>`;
     });
     body += `</div>`;
