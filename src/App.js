@@ -1781,6 +1781,8 @@ function WindowsStep({ windows, onChange }) {
         const glassPacks = WIN_OPTS.glassPacksByManufacturer[win.manufacturer] || WIN_OPTS.glassPacksByManufacturer["default"];
         const glassTints = WIN_OPTS.glassTintsByManufacturer[win.manufacturer] || WIN_OPTS.glassTintsByManufacturer["default"];
         const sizeCheck = validateWinSize(win.manufacturer, win.style, win.width, win.height);
+        const seriesIndicatesImpact = win.series && (win.series.toLowerCase().includes("impact") || win.series.toLowerCase().includes("non-impact"));
+        const showImpactToggle = !seriesIndicatesImpact;
         return (
           <div key={win.id} style={S.card}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
@@ -1818,7 +1820,8 @@ function WindowsStep({ windows, onChange }) {
               </div>
             )}
 
-            {/* Impact / Non-Impact */}
+            {/* Impact / Non-Impact — hidden when series already indicates impact status */}
+            {showImpactToggle && (
             <div style={{ marginBottom: 10 }}>
               <label style={{ fontSize: 11, color: "#0369a1", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>IMPACT / NON-IMPACT</label>
               <div style={{ display: "flex", gap: 8 }}>
@@ -1829,6 +1832,7 @@ function WindowsStep({ windows, onChange }) {
                 ))}
               </div>
             </div>
+            )}
 
             {/* Style + Frame Type */}
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -2391,7 +2395,7 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
     body += `<div class='sec'><div class='lbl'>${info.label} — Scope of Work</div>`;
     body += `<div style='display:flex;gap:12px;margin-bottom:8px;flex-wrap:wrap'>`;
     body += `<div style='display:flex;align-items:center;gap:4px;font-size:9px;font-weight:700;color:#0369a1'><span style='background:#dbeafe;border:1px solid #93c5fd;border-radius:10px;padding:2px 7px;color:#1d4ed8'>🏛️ Florida Minimum Building Code</span></div>`;
-    body += `<div style='display:flex;align-items:center;gap:4px;font-size:9px;font-weight:700'><span style='background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:2px 7px;color:#92400e'>⭐ Hardie Warranty Requirement</span></div>`;
+    body += `<div style='display:flex;align-items:center;gap:4px;font-size:9px;font-weight:700'><span style='background:#dcfce7;border:1px solid #86efac;border-radius:10px;padding:2px 7px;color:#166534'>⭐ Hardie Warranty Requirement</span></div>`;
     body += `</div>`;
     body += `<div style='border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;margin-bottom:12px'>`;
     info.bullets.forEach((b, i) => {
@@ -2399,7 +2403,7 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
       const text = b.text || b;
       const badge = isFbc
         ? `<span style='display:inline-block;background:#dbeafe;border:1px solid #93c5fd;border-radius:10px;padding:1px 7px;font-size:8px;font-weight:800;color:#1d4ed8;white-space:nowrap;margin-right:6px;flex-shrink:0'>🏛️ FL Min</span>`
-        : `<span style='display:inline-block;background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:1px 7px;font-size:8px;font-weight:800;color:#92400e;white-space:nowrap;margin-right:6px;flex-shrink:0'>⭐ Warranty</span>`;
+        : `<span style='display:inline-block;background:#dcfce7;border:1px solid #86efac;border-radius:10px;padding:1px 7px;font-size:8px;font-weight:800;color:#166534;white-space:nowrap;margin-right:6px;flex-shrink:0'>⭐ Warranty</span>`;
       body += `<div style='padding:7px 12px;font-size:11px;color:#334155;line-height:1.6;background:${i % 2 === 0 ? "white" : "#f8fafc"};border-bottom:1px solid #f1f5f9;display:flex;align-items:flex-start'>${badge}<span>${text}</span></div>`;
     });
     body += `</div>`;
