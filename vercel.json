@@ -1,11 +1,10 @@
 {
+  "buildCommand": "react-scripts build",
+  "outputDirectory": "build",
   "functions": {
     "api/drive.js": {
       "memory": 512,
       "maxDuration": 30
     }
-  },
-  "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
-  ]
+  }
 }
