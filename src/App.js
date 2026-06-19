@@ -1255,14 +1255,22 @@ function PricingStep({ state, onChange, onWindowsChange, onDoorsChange }) {
   );
 }
 
-function ServiceSelectStep({ selected, onChange, isFinancing, onFinancingChange }) {
+function ServiceSelectStep({ selected, onChange, isFinancing, onFinancingChange, savedCount, onShowSaved, currentProposalId }) {
   const toggle = (id) => {
     if (selected.includes(id)) onChange(selected.filter((s) => s !== id));
     else onChange([...selected, id]);
   };
   return (
     <div style={S.stepWrap}>
-      <h2 style={S.stepTitle}>What services does this job include?</h2>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+        <div>
+          <h2 style={{ ...S.stepTitle, marginBottom: 2 }}>What services does this job include?</h2>
+          {currentProposalId && <div style={{ fontSize: 10, color: "#16a34a", fontWeight: 700, marginBottom: 4 }}>✓ Proposal saved</div>}
+        </div>
+        <button onClick={onShowSaved} style={{ background: savedCount > 0 ? "#f0fdf4" : "#f8fafc", border: "1.5px solid " + (savedCount > 0 ? "#86efac" : "#e2e8f0"), borderRadius: 10, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: savedCount > 0 ? "#16a34a" : "#64748b", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          💾 {savedCount > 0 ? savedCount + " Saved" : "Saved"}
+        </button>
+      </div>
       <p style={S.stepSub}>Select all that apply — only relevant sections will appear in the proposal.</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
         {ALL_SERVICES.map((svc) => {
@@ -3184,6 +3192,7 @@ function App() {
         ...defaults, ...parsed,
         services:  Array.isArray(parsed.services)  ? parsed.services  : defaults.services,
         windows:   Array.isArray(parsed.windows)   ? parsed.windows   : defaults.windows,
+        doors:     Array.isArray(parsed.doors)     ? parsed.doors     : defaults.doors,
         isFinancing: parsed.isFinancing || false,
         pricing:   { ...defaults.pricing,  ...(parsed.pricing  || {}) },
         financing: { ...defaults.financing, ...(parsed.financing || {}) },
@@ -3198,6 +3207,125 @@ function App() {
       };
     } catch { return makeInitialState(); }
   });
+
+  // ── Saved Proposals ──────────────────────────────────────────────────────
+  const [savedProposals, setSavedProposals] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("ndc_saved_proposals") || "[]"); } catch { return []; }
+  });
+  const [showSavedList, setShowSavedList] = useState(false);
+  const [currentProposalId, setCurrentProposalId] = useState(() => localStorage.getItem("ndc_current_id") || null);
+
+  const [driveStatus, setDriveStatus] = useState(null); // null | "saving" | "saved" | "error"
+
+  const saveCurrentProposal = async () => {
+    const name = state.customer && state.customer.name ? state.customer.name.trim() : null;
+    if (!name) { alert("Please enter a customer name before saving."); return; }
+    const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
+    const fileName = name + "_" + dateStr;
+    const id = currentProposalId || uid();
+    const proposal = {
+      id,
+      name: fileName,
+      clientName: name,
+      savedAt: new Date().toISOString(),
+      services: state.services,
+      state: state,
+      step: step,
+    };
+
+    // Save to localStorage immediately
+    const existing = savedProposals.find(p => p.id === id);
+    const updated = existing
+      ? savedProposals.map(p => p.id === id ? proposal : p)
+      : [proposal, ...savedProposals];
+    setSavedProposals(updated);
+    setCurrentProposalId(id);
+    localStorage.setItem("ndc_saved_proposals", JSON.stringify(updated));
+    localStorage.setItem("ndc_current_id", id);
+
+    // Save to Google Drive
+    setDriveStatus("saving");
+    try {
+      const driveId = proposal.driveId || null;
+      const res = await fetch("/api/drive?action=save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileName, data: proposal, driveId }),
+      });
+      const json = await res.json();
+      if (json.driveId) {
+        const withDriveId = { ...proposal, driveId: json.driveId };
+        const finalList = updated.map(p => p.id === id ? withDriveId : p);
+        setSavedProposals(finalList);
+        localStorage.setItem("ndc_saved_proposals", JSON.stringify(finalList));
+        setDriveStatus("saved");
+        setTimeout(() => setDriveStatus(null), 3000);
+      }
+    } catch (e) {
+      console.warn("Drive save failed:", e);
+      setDriveStatus("error");
+      setTimeout(() => setDriveStatus(null), 4000);
+    }
+  };
+
+  // Load proposals from Drive on first mount
+  useEffect(() => {
+    fetch("/api/drive?action=list")
+      .then(r => r.json())
+      .then(json => {
+        if (json.proposals && json.proposals.length > 0) {
+          // Merge Drive proposals with local — Drive is source of truth
+          setSavedProposals(prev => {
+            const merged = [...json.proposals.map(p => ({ ...p, id: p.driveId }))];
+            return merged;
+          });
+        }
+      })
+      .catch(() => {}); // fail silently — local storage still works
+  }, []);
+
+  const loadProposal = (proposal) => {
+    const defaults = makeInitialState();
+    const parsed = proposal.state;
+    setState({
+      ...defaults, ...parsed,
+      services:  Array.isArray(parsed.services)  ? parsed.services  : defaults.services,
+      windows:   Array.isArray(parsed.windows)   ? parsed.windows   : defaults.windows,
+      doors:     Array.isArray(parsed.doors)     ? parsed.doors     : defaults.doors,
+      isFinancing: parsed.isFinancing || false,
+      pricing:   { ...defaults.pricing,  ...(parsed.pricing  || {}) },
+      financing: { ...defaults.financing, ...(parsed.financing || {}) },
+      company:   { ...defaults.company,   ...(parsed.company   || {}) },
+      customer:  { ...defaults.customer,  ...(parsed.customer  || {}) },
+      siding:    { ...defaults.siding,    ...(parsed.siding    || {}), walls: Array.isArray(parsed.siding && parsed.siding.walls) ? parsed.siding.walls : defaults.siding.walls },
+      soffit:    { ...defaults.soffit,    ...(parsed.soffit    || {}), items: Array.isArray(parsed.soffit && parsed.soffit.items) ? parsed.soffit.items : defaults.soffit.items },
+      fascia:    { ...defaults.fascia,    ...(parsed.fascia    || {}), items: Array.isArray(parsed.fascia && parsed.fascia.items) ? parsed.fascia.items : defaults.fascia.items },
+      paint:     { ...defaults.paint,     ...(parsed.paint     || {}), walls: Array.isArray(parsed.paint && parsed.paint.walls) ? parsed.paint.walls : defaults.paint.walls, trim: Array.isArray(parsed.paint && parsed.paint.trim) ? parsed.paint.trim : defaults.paint.trim },
+      misc:      { ...defaults.misc,      ...(parsed.misc      || {}), items: Array.isArray(parsed.misc && parsed.misc.items) ? parsed.misc.items : defaults.misc.items },
+      creditApp: { ...defaults.creditApp, ...(parsed.creditApp || {}) },
+    });
+    setStep(proposal.step || 0);
+    setCurrentProposalId(proposal.id);
+    localStorage.setItem("ndc_current_id", proposal.id);
+    setShowSavedList(false);
+    setSelectedOption(null);
+  };
+
+  const deleteProposal = (id) => {
+    const updated = savedProposals.filter(p => p.id !== id);
+    setSavedProposals(updated);
+    localStorage.setItem("ndc_saved_proposals", JSON.stringify(updated));
+    if (currentProposalId === id) { setCurrentProposalId(null); localStorage.removeItem("ndc_current_id"); }
+  };
+
+  const startNewProposal = () => {
+    setState(makeInitialState());
+    setStep(0);
+    setCurrentProposalId(null);
+    setSelectedOption(null);
+    setSelectedPayment(null);
+    localStorage.removeItem("ndc_current_id");
+  };
 
   const [selectedOption, setSelectedOption] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
@@ -3243,6 +3371,11 @@ function App() {
           <button onClick={() => setShowPricingModal(true)} title="Rep Pricing Tool" style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, color: "white", padding: "6px 10px", cursor: "pointer", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
             🔧 Rep Pricing
           </button>
+          {driveStatus && (
+            <div style={{ background: driveStatus === "saved" ? "rgba(22,163,74,0.3)" : driveStatus === "error" ? "rgba(220,38,38,0.3)" : "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, color: "white", padding: "6px 10px", fontSize: 11, fontWeight: 700 }}>
+              {driveStatus === "saving" ? "☁️ Saving..." : driveStatus === "saved" ? "✓ Saved to Drive" : "⚠ Drive error — saved locally"}
+            </div>
+          )}
         </div>
       </div>
 
@@ -3289,7 +3422,7 @@ function App() {
 
       {/* Step body */}
       <div style={S.body}>
-        {currentKey === "services"  && <ServiceSelectStep selected={state.services} onChange={(v) => setState((s) => ({ ...s, services: v }))} isFinancing={state.isFinancing} onFinancingChange={(v) => setState(s => ({ ...s, isFinancing: v }))} />}
+        {currentKey === "services"  && <ServiceSelectStep selected={state.services} onChange={(v) => setState((s) => ({ ...s, services: v }))} isFinancing={state.isFinancing} onFinancingChange={(v) => setState(s => ({ ...s, isFinancing: v }))} savedCount={savedProposals.length} onShowSaved={() => setShowSavedList(true)} currentProposalId={currentProposalId} />}
         {currentKey === "customer"  && <CustomerStep data={state.customer} onChange={(k, v) => update("customer", k, v)} />}
         {currentKey === "siding"    && <SidingStep data={state.siding} onChange={(k, v) => setState((s) => ({ ...s, siding: { ...s.siding, [k]: v } }))} onSidingTypeChange={(type) => setState((s) => ({ ...s, siding: { ...s.siding, sidingType: type }, sidingMaterials: defaultSidingMaterials(type) }))} state={state} />}
         {currentKey === "soffit"    && <SoffitStepSimple title="Soffits" data={state.soffit} onChange={(v) => setState((s) => ({ ...s, soffit: v }))} />}
@@ -3307,6 +3440,7 @@ function App() {
       {step < lastStep && currentKey !== "preview" && currentKey !== "contract" && currentKey !== "creditapp" && (
         <div style={S.nav}>
           {step > 0 && <button style={S.secondaryBtn} onClick={() => setStep(step - 1)}>← Back</button>}
+          <button style={{ background: "#16a34a", color: "white", border: "none", borderRadius: 10, padding: "12px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }} onClick={saveCurrentProposal}>💾</button>
           <button style={{ ...S.primaryBtn, marginLeft: "auto", opacity: canNext() ? 1 : 0.5 }} disabled={!canNext()} onClick={() => setStep(step + 1)}>Next →</button>
         </div>
       )}
@@ -3314,11 +3448,9 @@ function App() {
       {(currentKey === "preview" || currentKey === "contract") && (
         <div style={S.nav}>
           <button style={S.secondaryBtn} onClick={() => setStep(step - 1)}>← Back</button>
-          <button style={{ ...S.secondaryBtn, marginLeft: "auto" }} onClick={() => {
-            if (window.confirm("Clear all proposal data and start a new proposal?")) {
-              localStorage.removeItem("ndc_state"); localStorage.removeItem("ndc_step");
-              setState(makeInitialState()); setStep(0); setSelectedOption(null); setSelectedPayment(null);
-            }
+          <button style={{ ...S.primaryBtn, background: "#16a34a", flex: 1 }} onClick={saveCurrentProposal}>💾 Save</button>
+          <button style={{ ...S.secondaryBtn }} onClick={() => {
+            if (window.confirm("Start a new proposal? Save first if you want to keep this one.")) { startNewProposal(); }
           }}>New Proposal</button>
         </div>
       )}
@@ -3326,12 +3458,61 @@ function App() {
       {currentKey === "creditapp" && (
         <div style={S.nav}>
           <button style={S.secondaryBtn} onClick={() => setStep(step - 1)}>← Back to Contract</button>
-          <button style={{ ...S.secondaryBtn, marginLeft: "auto" }} onClick={() => {
-            if (window.confirm("Clear all proposal data and start a new proposal?")) {
-              localStorage.removeItem("ndc_state"); localStorage.removeItem("ndc_step");
-              setState(makeInitialState()); setStep(0); setSelectedOption(null);
-            }
+          <button style={{ ...S.primaryBtn, background: "#16a34a", flex: 1 }} onClick={saveCurrentProposal}>💾 Save</button>
+          <button style={{ ...S.secondaryBtn }} onClick={() => {
+            if (window.confirm("Start a new proposal? Save first if you want to keep this one.")) { startNewProposal(); }
           }}>New Proposal</button>
+        </div>
+      )}
+
+      {/* Saved Proposals Panel */}
+      {showSavedList && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+          <div style={{ background: "white", borderRadius: "16px 16px 0 0", width: "100%", maxWidth: 600, maxHeight: "80vh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#0f172a" }}>💾 Saved Proposals</div>
+                <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{savedProposals.length} saved</div>
+              </div>
+              <button onClick={() => setShowSavedList(false)} style={{ background: "none", border: "none", fontSize: 22, cursor: "pointer", color: "#64748b" }}>✕</button>
+            </div>
+            <div style={{ overflowY: "auto", flex: 1, padding: "12px 16px" }}>
+              {savedProposals.length === 0 && (
+                <div style={{ textAlign: "center", padding: "40px 20px", color: "#94a3b8" }}>
+                  <div style={{ fontSize: 32, marginBottom: 10 }}>📋</div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>No saved proposals yet</div>
+                  <div style={{ fontSize: 11, marginTop: 4 }}>Tap 💾 Save Proposal to save your current work</div>
+                </div>
+              )}
+              {savedProposals.map(p => {
+                const saved = new Date(p.savedAt);
+                const dateLabel = saved.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                const timeLabel = saved.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+                const isActive = p.id === currentProposalId;
+                return (
+                  <div key={p.id} style={{ background: isActive ? "#f0fdf4" : "#f8fafc", border: "1.5px solid " + (isActive ? "#86efac" : "#e2e8f0"), borderRadius: 10, padding: "14px 16px", marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ flex: 1 }} onClick={() => loadProposal(p)} style={{ flex: 1, cursor: "pointer" }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#0f172a", marginBottom: 2 }}>
+                        {isActive && <span style={{ background: "#16a34a", color: "white", fontSize: 8, fontWeight: 800, padding: "1px 6px", borderRadius: 10, marginRight: 6, textTransform: "uppercase" }}>Active</span>}
+                        {p.clientName}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#64748b" }}>{dateLabel} at {timeLabel}</div>
+                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{(p.services || []).join(", ")}</div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, marginLeft: 12 }}>
+                      <button onClick={() => loadProposal(p)} style={{ background: "#0f172a", color: "white", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Resume</button>
+                      <button onClick={() => { if (window.confirm("Delete this proposal?")) deleteProposal(p.id); }} style={{ background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 8, padding: "8px 10px", fontSize: 12, cursor: "pointer" }}>🗑</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ padding: "12px 16px", borderTop: "1px solid #e2e8f0" }}>
+              <button onClick={() => { setShowSavedList(false); startNewProposal(); }} style={{ width: "100%", background: "#0f172a", color: "white", border: "none", borderRadius: 10, padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                + Start New Proposal
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
