@@ -1,5 +1,7 @@
 const { google } = require("googleapis");
-const SHARE_WITH_EMAIL = "4xhelp@gmail.com";
+
+const SHEET_ID = "1_1H-pk-iZsNQ8G7irB6WI3YZCogtHPhmK6GSK8e30Xg";
+const SHEET_NAME = "Sheet1";
 
 function getAuth() {
   const privateKey = process.env.GOOGLE_PRIVATE_KEY
@@ -9,68 +11,114 @@ function getAuth() {
   if (!privateKey || !clientEmail) throw new Error("Missing Google credentials");
   return new google.auth.GoogleAuth({
     credentials: { type: "service_account", project_id: "lucid-hook-499911-d7", private_key: privateKey, client_email: clientEmail },
-    scopes: ["https://www.googleapis.com/auth/drive"],
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
 }
 
-async function getDrive() {
+async function getSheets() {
   const auth = getAuth();
-  return google.drive({ version: "v3", auth });
+  return google.sheets({ version: "v4", auth });
 }
 
-async function listProposals(drive) {
-  const res = await drive.files.list({
-    q: "mimeType='application/json' and trashed=false and name contains '_'",
-    fields: "files(id,name,modifiedTime)",
-    orderBy: "modifiedTime desc",
-    spaces: "drive",
+// Ensure header row exists
+async function ensureHeaders(sheets) {
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: `${SHEET_NAME}!A1:F1`,
   });
-  return res.data.files.map(f => ({
-    driveId: f.id,
-    name: f.name.replace(".json", ""),
-    savedAt: f.modifiedTime,
-  }));
-}
-
-async function saveProposal(drive, { fileName, data, driveId }) {
-  const content = JSON.stringify(data);
-  const media = { mimeType: "application/json", body: content };
-
-  if (driveId) {
-    await drive.files.update({
-      fileId: driveId,
-      requestBody: { name: fileName + ".json" },
-      media,
+  if (!res.data.values || res.data.values.length === 0) {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SHEET_ID,
+      range: `${SHEET_NAME}!A1`,
+      valueInputOption: "RAW",
+      requestBody: { values: [["ID", "Client Name", "Services", "Saved At", "Step", "Data"]] },
     });
-    return { driveId };
-  } else {
-    // Save to service account's own Drive (no parent folder needed)
-    const res = await drive.files.create({
-      requestBody: { name: fileName + ".json", mimeType: "application/json" },
-      media,
-      fields: "id",
-    });
-    // Share with NDC email so CJ can see it
-    try {
-      await drive.permissions.create({
-        fileId: res.data.id,
-        requestBody: { type: "user", role: "writer", emailAddress: SHARE_WITH_EMAIL },
-        sendNotificationEmail: false,
-      });
-    } catch(e) {
-      console.log("Share warning:", e.message);
-    }
-    return { driveId: res.data.id };
   }
 }
 
-async function loadProposal(drive, driveId) {
-  const res = await drive.files.get({ fileId: driveId, alt: "media" });
-  return res.data;
+async function listProposals(sheets) {
+  await ensureHeaders(sheets);
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: `${SHEET_NAME}!A2:F1000`,
+  });
+  const rows = res.data.values || [];
+  return rows.filter(r => r[0]).map(r => ({
+    driveId: r[0],
+    clientName: r[1] || "",
+    services: r[2] || "",
+    savedAt: r[3] || "",
+    step: parseInt(r[4] || "0"),
+    name: (r[1] || "Unknown") + "_" + (r[3] || "").split("T")[0],
+  })).reverse();
 }
 
-async function deleteProposal(drive, driveId) {
-  await drive.files.delete({ fileId: driveId });
+async function findRowById(sheets, id) {
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: `${SHEET_NAME}!A2:A1000`,
+  });
+  const rows = res.data.values || [];
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i][0] === id) return i + 2; // 1-indexed, +1 for header
+  }
+  return null;
+}
+
+async function saveProposal(sheets, { fileName, data, driveId }) {
+  await ensureHeaders(sheets);
+  const id = driveId || ("ndc_" + Date.now());
+  const clientName = (data.state && data.state.customer && data.state.customer.name) || fileName;
+  const services = (data.services || []).join(", ");
+  const savedAt = new Date().toISOString();
+  const step = data.step || 0;
+  const jsonData = JSON.stringify(data);
+  const rowData = [id, clientName, services, savedAt, step, jsonData];
+
+  if (driveId) {
+    // Update existing row
+    const rowNum = await findRowById(sheets, driveId);
+    if (rowNum) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `${SHEET_NAME}!A${rowNum}:F${rowNum}`,
+        valueInputOption: "RAW",
+        requestBody: { values: [rowData] },
+      });
+      return { driveId };
+    }
+  }
+
+  // Append new row
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SHEET_ID,
+    range: `${SHEET_NAME}!A2`,
+    valueInputOption: "RAW",
+    insertDataOption: "INSERT_ROWS",
+    requestBody: { values: [rowData] },
+  });
+  return { driveId: id };
+}
+
+async function loadProposal(sheets, driveId) {
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: `${SHEET_NAME}!A2:F1000`,
+  });
+  const rows = res.data.values || [];
+  const row = rows.find(r => r[0] === driveId);
+  if (!row) throw new Error("Proposal not found");
+  return JSON.parse(row[5]);
+}
+
+async function deleteProposal(sheets, driveId) {
+  const rowNum = await findRowById(sheets, driveId);
+  if (!rowNum) throw new Error("Proposal not found");
+  // Clear the row
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId: SHEET_ID,
+    range: `${SHEET_NAME}!A${rowNum}:F${rowNum}`,
+  });
   return { success: true };
 }
 
@@ -81,37 +129,37 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
 
   try {
-    const drive = await getDrive();
+    const sheets = await getSheets();
     const { action } = req.query;
 
     switch (action) {
       case "list": {
-        const proposals = await listProposals(drive);
+        const proposals = await listProposals(sheets);
         return res.status(200).json({ proposals });
       }
       case "save": {
         const { fileName, data, driveId } = req.body;
         if (!fileName || !data) return res.status(400).json({ error: "Missing fileName or data" });
-        const result = await saveProposal(drive, { fileName, data, driveId });
+        const result = await saveProposal(sheets, { fileName, data, driveId });
         return res.status(200).json(result);
       }
       case "load": {
         const { driveId } = req.query;
         if (!driveId) return res.status(400).json({ error: "Missing driveId" });
-        const data = await loadProposal(drive, driveId);
+        const data = await loadProposal(sheets, driveId);
         return res.status(200).json({ data });
       }
       case "delete": {
         const { driveId } = req.body;
         if (!driveId) return res.status(400).json({ error: "Missing driveId" });
-        const result = await deleteProposal(drive, driveId);
+        const result = await deleteProposal(sheets, driveId);
         return res.status(200).json(result);
       }
       default:
         return res.status(400).json({ error: "Unknown action: " + action });
     }
   } catch (err) {
-    console.error("Drive API error:", err.message);
+    console.error("Sheets API error:", err.message);
     return res.status(500).json({ error: err.message });
   }
 }
