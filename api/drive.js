@@ -1,10 +1,5 @@
-// api/drive.js — Vercel Serverless Function
-// Service account saves files to its own Drive, then shares with NDC email
-
 const { google } = require("googleapis");
-
-// The email to share all files with so CJ can see them
-const SHARE_WITH_EMAIL = "ndcjax@gmail.com";
+const SHARE_WITH_EMAIL = "4xhelp@gmail.com";
 
 function getAuth() {
   const privateKey = process.env.GOOGLE_PRIVATE_KEY
@@ -23,42 +18,18 @@ async function getDrive() {
   return google.drive({ version: "v3", auth });
 }
 
-// Get or create the NDC Proposals folder in service account's own Drive
-async function getOrCreateFolder(drive) {
-  const storedFolderId = process.env.GOOGLE_FOLDER_ID;
-  
-  // Try to find existing folder
-  const res = await drive.files.list({
-    q: "name='NDC Proposals' and mimeType='application/vnd.google-apps.folder' and trashed=false",
-    fields: "files(id,name)",
-  });
-  
-  if (res.data.files.length > 0) return res.data.files[0].id;
-  
-  // Create new folder
-  const folder = await drive.files.create({
-    requestBody: { name: "NDC Proposals", mimeType: "application/vnd.google-apps.folder" },
-    fields: "id",
-  });
-  
-  // Share folder with NDC email
-  await drive.permissions.create({
-    fileId: folder.data.id,
-    requestBody: { type: "user", role: "writer", emailAddress: SHARE_WITH_EMAIL },
-    sendNotificationEmail: false,
-  });
-  
-  return folder.data.id;
-}
-
 async function listProposals(drive) {
-  const folderId = await getOrCreateFolder(drive);
   const res = await drive.files.list({
-    q: `'${folderId}' in parents and mimeType='application/json' and trashed=false`,
+    q: "mimeType='application/json' and trashed=false and name contains '_'",
     fields: "files(id,name,modifiedTime)",
     orderBy: "modifiedTime desc",
+    spaces: "drive",
   });
-  return res.data.files.map(f => ({ driveId: f.id, name: f.name.replace(".json", ""), savedAt: f.modifiedTime }));
+  return res.data.files.map(f => ({
+    driveId: f.id,
+    name: f.name.replace(".json", ""),
+    savedAt: f.modifiedTime,
+  }));
 }
 
 async function saveProposal(drive, { fileName, data, driveId }) {
@@ -66,21 +37,29 @@ async function saveProposal(drive, { fileName, data, driveId }) {
   const media = { mimeType: "application/json", body: content };
 
   if (driveId) {
-    await drive.files.update({ fileId: driveId, requestBody: { name: fileName + ".json" }, media });
+    await drive.files.update({
+      fileId: driveId,
+      requestBody: { name: fileName + ".json" },
+      media,
+    });
     return { driveId };
   } else {
-    const folderId = await getOrCreateFolder(drive);
+    // Save to service account's own Drive (no parent folder needed)
     const res = await drive.files.create({
-      requestBody: { name: fileName + ".json", parents: [folderId], mimeType: "application/json" },
+      requestBody: { name: fileName + ".json", mimeType: "application/json" },
       media,
       fields: "id",
     });
-    // Share with NDC email
-    await drive.permissions.create({
-      fileId: res.data.id,
-      requestBody: { type: "user", role: "writer", emailAddress: SHARE_WITH_EMAIL },
-      sendNotificationEmail: false,
-    });
+    // Share with NDC email so CJ can see it
+    try {
+      await drive.permissions.create({
+        fileId: res.data.id,
+        requestBody: { type: "user", role: "writer", emailAddress: SHARE_WITH_EMAIL },
+        sendNotificationEmail: false,
+      });
+    } catch(e) {
+      console.log("Share warning:", e.message);
+    }
     return { driveId: res.data.id };
   }
 }
