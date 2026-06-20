@@ -783,173 +783,12 @@ function CreditAppStep({ data, onChange, projectTotal }) {
         ⬇️ Save Credit Application as PDF
       </button>
 
-      {/* CRM Post-Contract Popup */}
-      {showCRMPopup && crmPopupData && (() => {
-        const [outcome, setOutcome] = React.useState("sold");
-        const [lossReason, setLossReason] = React.useState("");
-        const [notes, setNotes] = React.useState("");
-        const contractAmt = crmPopupData.contractAmount || 0;
-        const commission = (contractAmt * 0.10).toFixed(2);
-        return (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-            <div style={{ background: "white", borderRadius: 16, padding: 24, maxWidth: 400, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#0f172a", marginBottom: 4 }}>📋 Save to CRM</div>
-              <div style={{ fontSize: 12, color: "#64748b", marginBottom: 16 }}>Track this client in your sales records</div>
-              <div style={{ background: "#f8fafc", borderRadius: 8, padding: 12, marginBottom: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{crmPopupData.clientName}</div>
-                <div style={{ fontSize: 11, color: "#64748b" }}>{crmPopupData.address}</div>
-                <div style={{ fontSize: 11, color: "#64748b" }}>{crmPopupData.services}</div>
-              </div>
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", marginBottom: 6 }}>Outcome</div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  {[["sold", "✅ Sold", "#16a34a", "#f0fdf4"], ["not_sold", "❌ Not Sold", "#dc2626", "#fef2f2"], ["follow_up", "🔄 Follow Up", "#0369a1", "#f0f9ff"]].map(([val, label, color, bg]) => (
-                    <div key={val} onClick={() => setOutcome(val)} style={{ flex: 1, textAlign: "center", padding: "8px 4px", borderRadius: 8, border: "2px solid " + (outcome === val ? color : "#e2e8f0"), background: outcome === val ? bg : "white", cursor: "pointer", fontSize: 11, fontWeight: 700, color: outcome === val ? color : "#64748b" }}>
-                      {label}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {outcome === "sold" && (
-                <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 8, padding: 12, marginBottom: 14 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontSize: 12, color: "#166534" }}>Contract Amount</span>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: "#16a34a" }}>${parseFloat(contractAmt).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: 12, color: "#166534" }}>Commission (10%)</span>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: "#16a34a" }}>${commission}</span>
-                  </div>
-                </div>
-              )}
-              {outcome === "not_sold" && (
-                <div style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", marginBottom: 6 }}>Loss Reason</div>
-                  <select value={lossReason} onChange={e => setLossReason(e.target.value)} style={{ ...S.input, fontSize: 13, padding: "8px 10px" }}>
-                    <option value="">-- Select reason --</option>
-                    <option>Price too high</option>
-                    <option>Went with competitor</option>
-                    <option>Needs to think about it</option>
-                    <option>Financing did not go through</option>
-                    <option>Homeowner not ready</option>
-                    <option>No decision maker present</option>
-                    <option>Other</option>
-                  </select>
-                </div>
-              )}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", marginBottom: 6 }}>Notes</div>
-                <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any additional notes..." style={{ ...S.input, height: 60, resize: "none", fontSize: 12 }} />
-              </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => {
-                  const record = { id: "crm_" + Date.now(), date: new Date().toISOString(), clientName: crmPopupData.clientName, address: crmPopupData.address, phone: crmPopupData.phone, email: crmPopupData.email, services: crmPopupData.services, outcome, contractAmount: outcome === "sold" ? contractAmt : 0, commission: outcome === "sold" ? parseFloat(commission) : 0, commissionPaid: false, lossReason: outcome === "not_sold" ? lossReason : "", notes };
-                  saveCRMRecord(record);
-                  setShowCRMPopup(false);
-                  setCrmPopupData(null);
-                }} style={{ flex: 1, background: "#0f172a", color: "white", border: "none", borderRadius: 10, padding: "12px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                  Save to CRM
-                </button>
-                <button onClick={() => { setShowCRMPopup(false); setCrmPopupData(null); }} style={{ background: "white", color: "#64748b", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "12px 16px", fontSize: 13, cursor: "pointer" }}>Skip</button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Full Screen CRM */}
-      {showCRM && (() => {
-        const [crmTab, setCrmTab] = React.useState("sold");
-        const [filterMonth, setFilterMonth] = React.useState("");
-        const months = [...new Set(crmRecords.map(r => r.date ? r.date.slice(0, 7) : ""))].filter(Boolean).sort().reverse();
-        const filtered = crmRecords.filter(r => {
-          if (crmTab === "sold" && r.outcome !== "sold") return false;
-          if (crmTab === "not_sold" && r.outcome !== "not_sold") return false;
-          if (crmTab === "follow_up" && r.outcome !== "follow_up") return false;
-          if (filterMonth && r.date && !r.date.startsWith(filterMonth)) return false;
-          return true;
-        });
-        const soldRecords = crmRecords.filter(r => r.outcome === "sold" && (!filterMonth || r.date.startsWith(filterMonth)));
-        const totalRevenue = soldRecords.reduce((a, r) => a + (r.contractAmount || 0), 0);
-        const totalCommission = soldRecords.reduce((a, r) => a + (r.commission || 0), 0);
-        const paidCommission = soldRecords.filter(r => r.commissionPaid).reduce((a, r) => a + (r.commission || 0), 0);
-        const pendingCommission = totalCommission - paidCommission;
-        return (
-          <div style={{ position: "fixed", inset: 0, background: "#f1f5f9", zIndex: 9000, display: "flex", flexDirection: "column", overflowY: "auto" }}>
-            <div style={{ background: "#0f172a", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: "white" }}>📊 CRM — Sales Tracker</div>
-                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>New Direction Construction · CJ Shires</div>
-              </div>
-              <button onClick={() => setShowCRM(false)} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, color: "white", padding: "8px 14px", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>✕ Close</button>
-            </div>
-            <div style={{ padding: "16px", maxWidth: 860, margin: "0 auto", width: "100%" }}>
-              <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center", flexWrap: "wrap" }}>
-                <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} style={{ ...S.input, fontSize: 13, padding: "8px 12px", maxWidth: 200 }}>
-                  <option value="">All Time</option>
-                  {months.map(m => <option key={m} value={m}>{new Date(m + "-01").toLocaleDateString("en-US", { month: "long", year: "numeric" })}</option>)}
-                </select>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
-                {[
-                  { label: "Jobs Sold", value: soldRecords.length, color: "#16a34a", bg: "#f0fdf4", border: "#86efac" },
-                  { label: "Total Revenue", value: "$" + totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 0 }), color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd" },
-                  { label: "Commission Earned", value: "$" + totalCommission.toLocaleString("en-US", { minimumFractionDigits: 0 }), color: "#7c3aed", bg: "#faf5ff", border: "#d8b4fe" },
-                  { label: "Commission Pending", value: "$" + pendingCommission.toLocaleString("en-US", { minimumFractionDigits: 0 }), color: "#d97706", bg: "#fffbeb", border: "#fcd34d" },
-                ].map(s => (
-                  <div key={s.label} style={{ background: s.bg, border: "1.5px solid " + s.border, borderRadius: 10, padding: "12px 14px" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: s.color, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>{s.label}</div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-                {[["sold", "✅ Sold", crmRecords.filter(r => r.outcome === "sold").length], ["not_sold", "❌ Not Sold", crmRecords.filter(r => r.outcome === "not_sold").length], ["follow_up", "🔄 Follow Up", crmRecords.filter(r => r.outcome === "follow_up").length]].map(([val, label, count]) => (
-                  <button key={val} onClick={() => setCrmTab(val)} style={{ padding: "8px 16px", borderRadius: 8, border: "1.5px solid " + (crmTab === val ? "#0f172a" : "#e2e8f0"), background: crmTab === val ? "#0f172a" : "white", color: crmTab === val ? "white" : "#64748b", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-                    {label} ({count})
-                  </button>
-                ))}
-              </div>
-              {filtered.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "40px 20px", color: "#94a3b8", background: "white", borderRadius: 12, border: "1px solid #e2e8f0" }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>No records yet</div>
-                </div>
-              ) : filtered.map(r => (
-                <div key={r.id} style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 12, padding: "14px 16px", marginBottom: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{r.clientName}</div>
-                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{r.address}</div>
-                      <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>{r.services}</div>
-                      {r.lossReason && <div style={{ fontSize: 11, color: "#dc2626", marginTop: 2 }}>Reason: {r.lossReason}</div>}
-                      {r.notes && <div style={{ fontSize: 11, color: "#64748b", marginTop: 2, fontStyle: "italic" }}>{r.notes}</div>}
-                      {r.phone && <div style={{ fontSize: 11, color: "#0369a1", marginTop: 4 }}>📞 {r.phone}{r.email ? " · ✉️ " + r.email : ""}</div>}
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                      <div style={{ fontSize: 11, color: "#94a3b8" }}>{r.date ? new Date(r.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : ""}</div>
-                      {r.outcome === "sold" && (
-                        <>
-                          <div style={{ fontSize: 15, fontWeight: 800, color: "#16a34a", marginTop: 4 }}>${parseFloat(r.contractAmount || 0).toLocaleString("en-US", { minimumFractionDigits: 0 })}</div>
-                          <div style={{ fontSize: 11, color: "#7c3aed", fontWeight: 700 }}>Comm: ${parseFloat(r.commission || 0).toLocaleString("en-US", { minimumFractionDigits: 0 })}</div>
-                          <div onClick={() => updateCRMRecord(r.id, { commissionPaid: !r.commissionPaid })} style={{ marginTop: 6, display: "inline-block", background: r.commissionPaid ? "#f0fdf4" : "#fffbeb", border: "1px solid " + (r.commissionPaid ? "#86efac" : "#fcd34d"), borderRadius: 20, padding: "3px 10px", fontSize: 10, fontWeight: 800, color: r.commissionPaid ? "#16a34a" : "#d97706", cursor: "pointer" }}>
-                            {r.commissionPaid ? "✓ Commission Paid" : "⏳ Commission Pending"}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Credit App PDF builder───────────────────────────────────────────────────────────────────────
 // Credit App PDF builder
 // ─────────────────────────────────────────────────────────────────────────────
 function buildCreditAppPDF(data, projectTotal) {
@@ -3722,6 +3561,168 @@ function App() {
           </div>
         </div>
       )}
+      {/* CRM Post-Contract Popup */}
+      {showCRMPopup && crmPopupData && (() => {
+        const [outcome, setOutcome] = React.useState("sold");
+        const [lossReason, setLossReason] = React.useState("");
+        const [notes, setNotes] = React.useState("");
+        const contractAmt = crmPopupData.contractAmount || 0;
+        const commission = (contractAmt * 0.10).toFixed(2);
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+            <div style={{ background: "white", borderRadius: 16, padding: 24, maxWidth: 400, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#0f172a", marginBottom: 4 }}>📋 Save to CRM</div>
+              <div style={{ fontSize: 12, color: "#64748b", marginBottom: 16 }}>Track this client in your sales records</div>
+              <div style={{ background: "#f8fafc", borderRadius: 8, padding: 12, marginBottom: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{crmPopupData.clientName}</div>
+                <div style={{ fontSize: 11, color: "#64748b" }}>{crmPopupData.address}</div>
+                <div style={{ fontSize: 11, color: "#64748b" }}>{crmPopupData.services}</div>
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", marginBottom: 6 }}>Outcome</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {[["sold", "✅ Sold", "#16a34a", "#f0fdf4"], ["not_sold", "❌ Not Sold", "#dc2626", "#fef2f2"], ["follow_up", "🔄 Follow Up", "#0369a1", "#f0f9ff"]].map(([val, label, color, bg]) => (
+                    <div key={val} onClick={() => setOutcome(val)} style={{ flex: 1, textAlign: "center", padding: "8px 4px", borderRadius: 8, border: "2px solid " + (outcome === val ? color : "#e2e8f0"), background: outcome === val ? bg : "white", cursor: "pointer", fontSize: 11, fontWeight: 700, color: outcome === val ? color : "#64748b" }}>
+                      {label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {outcome === "sold" && (
+                <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 8, padding: 12, marginBottom: 14 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, color: "#166534" }}>Contract Amount</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#16a34a" }}>${parseFloat(contractAmt).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 12, color: "#166534" }}>Commission (10%)</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#16a34a" }}>${commission}</span>
+                  </div>
+                </div>
+              )}
+              {outcome === "not_sold" && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", marginBottom: 6 }}>Loss Reason</div>
+                  <select value={lossReason} onChange={e => setLossReason(e.target.value)} style={{ ...S.input, fontSize: 13, padding: "8px 10px" }}>
+                    <option value="">-- Select reason --</option>
+                    <option>Price too high</option>
+                    <option>Went with competitor</option>
+                    <option>Needs to think about it</option>
+                    <option>Financing did not go through</option>
+                    <option>Homeowner not ready</option>
+                    <option>No decision maker present</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+              )}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", marginBottom: 6 }}>Notes</div>
+                <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any additional notes..." style={{ ...S.input, height: 60, resize: "none", fontSize: 12 }} />
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => {
+                  const record = { id: "crm_" + Date.now(), date: new Date().toISOString(), clientName: crmPopupData.clientName, address: crmPopupData.address, phone: crmPopupData.phone, email: crmPopupData.email, services: crmPopupData.services, outcome, contractAmount: outcome === "sold" ? contractAmt : 0, commission: outcome === "sold" ? parseFloat(commission) : 0, commissionPaid: false, lossReason: outcome === "not_sold" ? lossReason : "", notes };
+                  saveCRMRecord(record);
+                  setShowCRMPopup(false);
+                  setCrmPopupData(null);
+                }} style={{ flex: 1, background: "#0f172a", color: "white", border: "none", borderRadius: 10, padding: "12px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                  Save to CRM
+                </button>
+                <button onClick={() => { setShowCRMPopup(false); setCrmPopupData(null); }} style={{ background: "white", color: "#64748b", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "12px 16px", fontSize: 13, cursor: "pointer" }}>Skip</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Full Screen CRM */}
+      {showCRM && (() => {
+        const [crmTab, setCrmTab] = React.useState("sold");
+        const [filterMonth, setFilterMonth] = React.useState("");
+        const months = [...new Set(crmRecords.map(r => r.date ? r.date.slice(0, 7) : ""))].filter(Boolean).sort().reverse();
+        const filtered = crmRecords.filter(r => {
+          if (crmTab === "sold" && r.outcome !== "sold") return false;
+          if (crmTab === "not_sold" && r.outcome !== "not_sold") return false;
+          if (crmTab === "follow_up" && r.outcome !== "follow_up") return false;
+          if (filterMonth && r.date && !r.date.startsWith(filterMonth)) return false;
+          return true;
+        });
+        const soldRecords = crmRecords.filter(r => r.outcome === "sold" && (!filterMonth || r.date.startsWith(filterMonth)));
+        const totalRevenue = soldRecords.reduce((a, r) => a + (r.contractAmount || 0), 0);
+        const totalCommission = soldRecords.reduce((a, r) => a + (r.commission || 0), 0);
+        const paidCommission = soldRecords.filter(r => r.commissionPaid).reduce((a, r) => a + (r.commission || 0), 0);
+        const pendingCommission = totalCommission - paidCommission;
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "#f1f5f9", zIndex: 9000, display: "flex", flexDirection: "column", overflowY: "auto" }}>
+            <div style={{ background: "#0f172a", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "white" }}>📊 CRM — Sales Tracker</div>
+                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>New Direction Construction · CJ Shires</div>
+              </div>
+              <button onClick={() => setShowCRM(false)} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, color: "white", padding: "8px 14px", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>✕ Close</button>
+            </div>
+            <div style={{ padding: "16px", maxWidth: 860, margin: "0 auto", width: "100%" }}>
+              <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center", flexWrap: "wrap" }}>
+                <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} style={{ ...S.input, fontSize: 13, padding: "8px 12px", maxWidth: 200 }}>
+                  <option value="">All Time</option>
+                  {months.map(m => <option key={m} value={m}>{new Date(m + "-01").toLocaleDateString("en-US", { month: "long", year: "numeric" })}</option>)}
+                </select>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
+                {[
+                  { label: "Jobs Sold", value: soldRecords.length, color: "#16a34a", bg: "#f0fdf4", border: "#86efac" },
+                  { label: "Total Revenue", value: "$" + totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 0 }), color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd" },
+                  { label: "Commission Earned", value: "$" + totalCommission.toLocaleString("en-US", { minimumFractionDigits: 0 }), color: "#7c3aed", bg: "#faf5ff", border: "#d8b4fe" },
+                  { label: "Commission Pending", value: "$" + pendingCommission.toLocaleString("en-US", { minimumFractionDigits: 0 }), color: "#d97706", bg: "#fffbeb", border: "#fcd34d" },
+                ].map(s => (
+                  <div key={s.label} style={{ background: s.bg, border: "1.5px solid " + s.border, borderRadius: 10, padding: "12px 14px" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: s.color, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>{s.label}</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+                {[["sold", "✅ Sold", crmRecords.filter(r => r.outcome === "sold").length], ["not_sold", "❌ Not Sold", crmRecords.filter(r => r.outcome === "not_sold").length], ["follow_up", "🔄 Follow Up", crmRecords.filter(r => r.outcome === "follow_up").length]].map(([val, label, count]) => (
+                  <button key={val} onClick={() => setCrmTab(val)} style={{ padding: "8px 16px", borderRadius: 8, border: "1.5px solid " + (crmTab === val ? "#0f172a" : "#e2e8f0"), background: crmTab === val ? "#0f172a" : "white", color: crmTab === val ? "white" : "#64748b", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                    {label} ({count})
+                  </button>
+                ))}
+              </div>
+              {filtered.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "40px 20px", color: "#94a3b8", background: "white", borderRadius: 12, border: "1px solid #e2e8f0" }}>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>No records yet</div>
+                </div>
+              ) : filtered.map(r => (
+                <div key={r.id} style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 12, padding: "14px 16px", marginBottom: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{r.clientName}</div>
+                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{r.address}</div>
+                      <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>{r.services}</div>
+                      {r.lossReason && <div style={{ fontSize: 11, color: "#dc2626", marginTop: 2 }}>Reason: {r.lossReason}</div>}
+                      {r.notes && <div style={{ fontSize: 11, color: "#64748b", marginTop: 2, fontStyle: "italic" }}>{r.notes}</div>}
+                      {r.phone && <div style={{ fontSize: 11, color: "#0369a1", marginTop: 4 }}>📞 {r.phone}{r.email ? " · ✉️ " + r.email : ""}</div>}
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
+                      <div style={{ fontSize: 11, color: "#94a3b8" }}>{r.date ? new Date(r.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : ""}</div>
+                      {r.outcome === "sold" && (
+                        <>
+                          <div style={{ fontSize: 15, fontWeight: 800, color: "#16a34a", marginTop: 4 }}>${parseFloat(r.contractAmount || 0).toLocaleString("en-US", { minimumFractionDigits: 0 })}</div>
+                          <div style={{ fontSize: 11, color: "#7c3aed", fontWeight: 700 }}>Comm: ${parseFloat(r.commission || 0).toLocaleString("en-US", { minimumFractionDigits: 0 })}</div>
+                          <div onClick={() => updateCRMRecord(r.id, { commissionPaid: !r.commissionPaid })} style={{ marginTop: 6, display: "inline-block", background: r.commissionPaid ? "#f0fdf4" : "#fffbeb", border: "1px solid " + (r.commissionPaid ? "#86efac" : "#fcd34d"), borderRadius: 20, padding: "3px 10px", fontSize: 10, fontWeight: 800, color: r.commissionPaid ? "#16a34a" : "#d97706", cursor: "pointer" }}>
+                            {r.commissionPaid ? "✓ Commission Paid" : "⏳ Commission Pending"}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
