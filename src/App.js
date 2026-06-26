@@ -1319,7 +1319,7 @@ function ServiceSelectStep({ selected, onChange, isFinancing, onFinancingChange,
   );
 }
 
-function CustomerStep({ data, onChange }) {
+function CustomerStep({ data, fullState, onChange }) {
   const [countyLoading, setCountyLoading] = React.useState(false);
 
   const detectCounty = React.useCallback(async (address) => {
@@ -1374,6 +1374,53 @@ function CustomerStep({ data, onChange }) {
       </div>
       <Field label="Customer Email" value={data.email} onChange={(v) => onChange("email", v)} placeholder="customer@email.com" type="email" />
       <Field label="Customer Phone" value={data.phone} onChange={(v) => onChange("phone", v)} placeholder="(555) 000-0000" />
+
+      {/* Google Contacts Button */}
+      {(data.name || data.phone || data.email) && (
+        <div style={{ marginBottom: 16 }}>
+          <button onClick={() => {
+            const params = new URLSearchParams();
+            if (data.name) params.set("name", data.name);
+            if (data.phone) params.set("phone", data.phone);
+            if (data.email) params.set("email", data.email);
+            if (data.address) params.set("address", data.address);
+            // Build notes
+            const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+            let notes = "NDC Proposal — " + today + "\n";
+            if (fullState && fullState.services && fullState.services.length > 0) {
+              notes += "Services: " + fullState.services.join(", ") + "\n";
+            }
+            if (fullState.siding && fullState.siding.walls && fullState.siding.walls.length > 0) {
+              const sidingSqft = fullState.siding.walls.reduce((a, w) => a + parseFloat(w.sqft || 0), 0);
+              if (sidingSqft > 0) notes += "Siding: " + sidingSqft.toFixed(0) + " sq ft\n";
+            }
+            if (fullState.soffit && fullState.soffit.items && fullState.soffit.items.length > 0) {
+              const soffitLf = fullState.soffit.items.reduce((a, i) => a + parseFloat(i.linearFt || 0), 0);
+              if (soffitLf > 0) notes += "Soffit: " + soffitLf.toFixed(0) + " linear ft\n";
+            }
+            if (fullState.fascia && fullState.fascia.items && fullState.fascia.items.length > 0) {
+              const fasciaLf = fullState.fascia.items.reduce((a, i) => a + parseFloat(i.linearFt || 0), 0);
+              if (fasciaLf > 0) notes += "Fascia: " + fasciaLf.toFixed(0) + " linear ft\n";
+            }
+            if (fullState.windows && fullState.windows.length > 0) {
+              const totalWin = fullState.windows.reduce((a, w) => a + parseFloat(w.qty || 1), 0);
+              notes += "Windows: " + totalWin + " unit(s)\n";
+            }
+            if (fullState.doors && fullState.doors.length > 0) {
+              notes += "Doors: " + fullState.doors.length + " unit(s)\n";
+            }
+            if (data.pricing) {
+              const t = calcGrandTotal(fullState || {});
+              if (t.standardTotal > 0) notes += "Contract Total: $" + t.standardTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+            params.set("note", notes);
+            window.open("https://contacts.google.com/new?" + params.toString(), "_blank");
+          }} style={{ width: "100%", background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 10, padding: "12px 16px", fontSize: 13, fontWeight: 700, color: "#0369a1", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            📱 Save to Google Contacts
+          </button>
+          <div style={{ fontSize: 10, color: "#94a3b8", textAlign: "center", marginTop: 4 }}>Includes date, services, sq ft, and contract total — always pulls current info</div>
+        </div>
+      )}
       <div style={S.field}>
         <label style={S.label}>Property Street View Photo</label>
         <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", background: data.photo ? "#f0f9ff" : "#f8fafc", border: "1.5px dashed " + (data.photo ? "#0ea5e9" : "#cbd5e1"), borderRadius: 8, padding: "12px 16px", fontSize: 13, color: "#475569" }}>
@@ -3016,9 +3063,14 @@ function PreviewStep({ state, setState, setStep, steps, selectedOption, setSelec
                 const clientName = state.customer.name ? state.customer.name.replace(/[^a-zA-Z0-9 ]/g, "").trim().replace(/ /g, "_") : "Client";
                 const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
                 const ver = state.proposalVersion || 1;
+                const fileName = "NDC_Proposal_" + clientName + "_" + dateStr + "_v" + ver;
                 const newWin = window.open("", "_blank");
-                if (newWin) { newWin.document.write(pdfHtml); newWin.document.close(); newWin.document.title = "NDC_Proposal_" + clientName + "_" + dateStr + "_v" + ver; setTimeout(() => { newWin.focus(); newWin.print(); }, 800); }
+                if (newWin) { newWin.document.write(pdfHtml); newWin.document.close(); newWin.document.title = fileName; setTimeout(() => { newWin.focus(); newWin.print(); }, 800); }
                 setState(s => ({ ...s, proposalVersion: (s.proposalVersion || 1) + 1 }));
+                // Save to Google Drive
+                try {
+                  fetch("/api/drive?action=saveFile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileName, htmlContent: pdfHtml, type: "proposal" }) });
+                } catch(e) { console.warn("Drive file save failed:", e); }
               }}>
                 Save / Print PDF {state.proposalVersion > 1 ? "(v" + state.proposalVersion + ")" : ""}
               </button>
@@ -3101,12 +3153,14 @@ function ContractStep({ state, selectedOption, setStep, steps, showDeposit, depo
         <button style={{ background: "white", color: "#0f172a", border: "1.5px solid #0f172a", borderRadius: 10, padding: "12px 24px", fontWeight: 700, fontSize: 14, cursor: "pointer", width: "100%" }} onClick={() => {
           const clientName = (state.customer.name || "Client").replace(/[^a-zA-Z0-9 ]/g, "").trim().replace(/ /g, "_");
           const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }).replace(/\//g, "-");
-          const sigBlock = `<div style='padding:20px;border-top:2px solid #0f172a;margin-top:8px'><div style='font-size:9.5px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Client Signature</div>${sigDataUrl ? `<img src='${sigDataUrl}' style='width:100%;max-width:420px;height:90px;object-fit:contain;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;display:block;margin-bottom:8px'/>` : `<div style='border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;height:90px;margin-bottom:8px'></div>`}<div style='display:flex;justify-content:space-between;font-size:10px;color:#64748b;border-top:1.5px solid #0f172a;padding-top:6px'><span>${state.customer.name || "Client"} &nbsp;&nbsp; Date: ${today}</span><span>NDC Rep: ${repName} &nbsp;&nbsp; Date: ${today}</span></div></div>`;
-          const reviewBlock = `<div style='margin-top:20px;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:16px;background:#f8fafc'><div style='flex-shrink:0;text-align:center'><img src='https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(GOOGLE_REVIEW_URL)}' style='width:80px;height:80px;border-radius:6px;border:1px solid #e2e8f0;display:block;margin:0 auto 3px'/><div style='font-size:8px;color:#64748b;font-weight:600'>Scan to Review</div></div><div style='flex:1'><div style='font-size:12px;font-weight:800;color:#0f172a;margin-bottom:3px'>Thank You for Choosing NDC!</div><div style='font-size:10px;color:#475569;line-height:1.6'>We'd love to hear about your experience. Your Google review helps other Jacksonville homeowners make confident decisions.</div></div></div>`;
-          const pdfWithSig = contractPdfHtml.replace("</body>", sigBlock + reviewBlock + "</body>");
+          const contractFileName = "NDC_Contract_" + clientName + "_" + dateStr;
+          const sigBlock2 = `<div style='padding:20px;border-top:2px solid #0f172a;margin-top:8px'><div style='font-size:9.5px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Client Signature</div>${sigDataUrl ? `<img src='${sigDataUrl}' style='width:100%;max-width:420px;height:90px;object-fit:contain;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;display:block;margin-bottom:8px'/>` : `<div style='border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;height:90px;margin-bottom:8px'></div>`}<div style='display:flex;justify-content:space-between;font-size:10px;color:#64748b;border-top:1.5px solid #0f172a;padding-top:6px'><span>${state.customer.name || "Client"} &nbsp;&nbsp; Date: ${today}</span><span>NDC Rep: ${repName} &nbsp;&nbsp; Date: ${today}</span></div></div>`;
+          const reviewBlock2 = `<div style='margin-top:20px;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:16px;background:#f8fafc'><div style='flex-shrink:0;text-align:center'><img src='https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(GOOGLE_REVIEW_URL)}' style='width:80px;height:80px;border-radius:6px;border:1px solid #e2e8f0;display:block;margin:0 auto 3px'/><div style='font-size:8px;color:#64748b;font-weight:600'>Scan to Review</div></div><div style='flex:1'><div style='font-size:12px;font-weight:800;color:#0f172a;margin-bottom:3px'>Thank You for Choosing NDC!</div><div style='font-size:10px;color:#475569;line-height:1.6'>We'd love to hear about your experience.</div></div></div>`;
+          const pdfWithSig = contractPdfHtml.replace("</body>", sigBlock2 + reviewBlock2 + "</body>");
           const newWin = window.open("", "_blank");
-          if (newWin) { newWin.document.write(pdfWithSig); newWin.document.close(); newWin.document.title = "NDC_Contract_" + clientName + "_" + dateStr; setTimeout(() => { newWin.focus(); newWin.print(); }, 800); }
+          if (newWin) { newWin.document.write(pdfWithSig); newWin.document.close(); newWin.document.title = contractFileName; setTimeout(() => { newWin.focus(); newWin.print(); }, 800); }
           setTimeout(() => setShowReviewPopup(true), 1200);
+          try { fetch("/api/drive?action=saveFile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileName: contractFileName, htmlContent: pdfWithSig, type: "contract" }) }); } catch(e) {}
           // Trigger CRM popup
           setTimeout(() => {
             const t = calcGrandTotal(state);
@@ -3626,7 +3680,7 @@ function App() {
       {/* Step body */}
       <div style={S.body}>
         {currentKey === "services"  && <ServiceSelectStep selected={state.services} onChange={(v) => setState((s) => ({ ...s, services: v }))} isFinancing={state.isFinancing} onFinancingChange={(v) => setState(s => ({ ...s, isFinancing: v }))} savedCount={savedProposals.length} onShowSaved={() => setShowSavedList(true)} currentProposalId={currentProposalId} />}
-        {currentKey === "customer"  && <CustomerStep data={state.customer} onChange={(k, v) => update("customer", k, v)} />}
+        {currentKey === "customer"  && <CustomerStep data={state.customer} fullState={state} onChange={(k, v) => update("customer", k, v)} />}
         {currentKey === "siding"    && <SidingStep data={state.siding} onChange={(k, v) => setState((s) => ({ ...s, siding: { ...s.siding, [k]: v } }))} onSidingTypeChange={(type) => setState((s) => ({ ...s, siding: { ...s.siding, sidingType: type }, sidingMaterials: defaultSidingMaterials(type) }))} state={state} />}
         {currentKey === "soffit"    && <SoffitStepSimple title="Soffits" data={state.soffit} onChange={(v) => setState((s) => ({ ...s, soffit: v }))} />}
         {currentKey === "fascia"    && <SoffitStepSimple title="Fascia" data={state.fascia} onChange={(v) => setState((s) => ({ ...s, fascia: v }))} />}
