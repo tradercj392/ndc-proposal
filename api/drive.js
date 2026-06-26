@@ -2,10 +2,61 @@ const { google } = require("googleapis");
 
 const SHEET_ID = "1_1H-pk-iZsNQ8G7irB6WI3YZCogtHPhmK6GSK8e30Xg";
 const SHEET_NAME = "Sheet1";
+const CONTACTS_SHEET_NAME = "Contacts";
 const PROPOSALS_FOLDER_NAME = "NDC Proposals";
 const PDFS_FOLDER_NAME = "NDC Proposal PDFs";
 const CONTRACTS_FOLDER_NAME = "NDC Contracts";
 const SHARE_WITH_EMAIL = "ndcjax@gmail.com";
+
+async function ensureContactsSheet(sheets) {
+  // Check if Contacts tab exists
+  const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
+  const exists = meta.data.sheets.some(s => s.properties.title === CONTACTS_SHEET_NAME);
+  if (!exists) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SHEET_ID,
+      requestBody: { requests: [{ addSheet: { properties: { title: CONTACTS_SHEET_NAME } } }] },
+    });
+  }
+  // Ensure headers
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: `${CONTACTS_SHEET_NAME}!A1:H1` });
+  if (!res.data.values || res.data.values.length === 0) {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SHEET_ID,
+      range: `${CONTACTS_SHEET_NAME}!A1`,
+      valueInputOption: "RAW",
+      requestBody: { values: [["Date", "Client Name", "Address", "Phone", "Email", "County", "Services", "Notes"]] },
+    });
+  }
+}
+
+async function saveContact(sheets, { clientName, address, phone, email, county, services, notes }) {
+  await ensureContactsSheet(sheets);
+  // Check if contact already exists by name
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: `${CONTACTS_SHEET_NAME}!B2:B1000` });
+  const rows = res.data.values || [];
+  const existingRow = rows.findIndex(r => r[0] && r[0].toLowerCase() === (clientName || "").toLowerCase());
+  const rowData = [new Date().toLocaleDateString("en-US"), clientName || "", address || "", phone || "", email || "", county || "", services || "", notes || ""];
+  if (existingRow >= 0) {
+    // Update existing contact
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SHEET_ID,
+      range: `${CONTACTS_SHEET_NAME}!A${existingRow + 2}:H${existingRow + 2}`,
+      valueInputOption: "RAW",
+      requestBody: { values: [rowData] },
+    });
+  } else {
+    // Append new contact
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: `${CONTACTS_SHEET_NAME}!A2`,
+      valueInputOption: "RAW",
+      insertDataOption: "INSERT_ROWS",
+      requestBody: { values: [rowData] },
+    });
+  }
+  return { success: true };
+}
 
 function getAuth() {
   const privateKey = process.env.GOOGLE_PRIVATE_KEY
@@ -145,6 +196,21 @@ export default async function handler(req, res) {
         const { fileName, data, driveId } = req.body;
         if (!fileName || !data) return res.status(400).json({ error: "Missing fileName or data" });
         const result = await saveProposal(sheets, { fileName, data, driveId });
+        // Auto-save contact info when proposal is saved
+        try {
+          const customer = (data.state && data.state.customer) || {};
+          if (customer.name) {
+            await saveContact(sheets, {
+              clientName: customer.name,
+              address: customer.address || "",
+              phone: customer.phone || "",
+              email: customer.email || "",
+              county: customer.county || "",
+              services: (data.services || []).join(", "),
+              notes: "Proposal saved " + new Date().toLocaleDateString("en-US"),
+            });
+          }
+        } catch(e) { console.log("Contact save warning:", e.message); }
         return res.status(200).json(result);
       }
       case "load": {
