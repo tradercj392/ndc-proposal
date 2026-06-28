@@ -1375,50 +1375,31 @@ function CustomerStep({ data, fullState, onChange }) {
       <Field label="Customer Email" value={data.email} onChange={(v) => onChange("email", v)} placeholder="customer@email.com" type="email" />
       <Field label="Customer Phone" value={data.phone} onChange={(v) => onChange("phone", v)} placeholder="(555) 000-0000" />
 
-      {/* Google Contacts Button */}
+      {/* Contacts Button — vCard download */}
       {(data.name || data.phone || data.email) && (
         <div style={{ marginBottom: 16 }}>
           <button onClick={() => {
-            const params = new URLSearchParams();
-            if (data.name) params.set("name", data.name);
-            if (data.phone) params.set("phone", data.phone);
-            if (data.email) params.set("email", data.email);
-            if (data.address) params.set("address", data.address);
-            // Build notes
             const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+            const fs = fullState || {};
             let notes = "NDC Proposal — " + today + "\n";
-            if (fullState && fullState.services && fullState.services.length > 0) {
-              notes += "Services: " + fullState.services.join(", ") + "\n";
-            }
-            if (fullState.siding && fullState.siding.walls && fullState.siding.walls.length > 0) {
-              const sidingSqft = fullState.siding.walls.reduce((a, w) => a + parseFloat(w.sqft || 0), 0);
-              if (sidingSqft > 0) notes += "Siding: " + sidingSqft.toFixed(0) + " sq ft\n";
-            }
-            if (fullState.soffit && fullState.soffit.items && fullState.soffit.items.length > 0) {
-              const soffitLf = fullState.soffit.items.reduce((a, i) => a + parseFloat(i.linearFt || 0), 0);
-              if (soffitLf > 0) notes += "Soffit: " + soffitLf.toFixed(0) + " linear ft\n";
-            }
-            if (fullState.fascia && fullState.fascia.items && fullState.fascia.items.length > 0) {
-              const fasciaLf = fullState.fascia.items.reduce((a, i) => a + parseFloat(i.linearFt || 0), 0);
-              if (fasciaLf > 0) notes += "Fascia: " + fasciaLf.toFixed(0) + " linear ft\n";
-            }
-            if (fullState.windows && fullState.windows.length > 0) {
-              const totalWin = fullState.windows.reduce((a, w) => a + parseFloat(w.qty || 1), 0);
-              notes += "Windows: " + totalWin + " unit(s)\n";
-            }
-            if (fullState.doors && fullState.doors.length > 0) {
-              notes += "Doors: " + fullState.doors.length + " unit(s)\n";
-            }
-            if (data.pricing) {
-              const t = calcGrandTotal(fullState || {});
-              if (t.standardTotal > 0) notes += "Contract Total: $" + t.standardTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            }
-            params.set("note", notes);
-            window.open("https://contacts.google.com/new?" + params.toString(), "_blank");
+            if (fs.services && fs.services.length > 0) notes += "Services: " + fs.services.join(", ") + "\n";
+            if (fs.siding && fs.siding.walls) { const s = fs.siding.walls.reduce((a,w) => a + parseFloat(w.sqft||0), 0); if (s > 0) notes += "Siding: " + s.toFixed(0) + " sq ft\n"; }
+            if (fs.soffit && fs.soffit.items) { const s = fs.soffit.items.reduce((a,i) => a + parseFloat(i.linearFt||0), 0); if (s > 0) notes += "Soffit: " + s.toFixed(0) + " linear ft\n"; }
+            if (fs.fascia && fs.fascia.items) { const s = fs.fascia.items.reduce((a,i) => a + parseFloat(i.linearFt||0), 0); if (s > 0) notes += "Fascia: " + s.toFixed(0) + " linear ft\n"; }
+            if (fs.windows && fs.windows.length > 0) notes += "Windows: " + fs.windows.reduce((a,w) => a + parseFloat(w.qty||1), 0) + " unit(s)\n";
+            if (fs.doors && fs.doors.length > 0) notes += "Doors: " + fs.doors.length + " unit(s)\n";
+            try { const t = calcGrandTotal(fs); if (t.standardTotal > 0) notes += "Contract Total: $" + t.standardTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch(e) {}
+            const parts = (data.name || "").trim().split(" ");
+            const fn = parts[0] || ""; const ln = parts.slice(1).join(" ");
+            const vcard = ["BEGIN:VCARD","VERSION:3.0","N:" + ln + ";" + fn + ";;;","FN:" + (data.name || ""),data.phone ? "TEL;TYPE=CELL:" + data.phone : "",data.email ? "EMAIL:" + data.email : "",data.address ? "ADR;TYPE=HOME:;;" + data.address.replace(/,/g, " ") + ";;;;" : "","ORG:NDC Prospect","NOTE:" + notes.replace(/\n/g, "\\n"),"END:VCARD"].filter(Boolean).join("\n");
+            const blob = new Blob([vcard], { type: "text/vcard" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a"); a.href = url; a.download = (data.name || "Contact").replace(/[^a-zA-Z0-9 ]/g,"").trim().replace(/ /g,"_") + ".vcf";
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
           }} style={{ width: "100%", background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 10, padding: "12px 16px", fontSize: 13, fontWeight: 700, color: "#0369a1", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-            📱 Save to Google Contacts
+            📱 Save to Contacts
           </button>
-          <div style={{ fontSize: 10, color: "#94a3b8", textAlign: "center", marginTop: 4 }}>Includes date, services, sq ft, and contract total — always pulls current info</div>
+          <div style={{ fontSize: 10, color: "#94a3b8", textAlign: "center", marginTop: 4 }}>Downloads contact card with services &amp; total — tap file to add to your phone</div>
         </div>
       )}
       <div style={S.field}>
