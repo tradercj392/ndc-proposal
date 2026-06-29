@@ -2121,7 +2121,24 @@ function DoorsStep({ doors, onChange }) {
               React.createElement("label", { style: { fontSize: 11, color: "#0369a1", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" } }, "PANEL CONFIGURATION"),
               React.createElement("select", { style: { ...S.input, fontSize: 13, padding: "6px 8px", borderColor: "#bae6fd" }, value: door.cwsConfig || "", onChange: e => update(door.id, "cwsConfig", e.target.value) },
                 React.createElement("option", { value: "" }, "-- Select Configuration --"),
-                DOOR_OPTS.slidingConfigs.map(o => React.createElement("option", { key: o }, o))
+                React.createElement("option", { value: "XO (2-panel)" }, "XO — 2 panel: LEFT slides open, right fixed"),
+                React.createElement("option", { value: "OX (2-panel)" }, "OX — 2 panel: RIGHT slides open, left fixed"),
+                React.createElement("option", { value: "OXO (3-panel)" }, "OXO — 3 panel: CENTER slides open, both ends fixed"),
+                React.createElement("option", { value: "XOO (3-panel)" }, "XOO — 3 panel: LEFT slides open, right two fixed"),
+                React.createElement("option", { value: "OOX (3-panel)" }, "OOX — 3 panel: RIGHT slides open, left two fixed"),
+                React.createElement("option", { value: "OXXO (4-panel)" }, "OXXO — 4 panel: TWO CENTER panels slide, outer panels fixed"),
+                React.createElement("option", { value: "OXOXO (5-panel)" }, "OXOXO — 5 panel: Panels 2 & 4 slide, panels 1, 3 & 5 fixed"),
+                React.createElement("option", { value: "OOXXOO (6-panel)" }, "OOXXOO — 6 panel: TWO CENTER panels slide, outer four fixed"),
+                React.createElement("option", { value: "Pocket Configuration" }, "Pocket — all panels slide and stack into wall pocket"),
+                React.createElement("option", { value: "Bypass Configuration" }, "Bypass — panels slide past each other on separate tracks"),
+              ),
+              React.createElement("div", { style: { background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 6, padding: "8px 10px", marginTop: 6 } },
+                React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: "#92400e", marginBottom: 4 } }, "⚠️ Industry Standard: All configurations read from OUTSIDE looking in"),
+                React.createElement("div", { style: { display: "flex", gap: 8 } },
+                  React.createElement("div", { style: { background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 5, padding: "3px 8px", fontSize: 10, fontWeight: 700, color: "#166534" } }, "X = Slides open"),
+                  React.createElement("div", { style: { background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 5, padding: "3px 8px", fontSize: 10, fontWeight: 700, color: "#1d4ed8" } }, "O = Fixed panel"),
+                  React.createElement("div", { style: { background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 5, padding: "3px 8px", fontSize: 10, fontWeight: 700, color: "#dc2626" } }, "From inside = REVERSED")
+                )
               )
             ),
 
