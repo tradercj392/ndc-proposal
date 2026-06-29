@@ -3610,7 +3610,7 @@ function App() {
       name: fileName,
       clientName: name,
       savedAt: new Date().toISOString(),
-      services: state.services,
+      services: Array.isArray(state.services) ? state.services : [],
       state: state,
       step: step,
     };
@@ -3910,7 +3910,7 @@ function App() {
                         {p.clientName}
                       </div>
                       <div style={{ fontSize: 11, color: "#64748b" }}>{dateLabel} at {timeLabel}</div>
-                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{(p.services || []).join(", ")}</div>
+                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{(Array.isArray(p.services) ? p.services : []).join(", ")}</div>
                     </div>
                     <div style={{ display: "flex", gap: 8, marginLeft: 12 }}>
                       <button onClick={() => loadProposal(p)} style={{ background: "#0f172a", color: "white", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Resume</button>
