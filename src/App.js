@@ -3592,7 +3592,11 @@ function App() {
 
   // ── Saved Proposals ──────────────────────────────────────────────────────
   const [savedProposals, setSavedProposals] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("ndc_saved_proposals") || "[]"); } catch { return []; }
+    try {
+      const raw = JSON.parse(localStorage.getItem("ndc_saved_proposals") || "[]");
+      // Sanitize — ensure services is always an array
+      return raw.map(p => ({ ...p, services: Array.isArray(p.services) ? p.services : [] }));
+    } catch { return []; }
   });
   const [showSavedList, setShowSavedList] = useState(false);
   const [currentProposalId, setCurrentProposalId] = useState(() => localStorage.getItem("ndc_current_id") || null);
