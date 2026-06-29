@@ -114,6 +114,7 @@ const makeCreditApp = () => ({
 const makeInitialState = () => ({
   company: { name: "New Direction Construction", address: "820 Worth Rd, Jacksonville, FL 32259", phone: "(904) 891-9980", email: "", license: "CBC059304", logo: NDC_LOGO },
   customer: { name: "", address: "", email: "", phone: "", photo: null, county: "" },
+  jobPhotos: [],
   proposalVersion: 1,
   services: [],
   isFinancing: false,
@@ -1962,21 +1963,48 @@ function WindowsStep({ windows, onChange }) {
 const DOOR_OPTS = {
   doorTypes: ["Sliding Glass Door", "Front Door", "Single French Door", "Double French Door"],
   manufacturersByType: {
-    "Sliding Glass Door": ["CWS (Custom Window Systems)", "Pella", "Simonton", "PGT WinGuard", "Other"],
+    "Sliding Glass Door": ["CWS (Custom Window Systems)", "PGT WinGuard", "Pella", "Simonton", "Other"],
     "Front Door": ["Therma-Tru", "ProVia", "Other"],
     "Single French Door": ["CWS (Custom Window Systems)", "Jeld-Wen", "ProVia", "Therma-Tru", "Other"],
     "Double French Door": ["CWS (Custom Window Systems)", "Jeld-Wen", "ProVia", "Therma-Tru", "Other"],
   },
   seriesByManufacturer: {
-    "CWS (Custom Window Systems)": ["WindPact Plus (Vinyl Impact - Sliding)", "ComfortShield (Vinyl Non-Impact - Sliding)", "StormStrong (Vinyl Impact - Sliding)", "WindPact Plus (Vinyl Impact - French)", "ComfortShield (Vinyl Non-Impact - French)", "ICON Series (Aluminum Impact - French)", "Aria (Aluminum Impact - French)"],
-    "Therma-Tru": ["Smooth-Star (Fiberglass)", "Fiber-Classic (Fiberglass)", "Classic-Craft (Premium Fiberglass)", "Veris (Modern Aluminum/Fiberglass)", "Smooth-Star Steel"],
-    "ProVia": ["Heritage (Fiberglass)", "Signet (Premium Fiberglass)", "Legacy (Steel)", "Embarq (Premium)"],
-    "Jeld-Wen": ["Smooth-Pro (Fiberglass)", "W-2500 (Wood)", "Aurora (Steel)", "V-2500 (Vinyl)"],
-    "Pella": ["250 Series (Vinyl)", "350 Series", "Impervia (Fiberglass)", "Reserve (Clad-Wood)", "Lifestyle Series"],
-    "Simonton": ["PassageLine", "Reflections 5500", "StormBreaker Plus (Impact)", "Contemporary"],
-    "PGT WinGuard": ["WinGuard Aluminum (Impact)", "WinGuard Vinyl (Impact)", "WinDoor (Premium Impact)"],
+    "CWS (Custom Window Systems)": {
+      "Sliding Glass Door": ["WindPact Plus (Vinyl Impact)", "ComfortShield (Vinyl Non-Impact)", "StormStrong (Vinyl Impact)", "ICON Series (Aluminum Impact)", "Aria (Aluminum Impact)"],
+      "Single French Door": ["WindPact Plus (Vinyl Impact - French)", "ComfortShield (Vinyl Non-Impact - French)", "ICON Series (Aluminum Impact - French)"],
+      "Double French Door": ["WindPact Plus (Vinyl Impact - French)", "ComfortShield (Vinyl Non-Impact - French)", "ICON Series (Aluminum Impact - French)"],
+      "default": ["WindPact Plus (Vinyl Impact)", "ComfortShield (Vinyl Non-Impact)", "StormStrong (Vinyl Impact)"],
+    },
+    "PGT WinGuard": {
+      "Sliding Glass Door": ["WinGuard Aluminum Preferred (SGD5570)", "WinGuard Aluminum Preferred View (SGD5570NS)", "WinGuard Aluminum Premium (SGD780)", "WinGuard Vinyl (SGD5570V)"],
+      "default": ["WinGuard Aluminum (Impact)", "WinGuard Vinyl (Impact)"],
+    },
+    "Therma-Tru": { "default": ["Smooth-Star (Fiberglass)", "Fiber-Classic (Fiberglass)", "Classic-Craft (Premium Fiberglass)", "Veris (Modern Aluminum/Fiberglass)", "Smooth-Star Steel"] },
+    "ProVia": { "default": ["Heritage (Fiberglass)", "Signet (Premium Fiberglass)", "Legacy (Steel)", "Embarq (Premium)"] },
+    "Jeld-Wen": { "default": ["Smooth-Pro (Fiberglass)", "W-2500 (Wood)", "Aurora (Steel)", "V-2500 (Vinyl)"] },
+    "Pella": {
+      "Sliding Glass Door": ["Impervia (Fiberglass Impact)", "250 Series (Vinyl)", "350 Series", "Lifestyle Series"],
+      "default": ["250 Series (Vinyl)", "350 Series", "Impervia (Fiberglass)", "Reserve (Clad-Wood)", "Lifestyle Series"],
+    },
+    "Simonton": { "default": ["PassageLine", "Reflections 5500", "StormBreaker Plus (Impact)", "Contemporary"] },
   },
-  cwsSlidingConfigs: ["XO (2-panel)", "OX (2-panel)", "OXO (3-panel)", "OXXO (4-panel)", "OOX (3-panel)", "XOO (3-panel)", "OOXXOO (6-panel)"],
+  // Sliding door panel configurations
+  slidingConfigs: ["XO (2-panel)", "OX (2-panel)", "OXO (3-panel)", "OXXO (4-panel)", "OOX (3-panel)", "XOO (3-panel)", "OXOXO (5-panel)", "OOXXOO (6-panel)", "Pocket Configuration", "Bypass Configuration"],
+  // Sliding door specific options
+  slidingGlassOptions: ["Laminated Impact (Standard)", "Laminated Low-E Impact", "Laminated Insulating Low-E Impact", "Tempered (Non-Impact)", "Tempered Low-E (Non-Impact)", "Blinds Between Glass (Low-E)"],
+  slidingGlassTints: ["Clear", "Bronze", "Gray", "Green (Energy Tint)"],
+  slidingHandleStyles: ["Raised Pull Handle (Standard)", "Recessed Pull Handle", "Color-Matched Handle"],
+  slidingScreenOptions: ["Heavy-Duty Screen (Standard)", "No Screen", "Pet-Resistant Screen (Upgrade)"],
+  slidingGridOptions: ["No Grids", "Colonial Grid", "Prairie Grid", "Custom Grid Pattern"],
+  slidingAddOns: ["Blinds Between Glass", "Secondary Lock (Foot Bolt)", "Keyed Lock", "None"],
+  // Swing door options
+  glassOptions: ["Full Lite (Full Glass)", "3/4 Lite", "1/2 Lite (Half Glass)", "1/4 Lite (Quarter Glass)", "Blinds Between Glass", "Decorative / Art Glass", "Privacy Glass", "No Glass / Solid Panel"],
+  impactOptions: ["Impact (Laminated)", "Non-Impact"],
+  hardwareFinishes: ["Brushed Nickel", "Oil Rubbed Bronze", "Matte Black", "Satin Brass", "Chrome", "Antique Brass", "Aged Bronze", "Client Supplying Own Hardware"],
+  swingDirections: ["Left-Hand Inswing", "Right-Hand Inswing", "Left-Hand Outswing", "Right-Hand Outswing"],
+  sidelightPositions: ["Left Side Only", "Right Side Only", "Both Sides"],
+  jambMaterials: ["Composite", "Wood-Clad"],
+  thresholdFinishes: ["Mill Finish Aluminum (Standard)", "Black Aluminum", "Stainless Steel (Coastal)"],
   materialsByManufacturer: {
     "CWS (Custom Window Systems)": ["Vinyl", "Aluminum"],
     "Therma-Tru": ["Fiberglass", "Steel"],
@@ -1989,6 +2017,7 @@ const DOOR_OPTS = {
   },
   colorsByManufacturer: {
     "CWS (Custom Window Systems)": ["White", "Bronze", "Black", "Tan", "Custom Color"],
+    "PGT WinGuard": ["White", "Bronze", "Tan / Adobe", "Black (Exterior Only)", "Custom Color"],
     "Therma-Tru": ["White", "Black", "Fiesta Red", "Coastal Blue", "Cypress", "Wicker", "Custom Paint (Any Color)"],
     "ProVia": ["White", "Black (Coal Black)", "Coffee Bean", "Sea Green", "Snow Mist White", "American Cherry Stain", "Custom Color"],
     "Jeld-Wen": ["White", "Black", "Earl Grey", "Warm Toffee", "Primed (Paintable)", "Natural Wood Stain", "Custom Color"],
@@ -1996,31 +2025,17 @@ const DOOR_OPTS = {
     "Simonton": ["White", "Desert Sand", "Bronze", "Tan", "Black"],
     "default": ["White", "Bronze", "Black", "Tan / Beige", "Gray", "Cream", "Custom Color"],
   },
-  glassOptions: ["Full Lite (Full Glass)", "3/4 Lite", "1/2 Lite (Half Glass)", "1/4 Lite (Quarter Glass)", "Blinds Between Glass", "Decorative / Art Glass", "Privacy Glass", "No Glass / Solid Panel"],
-  impactOptions: ["Impact (Laminated)", "Non-Impact"],
-  hardwareFinishes: ["Brushed Nickel", "Oil Rubbed Bronze", "Matte Black", "Satin Brass", "Chrome", "Antique Brass", "Aged Bronze", "Client Supplying Own Hardware"],
-  swingDirections: ["Left-Hand Inswing", "Right-Hand Inswing", "Left-Hand Outswing", "Right-Hand Outswing"],
-  sidelightPositions: ["Left Side Only", "Right Side Only", "Both Sides"],
-  jambMaterials: ["Composite", "Wood-Clad"],
-  thresholdFinishes: ["Mill Finish Aluminum (Standard)", "Black Aluminum", "Stainless Steel (Coastal)"],
-  // Size limits in inches
   sizeLimits: {
     "Sliding Glass Door": {
+      "PGT WinGuard": { minW: 60, maxW: 480, minH: 78, maxH: 120 },
+      "CWS (Custom Window Systems)": { minW: 60, maxW: 144, minH: 78, maxH: 96 },
       "Pella": { minW: 60, maxW: 144, minH: 78, maxH: 96 },
       "Simonton": { minW: 60, maxW: 120, minH: 78, maxH: 96 },
-      "CWS (Custom Window Systems)": { minW: 60, maxW: 120, minH: 78, maxH: 96 },
-      "PGT WinGuard": { minW: 60, maxW: 120, minH: 78, maxH: 96 },
-      "default": { minW: 60, maxW: 120, minH: 78, maxH: 96 },
+      "default": { minW: 60, maxW: 144, minH: 78, maxH: 96 },
     },
-    "Front Door": {
-      "default": { minW: 30, maxW: 42, minH: 80, maxH: 96 },
-    },
-    "Single French Door": {
-      "default": { minW: 30, maxW: 42, minH: 80, maxH: 96 },
-    },
-    "Double French Door": {
-      "default": { minW: 60, maxW: 84, minH: 80, maxH: 96 },
-    },
+    "Front Door": { "default": { minW: 30, maxW: 42, minH: 80, maxH: 96 } },
+    "Single French Door": { "default": { minW: 30, maxW: 42, minH: 80, maxH: 96 } },
+    "Double French Door": { "default": { minW: 60, maxW: 84, minH: 80, maxH: 96 } },
   },
 };
 
@@ -2059,6 +2074,7 @@ function DoorsStep({ doors, onChange }) {
   );
 
   const hasSidelightOption = (d) => ["Front Door", "Single French Door", "Double French Door"].includes(d.doorType);
+  const isSliding = (d) => d.doorType === "Sliding Glass Door";
 
   return (
     React.createElement("div", { style: S.stepWrap },
@@ -2066,16 +2082,19 @@ function DoorsStep({ doors, onChange }) {
       React.createElement("p", { style: S.stepSub }, "Add entry doors, sliding glass doors, and French doors with full specifications."),
       doors.map((door) => {
         const mfrs = door.doorType ? (DOOR_OPTS.manufacturersByType[door.doorType] || ["Other"]) : null;
-        const series = door.manufacturer ? (DOOR_OPTS.seriesByManufacturer[door.manufacturer] || null) : null;
+        const mfrSeriesMap = door.manufacturer ? (DOOR_OPTS.seriesByManufacturer[door.manufacturer] || null) : null;
+        const series = mfrSeriesMap ? (mfrSeriesMap[door.doorType] || mfrSeriesMap["default"] || null) : null;
         const materials = door.manufacturer ? (DOOR_OPTS.materialsByManufacturer[door.manufacturer] || DOOR_OPTS.materialsByManufacturer["default"]) : DOOR_OPTS.materialsByManufacturer["default"];
         const colors = door.manufacturer ? (DOOR_OPTS.colorsByManufacturer[door.manufacturer] || DOOR_OPTS.colorsByManufacturer["default"]) : DOOR_OPTS.colorsByManufacturer["default"];
         const sizeCheck = validateDoorSize(door.doorType, door.manufacturer, door.width, door.height);
         const limits = door.doorType ? getDoorSizeLimits(door.doorType, door.manufacturer) : null;
+        const sliding = isSliding(door);
+
         return React.createElement("div", { key: door.id, style: { ...S.card, marginBottom: 16 } },
           // Header
           React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 } },
             React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
-              React.createElement("div", { style: { fontSize: 20 } }, "🚪"),
+              React.createElement("div", { style: { fontSize: 20 } }, sliding ? "🪟" : "🚪"),
               React.createElement("input", { style: { ...S.input, fontWeight: 800, fontSize: 14, width: 160 }, value: door.label, onChange: e => update(door.id, "label", e.target.value) })
             ),
             doors.length > 1 && React.createElement("button", { onClick: () => remove(door.id), style: { background: "none", border: "none", color: "#ef4444", fontSize: 18, cursor: "pointer" } }, "✕")
@@ -2084,7 +2103,7 @@ function DoorsStep({ doors, onChange }) {
           // Door Type
           React.createElement(Sel, { label: "DOOR TYPE", field: "doorType", door, options: DOOR_OPTS.doorTypes, highlight: true }),
 
-          // Manufacturer — filtered by door type
+          // Manufacturer
           mfrs && React.createElement(Sel, { label: "MANUFACTURER", field: "manufacturer", door, options: mfrs }),
           door.manufacturer === "Other" && React.createElement("div", { style: { marginBottom: 10 } },
             React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase" } }, "MANUFACTURER NAME"),
@@ -2094,43 +2113,135 @@ function DoorsStep({ doors, onChange }) {
           // Series
           series && React.createElement(Sel, { label: "SERIES / PRODUCT LINE", field: "series", door, options: series, highlight: true }),
 
-          // CWS Sliding Configuration
-          door.manufacturer === "CWS (Custom Window Systems)" && door.doorType === "Sliding Glass Door" && React.createElement("div", { style: { marginBottom: 10 } },
-            React.createElement("label", { style: { fontSize: 11, color: "#0369a1", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" } }, "PANEL CONFIGURATION"),
-            React.createElement("select", { style: { ...S.input, fontSize: 13, padding: "6px 8px", borderColor: "#bae6fd" }, value: door.cwsConfig || "", onChange: e => update(door.id, "cwsConfig", e.target.value) },
-              React.createElement("option", { value: "" }, "-- Select Configuration --"),
-              DOOR_OPTS.cwsSlidingConfigs.map(o => React.createElement("option", { key: o }, o))
+          // ── SLIDING GLASS DOOR SPECIFIC FIELDS ──
+          sliding && React.createElement(React.Fragment, null,
+
+            // Panel Configuration
+            React.createElement("div", { style: { marginBottom: 10 } },
+              React.createElement("label", { style: { fontSize: 11, color: "#0369a1", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" } }, "PANEL CONFIGURATION"),
+              React.createElement("select", { style: { ...S.input, fontSize: 13, padding: "6px 8px", borderColor: "#bae6fd" }, value: door.cwsConfig || "", onChange: e => update(door.id, "cwsConfig", e.target.value) },
+                React.createElement("option", { value: "" }, "-- Select Configuration --"),
+                DOOR_OPTS.slidingConfigs.map(o => React.createElement("option", { key: o }, o))
+              )
+            ),
+
+            // Frame Material
+            React.createElement(Sel, { label: "FRAME MATERIAL", field: "material", door, options: materials }),
+
+            // Impact toggle
+            React.createElement("div", { style: { marginBottom: 10 } },
+              React.createElement("label", { style: { fontSize: 11, color: "#0369a1", fontWeight: 700, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" } }, "IMPACT / NON-IMPACT"),
+              React.createElement("div", { style: { display: "flex", gap: 8 } },
+                DOOR_OPTS.impactOptions.map(opt => React.createElement("div", { key: opt, onClick: () => update(door.id, "impactOption", opt), style: { flex: 1, textAlign: "center", padding: "8px 4px", borderRadius: 8, border: "2px solid " + (door.impactOption === opt ? "#0369a1" : "#e2e8f0"), background: door.impactOption === opt ? "#f0f9ff" : "white", cursor: "pointer", fontSize: 12, fontWeight: 700, color: door.impactOption === opt ? "#0369a1" : "#64748b" } }, opt))
+              )
+            ),
+
+            // Glass Package + Glass Tint
+            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 } },
+              React.createElement("div", null,
+                React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase" } }, "GLASS PACKAGE"),
+                React.createElement("select", { style: { ...S.input, fontSize: 13, padding: "6px 8px" }, value: door.glassOption || "", onChange: e => update(door.id, "glassOption", e.target.value) },
+                  React.createElement("option", { value: "" }, "-- Select --"),
+                  DOOR_OPTS.slidingGlassOptions.map(o => React.createElement("option", { key: o }, o))
+                )
+              ),
+              React.createElement("div", null,
+                React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase" } }, "GLASS TINT"),
+                React.createElement("select", { style: { ...S.input, fontSize: 13, padding: "6px 8px" }, value: door.glassTint || "", onChange: e => update(door.id, "glassTint", e.target.value) },
+                  React.createElement("option", { value: "" }, "-- Select --"),
+                  DOOR_OPTS.slidingGlassTints.map(o => React.createElement("option", { key: o }, o))
+                )
+              )
+            ),
+
+            // Frame Color + Handle Style
+            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 } },
+              React.createElement("div", null,
+                React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase" } }, "FRAME COLOR"),
+                React.createElement("select", { style: { ...S.input, fontSize: 13, padding: "6px 8px" }, value: door.color || "", onChange: e => update(door.id, "color", e.target.value) },
+                  React.createElement("option", { value: "" }, "-- Select --"),
+                  colors.map(o => React.createElement("option", { key: o }, o))
+                )
+              ),
+              React.createElement("div", null,
+                React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase" } }, "HANDLE STYLE"),
+                React.createElement("select", { style: { ...S.input, fontSize: 13, padding: "6px 8px" }, value: door.handleStyle || "", onChange: e => update(door.id, "handleStyle", e.target.value) },
+                  React.createElement("option", { value: "" }, "-- Select --"),
+                  DOOR_OPTS.slidingHandleStyles.map(o => React.createElement("option", { key: o }, o))
+                )
+              )
+            ),
+
+            // Screen + Grids
+            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 } },
+              React.createElement("div", null,
+                React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase" } }, "SCREEN"),
+                React.createElement("select", { style: { ...S.input, fontSize: 13, padding: "6px 8px" }, value: door.screen || "", onChange: e => update(door.id, "screen", e.target.value) },
+                  React.createElement("option", { value: "" }, "-- Select --"),
+                  DOOR_OPTS.slidingScreenOptions.map(o => React.createElement("option", { key: o }, o))
+                )
+              ),
+              React.createElement("div", null,
+                React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase" } }, "GRIDS / GRILLES"),
+                React.createElement("select", { style: { ...S.input, fontSize: 13, padding: "6px 8px" }, value: door.grids || "", onChange: e => update(door.id, "grids", e.target.value) },
+                  React.createElement("option", { value: "" }, "-- Select --"),
+                  DOOR_OPTS.slidingGridOptions.map(o => React.createElement("option", { key: o }, o))
+                )
+              )
+            ),
+
+            // Add-ons
+            React.createElement("div", { style: { marginBottom: 10 } },
+              React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase" } }, "ADD-ONS / OPTIONS"),
+              React.createElement("select", { style: { ...S.input, fontSize: 13, padding: "6px 8px" }, value: door.addOns || "", onChange: e => update(door.id, "addOns", e.target.value) },
+                React.createElement("option", { value: "" }, "-- Select --"),
+                DOOR_OPTS.slidingAddOns.map(o => React.createElement("option", { key: o }, o))
+              )
             )
           ),
 
-          // Material
-          React.createElement(Sel, { label: "DOOR MATERIAL", field: "material", door, options: materials }),
+          // ── SWING DOOR SPECIFIC FIELDS (Front Door / French Door) ──
+          !sliding && React.createElement(React.Fragment, null,
+            // Material
+            React.createElement(Sel, { label: "DOOR MATERIAL", field: "material", door, options: materials }),
 
-          // Impact toggle
-          React.createElement("div", { style: { marginBottom: 10 } },
-            React.createElement("label", { style: { fontSize: 11, color: "#0369a1", fontWeight: 700, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" } }, "IMPACT / NON-IMPACT"),
-            React.createElement("div", { style: { display: "flex", gap: 8 } },
-              DOOR_OPTS.impactOptions.map(opt => React.createElement("div", { key: opt, onClick: () => update(door.id, "impactOption", opt), style: { flex: 1, textAlign: "center", padding: "8px 4px", borderRadius: 8, border: "2px solid " + (door.impactOption === opt ? "#0369a1" : "#e2e8f0"), background: door.impactOption === opt ? "#f0f9ff" : "white", cursor: "pointer", fontSize: 12, fontWeight: 700, color: door.impactOption === opt ? "#0369a1" : "#64748b" } }, opt))
+            // Impact toggle
+            React.createElement("div", { style: { marginBottom: 10 } },
+              React.createElement("label", { style: { fontSize: 11, color: "#0369a1", fontWeight: 700, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" } }, "IMPACT / NON-IMPACT"),
+              React.createElement("div", { style: { display: "flex", gap: 8 } },
+                DOOR_OPTS.impactOptions.map(opt => React.createElement("div", { key: opt, onClick: () => update(door.id, "impactOption", opt), style: { flex: 1, textAlign: "center", padding: "8px 4px", borderRadius: 8, border: "2px solid " + (door.impactOption === opt ? "#0369a1" : "#e2e8f0"), background: door.impactOption === opt ? "#f0f9ff" : "white", cursor: "pointer", fontSize: 12, fontWeight: 700, color: door.impactOption === opt ? "#0369a1" : "#64748b" } }, opt))
+              )
+            ),
+
+            // Glass + Color + Swing + Hardware + Jamb + Threshold
+            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } },
+              React.createElement(Sel, { label: "GLASS OPTION", field: "glassOption", door, options: DOOR_OPTS.glassOptions }),
+              React.createElement(Sel, { label: "COLOR", field: "color", door, options: colors }),
+              React.createElement(Sel, { label: "SWING DIRECTION", field: "swingDirection", door, options: DOOR_OPTS.swingDirections }),
+              React.createElement(Sel, { label: "HARDWARE FINISH", field: "hardwareFinish", door, options: DOOR_OPTS.hardwareFinishes }),
+              React.createElement(Sel, { label: "JAMB MATERIAL", field: "jambMaterial", door, options: DOOR_OPTS.jambMaterials }),
+              React.createElement(Sel, { label: "THRESHOLD FINISH", field: "thresholdFinish", door, options: DOOR_OPTS.thresholdFinishes }),
+            ),
+
+            // Sidelights
+            hasSidelightOption(door) && React.createElement("div", { style: { marginBottom: 10, marginTop: 10 } },
+              React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: door.hasSidelights ? 8 : 0, cursor: "pointer" }, onClick: () => update(door.id, "hasSidelights", !door.hasSidelights) },
+                React.createElement("div", { style: { position: "relative", width: 38, height: 22, borderRadius: 11, background: door.hasSidelights ? "#0ea5e9" : "#cbd5e1", cursor: "pointer", flexShrink: 0 } },
+                  React.createElement("div", { style: { position: "absolute", top: 2, left: door.hasSidelights ? 18 : 2, width: 18, height: 18, borderRadius: "50%", background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" } })
+                ),
+                React.createElement("span", { style: { fontSize: 12, fontWeight: 700, color: door.hasSidelights ? "#0369a1" : "#64748b" } }, "Includes Sidelights")
+              ),
+              door.hasSidelights && React.createElement(Sel, { label: "SIDELIGHT POSITION", field: "sidelightPosition", door, options: DOOR_OPTS.sidelightPositions })
             )
           ),
 
-          // Glass + Color + Swing grid
-          React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } },
-            React.createElement(Sel, { label: "GLASS OPTION", field: "glassOption", door, options: DOOR_OPTS.glassOptions }),
-            React.createElement(Sel, { label: "COLOR", field: "color", door, options: colors }),
-            React.createElement(Sel, { label: "SWING DIRECTION", field: "swingDirection", door, options: DOOR_OPTS.swingDirections }),
-            React.createElement(Sel, { label: "HARDWARE FINISH", field: "hardwareFinish", door, options: DOOR_OPTS.hardwareFinishes }),
-            React.createElement(Sel, { label: "JAMB MATERIAL", field: "jambMaterial", door, options: DOOR_OPTS.jambMaterials }),
-            React.createElement(Sel, { label: "THRESHOLD FINISH", field: "thresholdFinish", door, options: DOOR_OPTS.thresholdFinishes }),
-          ),
-
-          // Measurements with validation
-          React.createElement("div", { style: { marginBottom: 10 } },
-            React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" } }, "DIMENSIONS"),
+          // Measurements — shared
+          React.createElement("div", { style: { marginBottom: 10, marginTop: 10 } },
+            React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" } }, "DIMENSIONS (Overall Opening)"),
             React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "flex-start", flexWrap: "wrap" } },
               React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 4 } },
                 React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 600 } }, "Width (in)"),
-                React.createElement("input", { style: { ...S.input, padding: "6px 8px", fontSize: 13, width: 90, borderColor: sizeCheck && !sizeCheck.valid ? "#ef4444" : sizeCheck && sizeCheck.valid ? "#22c55e" : undefined }, type: "number", value: door.width || "", onChange: e => update(door.id, "width", e.target.value), placeholder: "e.g. 36" })
+                React.createElement("input", { style: { ...S.input, padding: "6px 8px", fontSize: 13, width: 90, borderColor: sizeCheck && !sizeCheck.valid ? "#ef4444" : sizeCheck && sizeCheck.valid ? "#22c55e" : undefined }, type: "number", value: door.width || "", onChange: e => update(door.id, "width", e.target.value), placeholder: "e.g. 72" })
               ),
               React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 4 } },
                 React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 600 } }, "Height (in)"),
@@ -2142,24 +2253,14 @@ function DoorsStep({ doors, onChange }) {
                   : React.createElement("div", { style: { background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 8, padding: "6px 10px", fontSize: 11, color: "#dc2626", fontWeight: 700 } }, "⚠ " + sizeCheck.errors.join(" | "))
               )
             ),
-            limits && React.createElement("div", { style: { fontSize: 10, color: "#94a3b8", marginTop: 4 } }, "Size range: W " + limits.minW + "in\u2013" + limits.maxW + "in \u00d7 H " + limits.minH + "in\u2013" + limits.maxH + "in")
-          ),
-
-          // Sidelights
-          hasSidelightOption(door) && React.createElement("div", { style: { marginBottom: 10 } },
-            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: door.hasSidelights ? 8 : 0, cursor: "pointer" }, onClick: () => update(door.id, "hasSidelights", !door.hasSidelights) },
-              React.createElement("div", { style: { position: "relative", width: 38, height: 22, borderRadius: 11, background: door.hasSidelights ? "#0ea5e9" : "#cbd5e1", cursor: "pointer", flexShrink: 0 } },
-                React.createElement("div", { style: { position: "absolute", top: 2, left: door.hasSidelights ? 18 : 2, width: 18, height: 18, borderRadius: "50%", background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" } })
-              ),
-              React.createElement("span", { style: { fontSize: 12, fontWeight: 700, color: door.hasSidelights ? "#0369a1" : "#64748b" } }, "Includes Sidelights")
-            ),
-            door.hasSidelights && React.createElement(Sel, { label: "SIDELIGHT POSITION", field: "sidelightPosition", door, options: DOOR_OPTS.sidelightPositions })
+            limits && React.createElement("div", { style: { fontSize: 10, color: "#94a3b8", marginTop: 4 } }, "Size range: W " + limits.minW + "in–" + limits.maxW + "in × H " + limits.minH + "in–" + limits.maxH + "in"),
+            sliding && React.createElement("div", { style: { fontSize: 10, color: "#64748b", marginTop: 4, fontStyle: "italic" } }, "Enter overall opening size — individual panel width = total width ÷ number of panels")
           ),
 
           // Notes
           React.createElement("div", { style: { marginTop: 6 } },
             React.createElement("label", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase" } }, "NOTES"),
-            React.createElement("textarea", { style: { ...S.input, height: 60, resize: "vertical", fontSize: 13 }, value: door.notes || "", onChange: e => update(door.id, "notes", e.target.value), placeholder: "e.g. remove existing door, demo frame, coastal hardware required..." })
+            React.createElement("textarea", { style: { ...S.input, height: 60, resize: "vertical", fontSize: 13 }, value: door.notes || "", onChange: e => update(door.id, "notes", e.target.value), placeholder: sliding ? "e.g. replace existing track, structural header needed, coastal hardware..." : "e.g. remove existing door, demo frame, coastal hardware required..." })
           )
         );
       }),
@@ -2451,22 +2552,6 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
     if (info.detail && info.detail.length > 0) {
       body += `<div style='font-size:9.5px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px'>Details</div>`;
       info.detail.forEach(d => { const isTotal = d.startsWith("Total:"); body += isTotal ? `<div style='font-size:11px;color:#0f172a;font-weight:800;line-height:1.8;padding:5px 0;border-top:1.5px solid #e2e8f0;margin-top:2px'>${d}</div>` : `<div style='font-size:10.5px;color:#334155;line-height:1.8;padding:3px 0;border-bottom:1px solid #f8fafc'>&bull; ${d}</div>`; });
-    }
-
-    // Wall photos — siding only
-    if (svc === "siding" && mode === "pdf") {
-      const wallsWithPhotos = state.siding.walls.filter(w => (w.photos && w.photos.length > 0) || w.photo);
-      if (wallsWithPhotos.length > 0) {
-        body += `<div style='font-size:9.5px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.8px;margin:12px 0 8px'>Wall Photos</div>`;
-        body += `<div style='display:flex;flex-wrap:wrap;gap:8px'>`;
-        wallsWithPhotos.forEach(w => {
-          const photos = w.photos && w.photos.length > 0 ? w.photos : (w.photo ? [w.photo] : []);
-          photos.forEach((photo, idx) => {
-            body += `<div style='flex:0 0 calc(50% - 4px)'><div style='font-size:9px;color:#64748b;margin-bottom:3px'>${w.location || w.label}${photos.length > 1 ? " (" + (idx + 1) + ")" : ""}</div><img src='${photo}' style='width:100%;height:140px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0'/></div>`;
-          });
-        });
-        body += `</div>`;
-      }
     }
 
     // ── Materials list — pdf only ──
@@ -2764,6 +2849,33 @@ function buildProposalHTML(state, selectedOption, mode, extras) {
     body += `<div style='font-size:11px;color:#475569;line-height:1.7;margin-bottom:6px'>We'd love to hear about your experience. Your review helps other homeowners in Jacksonville make confident decisions about their home improvement projects.</div>`;
     body += `<div style='font-size:10px;color:#0369a1;font-weight:700'>&#11088; Scan the QR code or visit: new-direction-construction.com</div>`;
     body += `</div></div>`;
+
+    // ── Job Photos section — above Terms & Conditions ──
+    const jobPhotos = state.jobPhotos || [];
+    // Also collect wall photos from siding
+    const wallPhotos = [];
+    if (state.siding && state.siding.walls) {
+      state.siding.walls.forEach(w => {
+        const photos = w.photos && w.photos.length > 0 ? w.photos : (w.photo ? [w.photo] : []);
+        photos.forEach((src, idx) => {
+          wallPhotos.push({ src, notes: (w.location || w.label) + (photos.length > 1 ? " (" + (idx + 1) + ")" : "") });
+        });
+      });
+    }
+    const allPhotos = [...jobPhotos.map(p => ({ src: p.src, notes: p.notes || "" })), ...wallPhotos];
+    if (allPhotos.length > 0) {
+      body += `<div class='sec' style='page-break-before:auto'><div class='lbl' style='display:flex;align-items:center;gap:8px'>📷 Job Site Photos</div>`;
+      body += `<div style='display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px'>`;
+      allPhotos.forEach((photo, idx) => {
+        body += `<div style='break-inside:avoid;page-break-inside:avoid'>`;
+        body += `<img src='${photo.src}' style='width:100%;height:220px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;display:block'/>`;
+        if (photo.notes) {
+          body += `<div style='margin-top:6px;font-size:10px;color:#334155;font-weight:600;background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:6px 8px;line-height:1.5'>${photo.notes}</div>`;
+        }
+        body += `</div>`;
+      });
+      body += `</div></div>`;
+    }
 
     body += `<div class='sec'><div class='lbl'>Terms and Conditions</div>`;
     tcItems.forEach((tc, i) => {
@@ -3213,6 +3325,7 @@ function buildSteps(services, isFinancing) {
   if (services.includes("windows")) steps.push({ key: "windows",  label: "Windows"  });
   if (services.includes("doors"))   steps.push({ key: "doors",    label: "Doors"    });
   if (services.includes("misc"))    steps.push({ key: "misc",     label: "Misc"     });
+  steps.push({ key: "photos",    label: "Photos"   });
   steps.push({ key: "preview",   label: "Preview"  });
   steps.push({ key: "contract",  label: "Contract" });
   if (isFinancing) steps.push({ key: "creditapp", label: "Credit App", emoji: "💳" });
@@ -3231,6 +3344,50 @@ function Field({ label, value, onChange, placeholder, type = "text" }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // App
 // ─────────────────────────────────────────────────────────────────────────────
+function PhotosStep({ photos, onChange }) {
+  const addPhoto = (src) => {
+    onChange([...photos, { id: uid(), src, notes: "" }]);
+  };
+  const removePhoto = (id) => onChange(photos.filter(p => p.id !== id));
+  const updateNotes = (id, notes) => onChange(photos.map(p => p.id === id ? { ...p, notes } : p));
+
+  return (
+    <div style={S.stepWrap}>
+      <h2 style={S.stepTitle}>Job Photos</h2>
+      <p style={S.stepSub}>Add photos of the job site. Include notes so the office knows what each photo shows.</p>
+
+      {photos.map((photo, idx) => (
+        <div key={photo.id} style={{ ...S.card, marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>Photo {idx + 1}</span>
+            <button onClick={() => removePhoto(photo.id)} style={S.removeBtn}>×</button>
+          </div>
+          <img src={photo.src} alt={"Photo " + (idx + 1)} style={{ width: "100%", maxHeight: 280, objectFit: "cover", borderRadius: 8, border: "1px solid #e2e8f0", marginBottom: 10 }} />
+          <label style={{ fontSize: 11, color: "#64748b", fontWeight: 700, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>Notes</label>
+          <textarea
+            value={photo.notes || ""}
+            onChange={e => updateNotes(photo.id, e.target.value)}
+            placeholder="e.g. North wall — rotted wood behind existing siding, Front door — frame damage at bottom..."
+            style={{ ...S.input, height: 70, resize: "vertical", fontSize: 13 }}
+          />
+        </div>
+      ))}
+
+      <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer", background: "#f8fafc", border: "2px dashed #cbd5e1", borderRadius: 10, padding: "16px", fontSize: 13, color: "#475569", marginBottom: 8 }}>
+        <span style={{ fontSize: 24 }}>📷</span>
+        <span>{photos.length > 0 ? "Add Another Photo (" + photos.length + " added)" : "Tap to Take or Upload Photo"}</span>
+        <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={e => {
+          const file = e.target.files[0];
+          if (!file) return;
+          compressImage(file, src => addPhoto(src));
+          e.target.value = "";
+        }} />
+      </label>
+      <div style={{ fontSize: 11, color: "#94a3b8", textAlign: "center" }}>Photos will appear in the proposal and contract above Terms &amp; Conditions</div>
+    </div>
+  );
+}
+
 function CRMPopup({ crmPopupData, saveCRMRecord, setShowCRMPopup, setCrmPopupData }) {
   const [outcome, setOutcome] = React.useState("sold");
   const [lossReason, setLossReason] = React.useState("");
@@ -3669,6 +3826,7 @@ function App() {
         {currentKey === "windows"   && <WindowsStep windows={state.windows} onChange={(v) => setState((s) => ({ ...s, windows: v }))} />}
         {currentKey === "doors"     && <DoorsStep doors={state.doors||[]} onChange={(v) => setState((s) => ({ ...s, doors: v }))} />}
         {currentKey === "misc"      && <MiscStep data={state.misc} onChange={(v) => setState((s) => ({ ...s, misc: v }))} />}
+        {currentKey === "photos"    && <PhotosStep photos={state.jobPhotos || []} onChange={(v) => setState((s) => ({ ...s, jobPhotos: v }))} />}
         {currentKey === "preview"   && <PreviewStep state={state} setState={setState} setStep={setStep} steps={steps} selectedOption={selectedOption} setSelectedOption={setSelectedOption} selectedPayment={selectedPayment} setSelectedPayment={setSelectedPayment} showDeposit={showDeposit} setShowDeposit={setShowDeposit} depositOption={depositOption} setDepositOption={setDepositOption} customDepositText={customDepositText} setCustomDepositText={setCustomDepositText} usingFinancing={usingFinancing} setUsingFinancing={setUsingFinancing} financingPct={financingPct} setFinancingPct={setFinancingPct} />}
         {currentKey === "contract"  && <ContractStep state={state} selectedOption={selectedOption} setStep={setStep} steps={steps} showDeposit={showDeposit} depositOption={depositOption} customDepositText={customDepositText} usingFinancing={usingFinancing} financingPct={financingPct} />}
         {currentKey === "creditapp" && <CreditAppStep data={state.creditApp} onChange={(v) => setState(s => ({ ...s, creditApp: v }))} projectTotal={projectTotal} />}
